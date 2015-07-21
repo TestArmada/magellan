@@ -1,0 +1,264 @@
+#!/usr/bin/env node
+
+// Note: this script assumes you run this from the same directory as where
+// the package.json that contains magellan resides. In addition
+// configuration must either be explicitly specified relative to that directory
+// or absolutely (or exist implicitly in the default location)
+
+var path = require("path");
+var margs = require("../src/margs");
+var _ = require("lodash");
+var TestRunner = require("../src/test_runner");
+var getTests = require("../src/get_tests");
+var testFilters = require("../src/test_filter");
+var WorkerAllocator = require("../src/worker_allocator");
+var SauceWorkerAllocator = require("../src/sauce/worker_allocator");
+var browserOptions = require("../src/detect-browsers");
+var settings = require("../src/settings");
+var Q = require("q");
+var sauceSettings = require("../src/sauce/settings");
+var async = require("async");
+var clc = require("cli-color");
+var browsers = require("../src/sauce/browsers");
+
+var isSauce = margs.argv.sauce ? true : false;
+var debug = margs.argv.debug || false;
+var useSerialMode = margs.argv.serial;
+var MAX_TEST_ATTEMPTS = parseInt(margs.argv.max_test_attempts) || 3;
+var selectedBrowsers;
+var workerAllocator;
+var MAX_WORKERS;
+
+// Show help and exit if it's asked for
+if (margs.argv.help) {
+  var help = require("../src/cli_help");
+  help.help();
+  process.exit(0);
+  return;
+}
+
+if (margs.argv.list_browsers) {
+  browsers.initialize(true).then(function () {
+    browsers.listBrowsers();
+    process.exit(0);
+  }).catch(function (err) {
+    console.log("Couldn't fetch browsers. Error: ", err);
+  });
+  return;
+}
+
+//
+// Initialize Reporters
+// ====================
+//
+// All reporter types are optional and either activated through the existence
+// of configuration (usually via environment variables) or command line switches.
+//
+var reporters = [];
+
+//
+// Load reporters from magellan.json
+// =================================
+//
+// Reporters that conform to the reporter API and inherit from src/reporter
+// can be loaded in magellan.json through a reporters[] list. These can refer to
+// either npm modules defined in package.json or to paths relative to the current
+// working directory of the calling script or shell.
+if (margs.argv.reporters && _.isArray(margs.argv.reporters)) {
+  margs.argv.reporters.forEach(function (mPath) {
+    var resolvedRequire;
+    mPath = mPath.trim();
+
+    if (mPath.charAt(0) === ".") {
+      resolvedRequire = path.resolve(process.cwd() + "/" + mPath);
+    } else {
+      resolvedRequire = mPath;
+    }
+
+    var reporterClass;
+    try {
+      reporterClass = require(resolvedRequire);
+    } catch (e) {
+      if (e.code === "MODULE_NOT_FOUND") {
+        console.error("Error while loading a reporter from configuration: " + resolvedRequire);
+        console.error(e);
+        process.exit(1);
+      }
+    }
+
+    reporters.push(new reporterClass());
+  });
+}
+
+
+//
+// Admiral integration (enabled if settings exist)
+//
+var admiralBuildSettings = require("../src/reporters/admiral/settings");
+if (admiralBuildSettings.enabled) {
+  var admiral = require("../src/reporters/admiral/reporter");
+  admiral.setConfig(admiralBuildSettings);
+  var admiralReporter = new admiral.reporter();
+  reporters.push(admiralReporter);
+}
+
+//
+// Slack integration (enabled if settings exist)
+//
+var slackSettings = require("../src/reporters/slack/settings");
+if (slackSettings.enabled) {
+  var Slack = require("../src/reporters/slack/slack");
+  var slackReporter = new Slack(slackSettings);
+  reporters.push(slackReporter);
+}
+
+//
+// Serial Mode Reporter (enabled with --serial)
+//
+if (useSerialMode) {
+  var StdoutReporter = require("../src/reporters/stdout/reporter");
+  reporters.push(new StdoutReporter());
+}
+
+//
+// Screenshot Aggregation (enabled with --aggregate_screenshots)
+//
+if (settings.aggregateScreenshots) {
+  var ScreenshotAggregator = require("../src/reporters/screenshot_aggregator/reporter");
+  reporters.push(new ScreenshotAggregator());
+}
+
+
+//
+// Find Tests, Start Worker Allocator
+//
+var tests = getTests(testFilters.detectFromCLI(margs.argv));
+
+if (!tests) {
+  console.log("Error: no tests found");
+  process.exit(1);
+}
+
+var initializeReporters = function () {
+  var deferred = Q.defer();
+  async.each(reporters, function (reporter, done) {
+    reporter.initialize()
+      .then(function () {
+        done();
+      }).catch(function (err) {
+        done(err);
+      });
+  }, function (err) {
+    if (err) {
+      deferred.reject(err);
+    } else {
+      deferred.resolve();
+    }
+  });
+  return deferred.promise;
+};
+
+var startSuite = function () {
+  workerAllocator.initialize(function (err) {
+    if (err) {
+      console.error(clc.redBright("Could not start Magellan. Got error while initializing worker allocator: "));
+      console.error(clc.redBright(err.toString()));
+      process.exit(1);
+      return;
+    }
+
+    var testRunner = new TestRunner(tests, {
+      debug: debug,
+
+      maxWorkers: MAX_WORKERS,
+
+      maxTestAttempts: MAX_TEST_ATTEMPTS,
+
+      browsers: selectedBrowsers,
+
+      reporters: reporters,
+
+      bailFast: (margs.argv.bail_fast ? true : false),
+      bailOnThreshold: (margs.argv.bail_early ? true : false),
+
+      serial: useSerialMode,
+
+      allocator: workerAllocator,
+
+      sauceSettings: isSauce ? sauceSettings : undefined,
+
+      onSuccess: function () {
+        workerAllocator.teardown(function () {
+          process.exit(0);
+        });
+      },
+
+      onFailure: function (failedTests) {
+        workerAllocator.teardown(function () {
+          process.exit(1);
+        });
+      }
+    })
+
+    testRunner.start();
+
+  });
+};
+
+browsers.initialize(isSauce)
+  .then(browserOptions.detectFromCLI.bind(this, margs.argv, isSauce))
+  .then(function (_selectedBrowsers) {
+    selectedBrowsers = _selectedBrowsers;
+    if (_selectedBrowsers.length === 0) {
+      console.log("\nError: To use --sauce mode, you need to specify a browser\n");
+      browsers.initialize(true).then(function () {
+        browsers.listBrowsers();
+        process.exit(1);
+      });
+      return;
+    } else {
+      if (debug) {
+        console.log("Selected browsers: ");
+        console.log(_selectedBrowsers.map(function (b) {
+          return [
+            b.browserId,
+            b.resolution ? b.resolution : "(any resolution)",
+            b.orientation ? b.orientation : "(any orientation)"
+          ].join(" ");
+        }).join("\n"));
+      }
+    }
+  })
+  .then(function () {
+    //
+    // Worker Count:
+    // =============
+    //
+    // Non-sauce mode:
+    //   Default to 8 workers if we're running phantomjs and *only* phantomjs, otherwise 3 if other browsers are involved
+    //   Default to 1 worker in serial mode. 
+    //
+    // Sauce mode:
+    //   Default to 3 workers in parallel mode (default).
+    //   Default to 1 worker in serial mode. 
+    //
+    if (isSauce) {
+      MAX_WORKERS = useSerialMode ? 1 : (parseInt(margs.argv.max_workers) || 3);
+    } else {
+      var DEFAULT_MAX_WORKERS = (selectedBrowsers.length === 1 && selectedBrowsers[0] === "phantomjs") ? 8 : 3;
+      MAX_WORKERS = useSerialMode ? 1 : (parseInt(margs.argv.max_workers) || DEFAULT_MAX_WORKERS);
+    }
+
+    if (isSauce) {
+      workerAllocator = new SauceWorkerAllocator(MAX_WORKERS);
+    } else {
+      workerAllocator = new WorkerAllocator(MAX_WORKERS);
+    }
+  })
+  .then(initializeReporters)
+  .then(startSuite)
+  .catch(function (err) {
+    console.error(clc.redBright("Error initializing reporters: "));
+    console.error(err.toString());
+    process.exit(1);
+  });
