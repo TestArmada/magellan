@@ -1,5 +1,5 @@
 {
-  "name": "@testarmada/magellan",
+  "name": "testarmada-magellan",
   "version": "1.5.16",
   "description": "Massively parallel automated testing",
   "main": "index.js",
