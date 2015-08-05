@@ -17,15 +17,15 @@ module.exports = {
     var maxFamWidth = _.max(Object.keys(families), function (f) { return f.length; }).length + 5;
     var maxCLIWidth = _.max(_.pluck(browsers, "id"), function (b) { return b.length; }).length + cliSuffix.length + 5;
 
-    var maxBrowserWidth = _.max(_.pluck(browsers, "desiredCapabilities.browserName"), function (b) { return b.length; }).length + 5;
-    var maxVersionWidth = _.max(_.pluck(browsers, "desiredCapabilities.version"), function (b) { return b.toString().length; }).length + 5;
+    var maxBrowserWidth = _.max(browsers.map(function (b) { return b.desiredCapabilities.browserName || "Native app"; }), function (b) { return b.length; }).length + 5;
+    var maxVersionWidth = _.max(browsers.map(function (b) { return b.desiredCapabilities.version || b.desiredCapabilities.platformVersion; }), function (b) { return b.toString().length; }).length + 5;
     var maxOSWidth = _.max(_.pluck(browsers, "desiredCapabilities.platform"), function (b) { return b.length; }).length + 5;
     var maxDeviceWidth = _.max(_.map(browsers, function (b) {
       return b.desiredCapabilities.deviceName || "Desktop";
     }), function (b) { return b.length; }).length + 5;
 
     var table = new Table({
-      head: ["Family", "Copy-Paste Command-Line Option", "Browser", "Version", "OS", "Device"],
+      head: ["Family", "Copy-Paste Command-Line Option", "Browser/Env", "Version", "OS", "Device"],
       colWidths: [maxFamWidth, maxCLIWidth, maxBrowserWidth, maxVersionWidth, maxOSWidth, maxDeviceWidth]
     });
 
@@ -37,8 +37,8 @@ module.exports = {
         table.push([
           clc.blackBright(count + "."),
           cliSuffix + b.id,
-          b.desiredCapabilities.browserName,
-          b.desiredCapabilities.version,
+          b.desiredCapabilities.browserName || "Native app",
+          b.desiredCapabilities.version || b.desiredCapabilities.platformVersion,
           b.desiredCapabilities.platform,
           (b.desiredCapabilities.deviceName ? clc.cyanBright(b.desiredCapabilities.deviceName) : "Desktop")
         ]);
