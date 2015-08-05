@@ -2,7 +2,7 @@ var path = require("path"),
   fs = require("fs"),
   _ = require("lodash"),
   acorn = require("acorn"),
-  walk = require("acorn/util/walk");
+  walk = require("acorn/dist/walk");
 
 var filterByTags = function(files, tags) {
   // Tidy up tag input. If we have a comma-delimited list, tokenize and clean it up

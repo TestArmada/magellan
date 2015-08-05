@@ -54,5 +54,8 @@ module.exports = {
   // Default to a config location that is the same as the magellan-boilerplate
   nightwatchConfigFilePath: argv.nightwatch_config || (fs.existsSync("./nightwatch.json") ? "./nightwatch.json" : "./conf/nightwatch.json"),
 
+  mochaTestFolders: argv.mocha_tests,
+  appiumApplicationLocation: argv.appium_application_location,
+
   customSauceBrowsers: argv.customSauceBrowsers || []
 };

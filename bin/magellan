@@ -47,6 +47,12 @@ if (margs.argv.list_browsers) {
   return;
 }
 
+// Basic Mocha/Appium integration support check
+if (margs.argv.framework === "mocha" && !isSauce) {
+  console.log("Error: Mocha support is limited to remote (Saucelabs) Appium at this time. Please specify an Appium device with --browser");
+  process.exit(1);
+}
+
 //
 // Initialize Reporters
 // ====================
