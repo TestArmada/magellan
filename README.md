@@ -25,7 +25,7 @@ Features:
 Test Framework Compatibility
 ============================
 
-  - [`magellan-nightwatch`](https://github.com/TestArmada/magellan-nightwatch) `1.4.13` or higher.
+  - [Nightwatch.js](http://nightwatchjs.org/), by using the [`magellan-nightwatch`](https://github.com/TestArmada/magellan-nightwatch) adapter, version `1.4.23` or higher.
   - ... with more to come.
 
 Example Developer Workflows
