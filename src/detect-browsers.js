@@ -78,6 +78,10 @@ module.exports = {
       }
     }
 
+    if (argv.browser && argv.browser.indexOf(",") > -1) {
+      argv.browsers = argv.browser;
+    }
+
     // Note: "browsers" always trumps a single "browser" and will overwrite
     // anything from a profile completely.
     if (argv.browsers) {
