@@ -4,9 +4,9 @@ var walk = require("acorn/dist/walk");
 var path = require("path");
 var fs = require("fs");
 
-var settings = require("../../settings");
+var mochaSettings = require("./mocha_settings");
 
-var sourceFolders = settings.mochaTestFolders;
+var sourceFolders = mochaSettings.mochaTestFolders;
 
 var Path = function (path, filename, id) {
   this.path = path;

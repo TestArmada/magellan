@@ -49,7 +49,7 @@ MochaTestRun.prototype.getEnvironment = function (env) {
 
 MochaTestRun.prototype.getArguments = function () {
   var grepString = this.path.toString();
-  var escapees = "\\^$[]*.\"";
+  var escapees = "\\^$[]+*.\"";
   escapees.split("").forEach(function (ch) {
     grepString = grepString.split(ch).join("\\" + ch);
   });
