@@ -34,22 +34,18 @@ MochaTestRun.prototype.getCommand = function () {
 
 // return the environment
 MochaTestRun.prototype.getEnvironment = function (env) {
-  var config = {
-    desiredCapabilities: this.sauceBrowserSettings,
-    appiumAppLocation: settings.appiumApplicationLocation,
-    sauceSettings: {
-      testServer: "http://" + process.env.SAUCE_USERNAME + ":" + process.env.SAUCE_ACCESS_KEY + "@ondemand.saucelabs.com:80/wd/hub"
-    }
-  };
+  var nodeConfig = require("../lib/amend_node_config")(env, {
+    desiredCapabilities: this.sauceBrowserSettings
+  });
 
-  return _.extend({
-    NODE_CONFIG: JSON.stringify(config)
-  }, env);
+  return _.extend(env, {
+    NODE_CONFIG: JSON.stringify(nodeConfig)
+  });
 };
 
 MochaTestRun.prototype.getArguments = function () {
   var grepString = this.path.toString();
-  var escapees = "\\^$[]*.\"";
+  var escapees = "\\^$[]+*.\"";
   escapees.split("").forEach(function (ch) {
     grepString = grepString.split(ch).join("\\" + ch);
   });

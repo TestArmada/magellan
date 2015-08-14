@@ -22,6 +22,8 @@ var clc = require("cli-color");
 var browsers = require("../src/sauce/browsers");
 
 var isSauce = margs.argv.sauce ? true : false;
+var isNodeBased = margs.argv.framework === "mocha";
+
 var debug = margs.argv.debug || false;
 var useSerialMode = margs.argv.serial;
 var MAX_TEST_ATTEMPTS = parseInt(margs.argv.max_test_attempts) || 3;
@@ -45,12 +47,6 @@ if (margs.argv.list_browsers) {
     console.log("Couldn't fetch browsers. Error: ", err);
   });
   return;
-}
-
-// Basic Mocha/Appium integration support check
-if (margs.argv.framework === "mocha" && !isSauce) {
-  console.log("Error: Mocha support is limited to remote (Saucelabs) Appium at this time. Please specify an Appium device with --browser");
-  process.exit(1);
 }
 
 //
@@ -212,7 +208,7 @@ var startSuite = function () {
 };
 
 browsers.initialize(isSauce)
-  .then(browserOptions.detectFromCLI.bind(this, margs.argv, isSauce))
+  .then(browserOptions.detectFromCLI.bind(this, margs.argv, isSauce, isNodeBased))
   .then(function (_selectedBrowsers) {
     selectedBrowsers = _selectedBrowsers;
     if (_selectedBrowsers.length === 0) {

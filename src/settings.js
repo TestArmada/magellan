@@ -28,7 +28,7 @@ module.exports = {
   BASE_PORT_RANGE: parseInt(argv.base_port_range) || 2000,
   BASE_PORT_SPACING: parseInt(argv.base_port_spacing) || 3,
 
-  environment: process.env,
+  environment: env,
 
   debug: argv.debug,
 
@@ -43,19 +43,11 @@ module.exports = {
 
   buildId: buildId,
 
-  //
-  //
-  // TODO: allow for framework setting via magellan.json
-  //
-  //
   framework: argv.framework || "magellan-nightwatch",
 
   // TODO: move this to interop
   // Default to a config location that is the same as the magellan-boilerplate
   nightwatchConfigFilePath: argv.nightwatch_config || (fs.existsSync("./nightwatch.json") ? "./nightwatch.json" : "./conf/nightwatch.json"),
-
-  mochaTestFolders: argv.mocha_tests,
-  appiumApplicationLocation: argv.appium_application_location,
 
   customSauceBrowsers: argv.customSauceBrowsers || []
 };

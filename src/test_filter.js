@@ -2,7 +2,8 @@ var path = require("path"),
   fs = require("fs"),
   _ = require("lodash"),
   acorn = require("acorn"),
-  walk = require("acorn/dist/walk");
+  walk = require("acorn/dist/walk"),
+  settings = require("./settings");
 
 var filterByTags = function(files, tags) {
   // Tidy up tag input. If we have a comma-delimited list, tokenize and clean it up
@@ -94,8 +95,17 @@ var PREDEFINED_FILTERS = {
     console.log("Using test filter: ", filename);
 
     return files.filter(function(f) {
-      if (path.resolve(f.trim()) === path.resolve(filename.trim())) {
-        return true;
+      //
+      // TODO: instead check if this is an instance of a Path object, not "mocha" substring check
+      //
+      if (settings.framework.indexOf("mocha") > -1) {
+        if (f.path === filename) {
+          return true;
+        }
+      } else {
+        if (path.resolve(f.trim()) === path.resolve(filename.trim())) {
+          return true;
+        }
       }
     });
   },

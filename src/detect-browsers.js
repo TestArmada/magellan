@@ -24,7 +24,7 @@ module.exports = {
 
   // Return a promise that we'll resolve with a list of browsers selected
   // by the user from command line arguments
-  detectFromCLI: function (argv, sauceEnabled) {
+  detectFromCLI: function (argv, sauceEnabled, isNodeBased) {
     var deferred = Q.defer();
     var browsers;
 
@@ -121,8 +121,13 @@ module.exports = {
         if (sauceEnabled) {
           browsers = [];
         } else {
-          var phantomBrowser = Browser("phantomjs", argv.resolution, argv.orientation);
-          browsers = [phantomBrowser];
+          var fallbackBrowser;
+          if (isNodeBased) {
+            fallbackBrowser = Browser("nodejs", argv.resolution, argv.orientation);
+          } else {
+            fallbackBrowser = Browser("phantomjs", argv.resolution, argv.orientation);
+          }
+          browsers = [fallbackBrowser];
         }
       }
     }
