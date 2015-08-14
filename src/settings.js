@@ -28,7 +28,7 @@ module.exports = {
   BASE_PORT_RANGE: parseInt(argv.base_port_range) || 2000,
   BASE_PORT_SPACING: parseInt(argv.base_port_spacing) || 3,
 
-  environment: process.env,
+  environment: env,
 
   debug: argv.debug,
 

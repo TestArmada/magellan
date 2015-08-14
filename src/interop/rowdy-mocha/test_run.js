@@ -46,26 +46,9 @@ RowdyMochaTestRun.prototype.getEnvironment = function (env) {
     FUNC_PORT: this.mockingPort
   };
 
-  var nodeConfig = env.NODE_CONFIG;
+  var nodeConfig = require("../lib/amend_node_config")(env, mockingSettings);
 
-  if (typeof nodeConfig === "string") {
-    try {
-      nodeConfig = JSON.parse(env.NODE_CONFIG);
-    } catch (e) {
-      // bad node config. Just start a new one
-      nodeConfig = {};
-    }
-  }
-
-  if (nodeConfig && typeof nodeConfig === "object") {
-    // already an object {}
-  } else {
-    nodeConfig = {};
-  }
-
-  nodeConfig = _.extend(nodeConfig, mockingSettings);
-
-  return _.extend({
+  return _.extend(env, mockingSettings, {
     // Example values for rowdy:
     // "local.phantomjs"
     // "sauceLabs.safari_7_OS_X_10_9_Desktop"
@@ -79,7 +62,7 @@ RowdyMochaTestRun.prototype.getEnvironment = function (env) {
         "port": this.seleniumPort
       }
     })
-  }, mockingSettings, env);
+  });
 };
 
 RowdyMochaTestRun.prototype.getArguments = function () {
