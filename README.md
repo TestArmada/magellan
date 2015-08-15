@@ -25,9 +25,9 @@ Features:
 Test Framework Compatibility
 ============================
 
-  - `mocha` / `wd` / `webdriver.io` [example Mocha/wd project](https://github.com/TestArmada/boilerplate-mocha)
+  - `mocha` / `wd` / `webdriver.io` ( [example Mocha/wd project](https://github.com/TestArmada/boilerplate-mocha) )
   - `node.js` (non-browser) test suites (example project coming soon).
-  - `Nightwatch.js` test suites ( [example Nightwatch project](https://github.com/TestArmada/boilerplate-nightwatch).
+  - `Nightwatch.js` test suites ( [example Nightwatch project](https://github.com/TestArmada/boilerplate-nightwatch) )
   - `appium.js` (example project coming soon).
 
 Example Developer Workflows
