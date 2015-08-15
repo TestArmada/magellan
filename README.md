@@ -1,7 +1,7 @@
 # magellan
 ## Large-Scale Automated Testing
 
-Magellan is a tool for scaling your automated test suite to be massively parallel, with added reliability. Run large test suites across across many environments at the same time (i.e multiple browsers or versions, or multiple native iOS or Android devies) with a friendly command-line workflow that is both local development and continuous-integration friendly. Magellan is compatible with `mocha` (`wd.js`, `webdriver.io`, `appium`, and node.js) tests ( [example Mocha/wd project](https://github.com/TestArmada/boilerplate-mocha) ) and `Nightwatch.js` tests ( [example Nightwatch project](https://github.com/TestArmada/boilerplate-nightwatch) ), and includes [SauceLabs](http://www.saucelabs.com/) support.
+Magellan is a tool for massively-scaling your automated test suite, with added reliability. Run large test suites across across many environments (multiple browsers or versions, or multiple native iOS or Android devices) at the same time, in parallel, with a friendly command-line workflow that is both local development and continuous-integration friendly. Magellan is compatible with `mocha` (`wd.js`, `webdriver.io`, `appium`, and node.js) tests ( [example Mocha/wd project](https://github.com/TestArmada/boilerplate-mocha) ) and `Nightwatch.js` tests ( [example Nightwatch project](https://github.com/TestArmada/boilerplate-nightwatch) ), and includes [SauceLabs](http://www.saucelabs.com/) support.
 
 Features:
 
