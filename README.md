@@ -354,3 +354,8 @@ Here's an example `scripts` block that implements these tasks in your package.js
     "magellan:teardown": "./path/to/my/teardown.sh"
   },
 ```
+
+## Licenses
+
+All code not otherwise specified is Copyright Wal-Mart Stores, Inc.
+Released under the [MIT](./LICENSE) License.
