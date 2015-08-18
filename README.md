@@ -275,7 +275,9 @@ export SAUCE_TUNNEL_ID="xxxxxxxxx"
 SauceLabs Tunnelling Support (Sauce Connect)
 ============================================
 
-**NOTE**: By default, Magellan assumes that tests run within a secure network and that a tunnel is required from SauceLabs to your test machine. If you don't need this option and want faster `--sauce` initialization, you can use `--no_tunnels` at runtime to skip the tunnel construction process.
+**NOTE**: By default, Magellan assumes that tests run on an open network visible to SauceLabs. 
+
+If your tests are running in a closed CI environment not visible to the Internet, a tunnel is required from SauceLabs to your test machine (when using `--sauce` mode). To activate tunnel creation, use `--create_tunnels`. Magellan will create a unique tunnel for each worker.
 
 Display Resolution and Orientation Support (SauceLabs Browsers)
 ===============================================================

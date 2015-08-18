@@ -33,7 +33,7 @@ module.exports = {
     console.log("  --browser=browsername        Run tests in chrome, firefox, etc (default: phantomjs).");
     console.log("  --browsers=b1,b2,..          Run multiple browsers in parallel.");
     console.log("  --browsers=all               Run all available browsers (sauce only).");
-    console.log("  --no_tunnels                 Don't use tunnels in sauce mode (for use with --sauce only)");
+    console.log("  --create_tunnels             Create secure tunnels in sauce mode (for use with --sauce only)");
     console.log("  --profile=p1,p2,..           Specify lists of browsers to use defined in profiles in magellan.json config.")
     console.log("");
     console.log("  +------------------------------------------+-----------+-------------------+");

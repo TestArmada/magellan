@@ -18,6 +18,10 @@ var MochaTestRun = function (options) {
   delete this.sauceBrowserSettings.resolutions;
   delete this.sauceBrowserSettings.id;
 
+  if (options.sauceSettings && options.sauceSettings.useTunnels) {
+    this.sauceBrowserSettings.tunnelId = this.worker.tunnelId;
+  }
+
   // needed if local testing
   this.seleniumPort = this.worker.portOffset + 1;
 
