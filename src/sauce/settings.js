@@ -13,7 +13,7 @@ var config = {
 
   // optional:
   tunnelTimeout:        process.env.SAUCE_TUNNEL_CLOSE_TIMEOUT,
-  useTunnels:           !argv.no_tunnels
+  useTunnels:           !!argv.create_tunnels
 };
 
 var parameterWarnings = {

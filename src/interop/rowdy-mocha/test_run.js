@@ -17,6 +17,10 @@ var RowdyMochaTestRun = function (options) {
     this.rowdyBrowser = "local." + this.test.browser.browserId;
   }
 
+  if (options.sauceSettings && options.sauceSettings.useTunnels) {
+    this.tunnelId = this.worker.tunnelId;
+  }
+
   // needed if local testing
   this.seleniumPort = this.worker.portOffset + 1;
 
@@ -52,6 +56,7 @@ RowdyMochaTestRun.prototype.getEnvironment = function (env) {
     // Example values for rowdy:
     // "local.phantomjs"
     // "sauceLabs.safari_7_OS_X_10_9_Desktop"
+    SAUCE_CONNECT_TUNNEL_ID: this.tunnelId,
     NODE_CONFIG: JSON.stringify(nodeConfig),
     ROWDY_SETTINGS: this.rowdyBrowser,
     ROWDY_OPTIONS: JSON.stringify({
