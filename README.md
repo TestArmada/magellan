@@ -1,3 +1,4 @@
+[![Stories in Ready](https://badge.waffle.io/TestArmada/magellan.png?label=ready&title=Ready)](https://waffle.io/TestArmada/magellan)
 # magellan
 ## Large-Scale Automated Testing
 
