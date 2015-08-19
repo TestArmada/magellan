@@ -239,11 +239,13 @@ TestRunner.prototype = {
     }
 
     // Note: There are three ways a process can die:
+    //
     //   1. "close" emitted.
     //   2. "exit" emitted.
-    //   3. direct call of workerClosed(), with a kill of the process tree
-    // Because "close" emits unpredictably some time after we fulfill case #3,
-    // we wrap this callback in once() so that we only clean up 
+    //   3. direct call of workerClosed(), with a kill of the process tree.
+    //
+    // Because "close" emits unpredictably some time after we fulfill case
+    // #3, we wrap this callback in once() so that we only clean up once.
     var workerClosed = once(function (code) {
       testRun.test.stopClock();
       clearInterval(sentry);
