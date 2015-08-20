@@ -306,6 +306,28 @@ export SAUCE_CONNECT_VERSION=4.3.10
 export SAUCE_TUNNEL_ID="xxxxxxxxx"
 ```
 
+Listing and Using SauceLabs Browsers
+====================================
+
+Magellan can query the SauceLabs API for a list of available browsers (for web testing) and devices (for native app testing in iOS and Android), and present them as a list of friendly browser ids:
+
+```console
+$ magellan --list_browsers
+```
+
+To use a given SauceLabs browser, specify it when using the `--sauce` option:
+
+```console
+$ magellan --sauce --browser=chrome_42_Windows_2012_R2_Desktop
+```
+
+To use multiple SauceLabs browsers and environments at the same time, simply list multiple ids:
+```
+$ magellan --sauce --browsers=chrome_42_Windows_2012_R2_Desktop,safari_7_OS_X_10_9_Desktop 
+```
+
+Note: If you are building reporting or CI tools and want to use the same SauceLabs API and browser naming support toolset, check out [guacamole](https://github.com/TestArmada/guacamole).
+
 SauceLabs Tunnelling Support (Sauce Connect)
 ============================================
 
