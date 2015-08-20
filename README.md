@@ -19,9 +19,10 @@ Features
     - Slack reporting support.
     - [Admiral](https://github.com/TestArmada/admiral) reporting support.
     - Plays well with CI (Jenkins, etc).
-    - SauceLabs Remote Browser Support:
+    - SauceLabs Remote Browser and Device Support:
       - Optional tunnel management.
       - Create lists of browser tiers or browser testing groups with browser profiles (eg: tier1 browsers, tier2 browsers, mobile browsers, vintage IE versions, etc).
+      - Manage not just browsers, but also devices for native application testing (iOS and Android)
 
 Test Framework Compatibility
 ============================
