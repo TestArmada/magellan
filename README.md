@@ -1,7 +1,7 @@
 # magellan
 ## Large-Scale Automated Testing
 
-Magellan is a tool for massively-scaling your automated test suite, with added reliability. Run large test suites across across many environments (multiple browsers or versions, or multiple native iOS or Android devices) at the same time, in parallel, with a friendly command-line workflow that is both local development and continuous-integration friendly. Magellan is compatible with `mocha` (`wd.js`, `webdriver.io`, `appium`, and node.js) tests ( [example Mocha/wd project](https://github.com/TestArmada/boilerplate-mocha) ) and `Nightwatch.js` tests ( [example Nightwatch project](https://github.com/TestArmada/boilerplate-nightwatch) ), and includes [SauceLabs](http://www.saucelabs.com/) support.
+Magellan is a tool for massively-scaling your automated test suite, with added reliability. Run large test suites across across many environments (multiple browsers or versions, or multiple native iOS or Android devices) at the same time, in parallel, with a friendly command-line workflow that is both local development and continuous-integration friendly. Magellan is compatible with `mocha` (`wd.js`, `webdriver.io`, `appium`) tests ( [example Mocha/wd project](https://github.com/TestArmada/boilerplate-mocha) ) and `Nightwatch.js` tests ( [example Nightwatch project](https://github.com/TestArmada/boilerplate-nightwatch) ), and includes [SauceLabs](http://www.saucelabs.com/) support. Through Magellan's `mocha` support, you can scale regular node.js test suites too.
 
 Features
 ========
@@ -28,13 +28,44 @@ Test Framework Compatibility
 
   - `mocha`:
     - `wd` ( [example Mocha/wd project](https://github.com/TestArmada/boilerplate-mocha-wd) )
-    - `webdriver.io` ( [example Mocha/wd project](https://github.com/TestArmada/boilerplate-mocha-webdriverio) )
+    - `webdriver.io` ( [example Mocha/webdriver.io project](https://github.com/TestArmada/boilerplate-mocha-webdriverio) )
   - `Nightwatch.js` ( [example Nightwatch project](https://github.com/TestArmada/boilerplate-nightwatch) )
   - `node.js` (non-browser) test suites (example project coming soon).
   - `appium.js` (example project coming soon).
 
+How Magellan Fits In
+====================
+
+Magellan can best be described as a *runner-runner*. If you use `mocha` or `nightwatch` to run your current tests, then you can use Magellan to in turn run `mocha` or `nightwatch` and scale up your test runs.
+
+When running tests with mocha, Magellan simply stacks on top of your existing suite:
+
+#### `mocha` tests
+
+![magellan stack-mocha](https://cloud.githubusercontent.com/assets/12995/9394790/552d3828-473f-11e5-9bb4-9d732f09c85b.png)
+
+#### `mocha` tests, with help from `rowdy`
+
+Note: **This is the preferred solution for working with `mocha`**. If you want to spend less time handling selenium `desiredCapabilities` objects and starting/stopping Selenium, Magellan works much better with [`rowdy`](https://github.com/FormidableLabs/rowdy), which handles these tasks for you (for examples of this in action, see our [example Mocha/wd project](https://github.com/TestArmada/boilerplate-mocha-wd) and [example Mocha/webdriver.io project](https://github.com/TestArmada/boilerplate-mocha-webdriverio)). That setup looks like this:
+
+![magellan stack-rowdy](https://cloud.githubusercontent.com/assets/12995/9394793/554f1862-473f-11e5-80d8-450d95cacc66.png)
+
+#### `Nightwatch.js` tests
+
+Magellan can also run [`Nightwatch.js`](https://nightwatchjs.org/) test suites (please see our [example Nightwatch project](https://github.com/TestArmada/boilerplate-nightwatch) ), in which case your stack looks like this:
+
+![magellan stack-nightwatch](https://cloud.githubusercontent.com/assets/12995/9394791/55493e24-473f-11e5-8f37-77d6683290f1.png)
+
+#### Plain `node.js` tests
+
+Finally, Magellan can also scale regular ol' node.js tests (no browsers or devices) using Mocha:
+
+![magellan stack-nodejs](https://cloud.githubusercontent.com/assets/12995/9394792/554da8ba-473f-11e5-90fb-aeaed90be971.png)
+
 Example Developer Workflows
 ===========================
+
+Magellan is a command line tool.
 
 **Note**: The following examples assume you have `./node_modules/.bin` in your `PATH`. If you don't have this rule in `PATH`, or are unable to add it, you can also run any of the examples below like this:
 ```console
