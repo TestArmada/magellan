@@ -3,7 +3,8 @@
 
 Magellan is a tool for massively-scaling your automated test suite, with added reliability. Run large test suites across across many environments (multiple browsers or versions, or multiple native iOS or Android devices) at the same time, in parallel, with a friendly command-line workflow that is both local development and continuous-integration friendly. Magellan is compatible with `mocha` (`wd.js`, `webdriver.io`, `appium`, and node.js) tests ( [example Mocha/wd project](https://github.com/TestArmada/boilerplate-mocha) ) and `Nightwatch.js` tests ( [example Nightwatch project](https://github.com/TestArmada/boilerplate-nightwatch) ), and includes [SauceLabs](http://www.saucelabs.com/) support.
 
-Features:
+Features
+========
 
   - **Parallel Test Runs**
     - Worker allocation and management with failed test retry.
@@ -25,9 +26,11 @@ Features:
 Test Framework Compatibility
 ============================
 
-  - `mocha` / `wd` / `webdriver.io` ( [example Mocha/wd project](https://github.com/TestArmada/boilerplate-mocha) )
+  - `mocha`:
+    - `wd` ( [example Mocha/wd project](https://github.com/TestArmada/boilerplate-mocha-wd) )
+    - `webdriver.io` ( [example Mocha/wd project](https://github.com/TestArmada/boilerplate-mocha-webdriverio) )
+  - `Nightwatch.js` ( [example Nightwatch project](https://github.com/TestArmada/boilerplate-nightwatch) )
   - `node.js` (non-browser) test suites (example project coming soon).
-  - `Nightwatch.js` test suites ( [example Nightwatch project](https://github.com/TestArmada/boilerplate-nightwatch) )
   - `appium.js` (example project coming soon).
 
 Example Developer Workflows
