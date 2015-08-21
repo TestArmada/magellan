@@ -1,5 +1,4 @@
-# magellan
-## Large-Scale Automated Testing
+## Magellan: Large-Scale Automated Testing
 
 ![image](https://cloud.githubusercontent.com/assets/12995/9419235/e2fbb4f2-480e-11e5-9de8-c6c4871890b9.png)
 
