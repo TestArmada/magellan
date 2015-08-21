@@ -9,6 +9,7 @@ var settings = require("../../settings");
 var mochaSettings = require("../lib/mocha_settings");
 
 var RowdyMochaTestRun = function (options) {
+  throw new Error('stub');
   BaseTestrun.call(this, options);
 
   if (options.sauceBrowserSettings) {
