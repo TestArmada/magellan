@@ -14,7 +14,7 @@ var SauceWorkerAllocator = function (_MAX_WORKERS) {
   this.tunnels = [];
   this.tunnelErrors = [];
   this.MAX_WORKERS = _MAX_WORKERS;
-  this.maxTunnels = Math.min(sauceSettings.maxTunnels || _MAX_WORKERS, _MAX_WORKERS);
+  this.maxTunnels = sauceSettings.maxTunnels;
   this.tunnelPrefix = Math.round(Math.random() * 99999).toString(16);
 };
 

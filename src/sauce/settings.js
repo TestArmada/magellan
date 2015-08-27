@@ -14,7 +14,7 @@ var config = {
   // optional:
   tunnelTimeout:        process.env.SAUCE_TUNNEL_CLOSE_TIMEOUT,
   useTunnels:           !!argv.create_tunnels,
-  maxTunnels:           argv.num_tunnels
+  maxTunnels:           argv.num_tunnels || 1
 };
 
 var parameterWarnings = {
