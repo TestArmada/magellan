@@ -32,6 +32,8 @@ module.exports = {
 
   debug: argv.debug,
 
+  gatherTrends: argv.gather_trends,
+
   aggregateScreenshots: argv.aggregate_screenshots,
   tempDir: TEMP_DIR,
 
