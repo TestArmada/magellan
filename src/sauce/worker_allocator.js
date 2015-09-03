@@ -14,6 +14,8 @@ var SauceWorkerAllocator = function (_MAX_WORKERS) {
   this.tunnels = [];
   this.tunnelErrors = [];
   this.MAX_WORKERS = _MAX_WORKERS;
+  this.maxTunnels = sauceSettings.maxTunnels;
+  this.tunnelPrefix = Math.round(Math.random() * 99999).toString(16);
 };
 
 util.inherits(SauceWorkerAllocator, BaseWorkerAllocator);
@@ -32,11 +34,9 @@ SauceWorkerAllocator.prototype.initialize = function (callback) {
           if (err) {
             callback(new Error("Cannot initialize worker allocator: " + err.toString()));
           } else {
-            // NOTE: If we only managed to fewer tunnels than we requested,
-            // we need to reduce the number of workers.
-            if (this.tunnels.length !== this.MAX_WORKERS) {
-              this.initializeWorkers(this.tunnels.length);
-            }
+            // NOTE: We wait until we know how many tunnels we actually got before
+            // we assign tunnel ids to workers.
+            this.assignTunnelsToWorkers(this.tunnels.length);
             callback();
           }
         }.bind(this));
@@ -45,15 +45,18 @@ SauceWorkerAllocator.prototype.initialize = function (callback) {
   }
 };
 
-SauceWorkerAllocator.prototype.initializeWorkers = function (numWorkers) {
-  BaseWorkerAllocator.prototype.initializeWorkers.call(this, numWorkers);
+SauceWorkerAllocator.prototype.assignTunnelsToWorkers = function (numOpenedTunnels) {
+  var self = this;
 
-  if (sauceSettings.useTunnels) {
-    // Assign a tunnel id for each worker.
-    this.workers.forEach(function (worker){
-      worker.tunnelId = sauceSettings.tunnelId + "_" + (worker.index) + "_" + Math.round(Math.random() * 99999).toString(16);
-    });
-  }
+  // Assign a tunnel id for each worker.
+  this.workers.forEach(function (worker, i) {
+    worker.tunnelId = self.getTunnelId(i % numOpenedTunnels);
+    console.log("Assigning worker " + worker.index + " to tunnel " + worker.tunnelId)
+  });
+};
+
+SauceWorkerAllocator.prototype.getTunnelId = function (tunnelIndex) {
+  return sauceSettings.tunnelId + "_" + this.tunnelPrefix + "_" + tunnelIndex;
 };
 
 SauceWorkerAllocator.prototype.teardown = function (callback) {
@@ -75,17 +78,17 @@ SauceWorkerAllocator.prototype.openTunnels = function(callback) {
       self.tunnels.push(tunnelInfo);
     }
 
-    if (self.tunnels.length === self.MAX_WORKERS) {
+    if (self.tunnels.length === self.maxTunnels) {
       console.log("All tunnels open!  Continuing...");
       callback();
-    } else if (self.tunnels.length > 0 && (self.tunnels.length + self.tunnelErrors.length === self.MAX_WORKERS)) {
+    } else if (self.tunnels.length > 0 && (self.tunnels.length + self.tunnelErrors.length === self.maxTunnels)) {
       // We've accumulated some tunnels and some errors. Continue with a limited number of workers?
-      console.log("Opened only " + self.tunnels.length + " tunnels out of " + self.MAX_WORKERS + " requested (due to errors).");
+      console.log("Opened only " + self.tunnels.length + " tunnels out of " + self.maxTunnels + " requested (due to errors).");
       console.log("Continuing with a reduced number of workers (" + self.tunnels.length + ").")
       callback();
-    } else if (self.tunnelErrors.length === self.MAX_WORKERS) {
+    } else if (self.tunnelErrors.length === self.maxTunnels) {
       // We've tried to open N tunnels but instead got N errors.
-      callback(new Error("\nCould not open any sauce tunnels (attempted to open " + self.MAX_WORKERS + " total tunnels): \n" + 
+      callback(new Error("\nCould not open any sauce tunnels (attempted to open " + self.maxTunnels + " total tunnels): \n" + 
           self.tunnelErrors.map(function(err) {
             return err.toString();
           }).join("\n") + "\nPlease check that there are no sauce-connect-launcher (sc) processes running."
@@ -94,33 +97,32 @@ SauceWorkerAllocator.prototype.openTunnels = function(callback) {
       if (err) {
         console.log("Failed to open a tunnel, number of failed tunnels: " + self.tunnelErrors.length);
       }
-      console.log(self.tunnels.length + " of " + self.MAX_WORKERS + " tunnels open.  Waiting...");
+      console.log(self.tunnels.length + " of " + self.maxTunnels + " tunnels open.  Waiting...");
     }
   };
 
-  var openTunnel = function(tunnelNum) {
+  var openTunnel = function(tunnelIndex) {
 
-    console.log("Opening tunnel " + tunnelNum + " of " + self.MAX_WORKERS);
+    var tunnelId = self.getTunnelId(tunnelIndex);
+    console.log("Opening tunnel " + tunnelIndex + " of " + self.maxTunnels + " [id = " + tunnelId + "]");
 
     var options = {
-      // NOTE: Workers are indexed from 1 for readability purposes, but worker 1 is at index 0.
-      tunnelId: self.workers[tunnelNum - 1].tunnelId,
+      tunnelId: tunnelId,
       username: sauceSettings.username,
       accessKey: sauceSettings.accessKey,
-      seleniumPort: BASE_SELENIUM_PORT_OFFSET + tunnelNum,
+      seleniumPort: BASE_SELENIUM_PORT_OFFSET + (tunnelIndex + 1),
       callback: tunnelOpened
     };
 
     tunnel.open(options);
   };
 
-  _.times(this.MAX_WORKERS, function(n) {
+  _.times(this.maxTunnels, function (n) {
     // worker numbers are 1-indexed
-    n = n + 1;
     console.log("Waiting " + n + " sec to open tunnel #" + n);
     _.delay(function() {
       openTunnel(n);
-    }, n * 2000);
+    }, n * 1000);
   });
 
 };
@@ -165,6 +167,7 @@ SauceWorkerAllocator.prototype.cleanupTunnels = function(callback) {
   // are still active at this point, we need to forcefully kill them so that we're not
   // leaving the build environment in a polluted state.
 
+  // NOTE: this may not be Windows compatible
   var cmd = "pkill -9 -f " + sauceSettings.tunnelId;
 
   console.log("Cleaning up any remaining sauce connect processes with: " + cmd);

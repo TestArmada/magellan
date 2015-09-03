@@ -1,5 +1,6 @@
-# magellan
-## Large-Scale Automated Testing
+## Magellan: Large-Scale Automated Testing
+
+![image](https://cloud.githubusercontent.com/assets/12995/9419235/e2fbb4f2-480e-11e5-9de8-c6c4871890b9.png)
 
 Magellan is a tool for massively-scaling your automated test suite, with added reliability. Run large test suites across across many environments (multiple browsers or versions, or multiple native iOS or Android devices) at the same time, in parallel, with a friendly command-line workflow that is both local development and continuous-integration friendly. Magellan is compatible with `mocha` (`wd.js`, `webdriver.io`, `appium`) tests ( [example Mocha/wd project](https://github.com/TestArmada/boilerplate-mocha) ) and `Nightwatch.js` tests ( [example Nightwatch project](https://github.com/TestArmada/boilerplate-nightwatch) ), and includes [SauceLabs](http://www.saucelabs.com/) support. Through Magellan's `mocha` support, you can scale regular node.js test suites too.
 
@@ -20,7 +21,7 @@ Features
     - [Admiral](https://github.com/TestArmada/admiral) reporting support.
     - Plays well with CI (Jenkins, etc).
     - SauceLabs Remote Browser and Device Support:
-      - Optional tunnel management.
+      - Optional Sauce Connect tunnel management (`--create_tunnels`).
       - Create lists of browser tiers or browser testing groups with browser profiles (eg: tier1 browsers, tier2 browsers, mobile browsers, vintage IE versions, etc).
       - Manage not just browsers, but also devices for native application testing (iOS and Android)
 
@@ -302,7 +303,11 @@ export SAUCE_ACCESS_KEY='xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx'
 
 # SauceConnect version for download
 export SAUCE_CONNECT_VERSION=4.3.10
+```
 
+A Sauce Connect tunnel prefix must be set for tunnel management to work when using `--create_tunnels` (see more on this below).
+
+```
 # Tunnel id prefix, Example: "my_tunnel", "qa_tunnel", etc
 export SAUCE_TUNNEL_ID="xxxxxxxxx"
 ```
@@ -334,7 +339,13 @@ SauceLabs Tunnelling Support (Sauce Connect)
 
 **NOTE**: By default, Magellan assumes that tests run on an open network visible to SauceLabs. 
 
-If your tests are running in a closed CI environment not visible to the Internet, a tunnel is required from SauceLabs to your test machine (when using `--sauce` mode). To activate tunnel creation, use `--create_tunnels`. Magellan will create a unique tunnel for each worker.
+If your tests are running in a closed CI environment not visible to the Internet, a tunnel is required from SauceLabs to your test machine (when using `--sauce` mode). To activate tunnel creation, use `--create_tunnels`. Magellan will create a tunnel for the test run. If you want to distribute your work load across more than one tunnel, specify the `--max_tunnels=N` option, like so:
+
+```console
+$ magellan --sauce --browser=chrome_42_Windows_2012_R2_Desktop --create_tunnels --max_tunnels=4 --max_workers=16
+```
+
+In the above example, 4 tunnels will be distributed amongst 16 workers.
 
 Display Resolution and Orientation Support (SauceLabs Browsers)
 ===============================================================

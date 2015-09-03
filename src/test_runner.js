@@ -8,6 +8,7 @@ var path = require("path");
 var Q = require("q");
 var once = require("once");
 var EventEmitter = require("events").EventEmitter;
+var fs = require("fs");
 
 var sauceBrowsers = require("./sauce/browsers");
 
@@ -92,6 +93,13 @@ var TestRunner = function (tests, options) {
       return new Test(path, requestedBrowser, sauceBrowserSettings, self.MAX_TEST_ATTEMPTS);
     });
   }));
+
+  if (settings.gatherTrends) {
+    this.trends = {
+      failures: {}
+    };
+    console.log("Gathering trends to ./trends.json");
+  }
 
   this.numTests = this.tests.length;
   this.passedTests = [];
@@ -406,6 +414,30 @@ TestRunner.prototype = {
     return deferred.promise;
   },
 
+  gatherTrends: function () {
+    if (settings.gatherTrends) {
+      console.log("Updating trends ...");
+
+      var existingTrends;
+      var self = this;
+
+      try {
+        existingTrends = JSON.parse(fs.readFileSync("./trends.json"));
+      } catch (e) {
+        existingTrends = {failures: {}};
+      }
+
+      Object.keys(this.trends.failures).forEach(function (key) {
+        var localFailureCount = self.trends.failures[key];
+        existingTrends.failures[key] = existingTrends.failures[key] > -1 ? existingTrends.failures[key] + localFailureCount : localFailureCount;
+      });
+
+      fs.writeFileSync("./trends.json", JSON.stringify(existingTrends, null, 2));
+
+      console.log("Updated trends at ./trends.json");
+    }
+  },
+
   logFailedTests: function () {
     console.log(clc.redBright("\n============= Failed Tests:  =============\n"));
 
@@ -423,6 +455,8 @@ TestRunner.prototype = {
   // bringing in any information from reporters  
   summarizeCompletedBuild: function () {
     var deferred = Q.defer();
+
+    this.gatherTrends();
 
     if (this.failedTests.length > 0) {
       this.logFailedTests();
@@ -520,6 +554,12 @@ TestRunner.prototype = {
       this.passedTests.push(test);
       this.failedTests = _.difference(this.failedTests, this.passedTests);
     } else {
+
+      if (settings.gatherTrends) {
+        var key = test.toString();
+        this.trends.failures[key] = this.trends.failures[key] > -1 ? this.trends.failures[key] + 1 : 1;
+      }
+
       if (this.failedTests.indexOf(test) === -1) {
         this.failedTests.push(test);
       }
