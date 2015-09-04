@@ -41,6 +41,9 @@ if (margs.argv.help) {
 
 if (margs.argv.list_browsers) {
   browsers.initialize(true).then(function () {
+    if (margs.argv.device_additions) {
+      browsers.addDevicesFromFile(margs.argv.device_additions);
+    }
     browsers.listBrowsers();
     process.exit(0);
   }).catch(function (err) {
@@ -208,6 +211,11 @@ var startSuite = function () {
 };
 
 browsers.initialize(isSauce)
+  .then(function () {
+    if (margs.argv.device_additions) {
+      browsers.addDevicesFromFile(margs.argv.device_additions);
+    }
+  })
   .then(browserOptions.detectFromCLI.bind(this, margs.argv, isSauce, isNodeBased))
   .then(function (_selectedBrowsers) {
     selectedBrowsers = _selectedBrowsers;
