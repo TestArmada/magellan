@@ -168,6 +168,7 @@ TestRunner.prototype = {
             // to drain the queue, so we fail the test, even though the test itself may
             // have not actually failed.
             console.log(clc.redBright("Fatal internal error while running a test:", error));
+            console.log(clc.redBright(e.stack));
 
             // Give this worker back to the allocator
             self.allocator.release(worker);
