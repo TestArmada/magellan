@@ -25,9 +25,7 @@ var lintConfig = function (conf) {
 
 // throws file read/write exceptions, JSON parse exceptions
 module.exports = function (sourceConfigPath, tempAssetPath, options) {
-  var data = fs.readFileSync(sourceConfigPath, "utf8");
-
-  var conf = JSON.parse(data);
+  var conf = require(path.resolve(sourceConfigPath));
 
   if (options.localSeleniumPort) {
     // Local-testing selenium port (non-sauce)
