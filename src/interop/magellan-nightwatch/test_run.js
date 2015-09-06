@@ -84,7 +84,7 @@ NightwatchTestrun.prototype.getArguments = function () {
   }
 
   if (this.debug) {
-    args.push("--debug");
+    args.push("--verbose");
   }
 
   return args;
