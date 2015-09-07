@@ -76,6 +76,10 @@ module.exports = {
     return result;
   },
 
+  addDevicesFromFile: function (filePath) {
+    SauceBrowsers.addNormalizedBrowsersFromFile(filePath);
+  },
+
   initialize: function (fetchSauceBrowsers) {
     if (fetchSauceBrowsers) {
       return SauceBrowsers.initialize();
