@@ -5,18 +5,16 @@ var settings = require("../../settings");
 var nightwatchConfigFilePath = settings.nightwatchConfigFilePath;
 
 module.exports = function () {
-  var data;
+  var nightwatchConfig;
 
   try {
-    data = fs.readFileSync(nightwatchConfigFilePath, "utf8");
+    nightwatchConfig = require(path.resolve(nightwatchConfigFilePath));
     console.log("Magellan-nightwatch test iterator found nightwatch configuration at: " + nightwatchConfigFilePath);
-  } catch (e) {
-    var error = "Magellan-nightwatch test iterator: Error reading nightwatch configuration at " + nightwatchConfigFilePath;
-    console.error(error);
+  } catch (err) {
+    var error = "Magellan-nightwatch test iterator cannot read nightwatch configuration: " + err.toString();
     return;
   }
 
-  var nightwatchConfig = JSON.parse(data);
   var srcFolders = nightwatchConfig.src_folders;
 
   var allFiles = [];
