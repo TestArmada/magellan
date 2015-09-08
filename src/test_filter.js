@@ -2,6 +2,7 @@ var path = require("path"),
   fs = require("fs"),
   _ = require("lodash"),
   acorn = require("acorn"),
+  clc = require("cli-color"),
   walk = require("acorn/dist/walk"),
   settings = require("./settings");
 
@@ -39,7 +40,16 @@ var filterByTags = function(files, tags) {
     //
     var foundTags = false;
     var pass = false;
-    var root = acorn.parse(fs.readFileSync(path.resolve(f)));
+    var filename = path.resolve(f);
+    var root;
+    try {
+      root = acorn.parse(fs.readFileSync(filename), {
+        ecmaVersion: 6
+      });
+    } catch (err) {
+      console.log(clc.redBright("Syntax error in parsing " + filename));
+      throw err;
+    }
 
     walk.findNodeAt(root, null, null, function (nodeType, node) {
       if (!foundTags && nodeType === "Property") {
