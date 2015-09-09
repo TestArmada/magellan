@@ -1,5 +1,7 @@
 var sauceBrowsers = require("./sauce/browsers.js");
 var Q = require("q");
+var hostedProfiles = require("./hosted_profiles");
+var _ = require("lodash");
 
 var Browser = function (id, resolution, orientation) {
   var result = {
@@ -32,6 +34,20 @@ module.exports = {
     // a browser is set ia CLI, we assume details from the stored profile 
     // and override with anything else explicitly set.
     if (argv.profile) {
+
+      if (argv.profile.indexOf("http:") > -1 || argv.profile.indexOf("https:") > -1) {
+        // We fetch profiles from an URL if it starts with http: or https:
+        // We assume it will have a #fragment to identify a given desired profile.
+        // Note: The hosted profiles are merged on top of any local profiles.
+        var fetchedProfiles = hostedProfiles.getProfilesAtURL(argv.profile.split("#")[0]);
+        if (fetchedProfiles && fetchedProfiles.profiles) {
+          argv.profiles = _.extend({}, argv.profiles, fetchedProfiles.profiles);
+
+          console.log("Loaded hosted profiles from " + argv.profile.split("#")[0]);
+        }
+
+        argv.profile = hostedProfiles.getProfileNameFromURL(argv.profile);
+      }
 
       console.log("Requested profile(s): ", argv.profile);
 
