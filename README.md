@@ -159,12 +159,12 @@ This option allows for a build to run for longer but still terminate if a signif
 
 You can control how long Magellan waits for a test to execute before explicitly killing it by supplying a `bail_time` argument. For example, to set bail time to 60 seconds:
 ```console
-$ magellan --bail_early --bail-time=60000
+$ magellan --bail_early --bail_time=60000
 ```
 
 A bail option does not have to be used to set bail time. For example:
 ```console
-$ magellan --bail-time=60000
+$ magellan --bail_time=60000
 ```
 
 The `bail_time` setting can also be written to Magellan configuration. See 
