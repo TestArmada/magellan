@@ -214,7 +214,7 @@ Example Custom Reporter
 =======================
 
 ```javascript
-var BaseReporter = require("magellan").Reporter;
+var BaseReporter = require("testarmada-magellan").Reporter;
 var util = require("util");
 
 var Reporter = function () {
