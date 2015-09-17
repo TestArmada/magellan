@@ -1,3 +1,3 @@
 module.exports = {
-  Reporter: require("./reporter/reporter")
+  Reporter: require("./reporters/reporter")
 };
