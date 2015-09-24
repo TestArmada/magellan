@@ -48,6 +48,7 @@ if (margs.argv.list_browsers) {
     process.exit(0);
   }).catch(function (err) {
     console.log("Couldn't fetch browsers. Error: ", err);
+    console.log(err.stack);
   });
   return;
 }
