@@ -3,22 +3,24 @@ var Q = require("q");
 var hostedProfiles = require("./hosted_profiles");
 var _ = require("lodash");
 
-var Browser = function (id, resolution, orientation) {
-  var result = {
-    slug: function () {
+var Browser = function(b) {
+
+  var result = _.extend(b, {
+    slug: function() {
       return this.browserId
         + (this.resolution ? "_" + this.resolution : "")
         + (this.orientation ? "_" + this.orientation : "");
     },
-    toString: function () {
+    toString: function() {
       return (this.browserId
         + (this.resolution ? " @" + this.resolution : "")
         + (this.orientation ? " orientation: " + this.orientation : ""));
     },
-    browserId: id,
-    resolution: resolution ? resolution.trim() : undefined,
-    orientation: orientation ? orientation.trim() : undefined
-  };
+    browserId: b.id,
+    resolution: b.resolution ? b.resolution.trim() : undefined,
+    orientation: b.orientation ? b.orientation.trim() : undefined
+  });
+
   return result;
 };
 
@@ -26,7 +28,7 @@ module.exports = {
 
   // Return a promise that we'll resolve with a list of browsers selected
   // by the user from command line arguments
-  detectFromCLI: function (argv, sauceEnabled, isNodeBased) {
+  detectFromCLI: function(argv, sauceEnabled, isNodeBased) {
     var deferred = Q.defer();
     var browsers;
 
@@ -71,10 +73,20 @@ module.exports = {
           browsers = [];
           var notFoundProfiles = [];
 
-          requestedProfiles.forEach(function (requestedProfile) {
+          requestedProfiles.forEach(function(requestedProfile) {
             if (argv.profiles.hasOwnProperty(requestedProfile)) {
-              argv.profiles[requestedProfile].forEach(function (b) {
-                browsers.push(Browser(b.browser, b.resolution, b.orientation));
+              argv.profiles[requestedProfile].forEach(function(b) {
+
+
+                if (b.deviceBeta) {
+                  browsers.push(Browser(b));
+                } else {
+                  browsers.push(Browser({
+                    id: b.browser,
+                    resolution: b.resolution,
+                    orientation: b.orientation
+                  }));
+                };
               });
             } else {
               notFoundProfiles.push(requestedProfile);
@@ -101,20 +113,28 @@ module.exports = {
     // Note: "browsers" always trumps a single "browser" and will overwrite
     // anything from a profile completely.
     if (argv.browsers) {
-      browsers = argv.browsers.split(",").map(function (browser) {
+      browsers = argv.browsers.split(",").map(function(browser) {
         // NOTE: This applies the same orientation value to all browsers, regardless of whether it's appropriate or not
         // For better per-browser control, it's better to use browser profiles.
-        return Browser(browser.trim(), argv.resolution, argv.orientation);
+        return Browser({
+          id: browser.trim(),
+          resolution: argv.resolution,
+          orientation: argv.orientation
+        });
       });
     } else if (argv.browser) {
-      var singleBrowser = Browser(argv.browser, argv.resolution, argv.orientation);
+      var singleBrowser = Browser({
+        id: argv.browser,
+        resolution: argv.resolution,
+        orientation: argv.orientation
+      });
 
       if (argv.profile) {
         // If we've loaded a profile from magellan.json, the --browser option
         // merely narrows down which of the profiles we're using.
         // Select argv.browser *from* the existing list of browsers, which
         // have already been loaded via argv.profile
-        browsers = browsers.filter(function (b) {
+        browsers = browsers.filter(function(b) {
           return b.browserId === argv.browser.trim();
         });
       } else {
@@ -139,9 +159,17 @@ module.exports = {
         } else {
           var fallbackBrowser;
           if (isNodeBased) {
-            fallbackBrowser = Browser("nodejs", argv.resolution, argv.orientation);
+            fallbackBrowser = Browser({
+              id: "nodejs",
+              resolution: argv.resolution,
+              orientation: argv.orientation
+            });
           } else {
-            fallbackBrowser = Browser("phantomjs", argv.resolution, argv.orientation);
+            fallbackBrowser = Browser({
+              id: "phantomjs",
+              resolution: argv.resolution,
+              orientation: argv.orientation
+            });
           }
           browsers = [fallbackBrowser];
         }
@@ -150,8 +178,14 @@ module.exports = {
 
     // validate browser list if Sauce is enabled
     if (sauceEnabled) {
-      sauceBrowsers.initialize(sauceEnabled).then(function () {
-        var unrecognizedBrowsers = browsers.filter(function (browser) {
+      sauceBrowsers.initialize(sauceEnabled).then(function() {
+        var unrecognizedBrowsers = browsers.filter(function(browser) {
+
+          if (browser.deviceBeta) {
+            // skip sauce verification if device beta is in use
+            return false;
+          }
+
           var browserId = browser.browserId;
           // If we've specified a resolution, validate that this browser supports that exact resolution.
           if (browser.resolution) {
@@ -166,10 +200,9 @@ module.exports = {
             return !sauceBrowsers.browser(browserId);
           }
         });
-
         if (unrecognizedBrowsers.length > 0) {
           console.log("Error! Unrecognized saucelabs browsers specified:");
-          unrecognizedBrowsers.forEach(function (browser) {
+          unrecognizedBrowsers.forEach(function(browser) {
             console.log("  " + browser.browserId + " " + (browser.resolution ? " at resolution: " + browser.resolution : ""));
           });
 
