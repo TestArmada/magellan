@@ -159,12 +159,12 @@ This option allows for a build to run for longer but still terminate if a signif
 
 You can control how long Magellan waits for a test to execute before explicitly killing it by supplying a `bail_time` argument. For example, to set bail time to 60 seconds:
 ```console
-$ magellan --bail_early --bail-time=60000
+$ magellan --bail_early --bail_time=60000
 ```
 
 A bail option does not have to be used to set bail time. For example:
 ```console
-$ magellan --bail-time=60000
+$ magellan --bail_time=60000
 ```
 
 The `bail_time` setting can also be written to Magellan configuration. See 
@@ -214,7 +214,7 @@ Example Custom Reporter
 =======================
 
 ```javascript
-var BaseReporter = require("magellan").Reporter;
+var BaseReporter = require("testarmada-magellan").Reporter;
 var util = require("util");
 
 var Reporter = function () {
@@ -399,6 +399,37 @@ $ magellan --profile=my_profile_1
 # or specify multiple profiles
 $ magellan --profile=tier_1_browsers,tier_2_browsers
 ```
+
+Hosted Browser Profiles
+=======================
+
+If you're using profiles to reflect browser tiers in a large organization, you may wish to centralize your profiles on a web server somewhere and have `magellan` load them remotely. To do this, specify a profile URL to source profiles from, and the profile you want to use after a `#` (hash):
+
+```console
+$ magellan --profile=http://example.com/testing/browser_profiles.json#tier2
+```
+
+Multiple profiles can be specified the same way, comma delimited:
+
+```console
+$ magellan --profile=http://example.com/testing/browser_profiles.json#tier1,tier2
+```
+
+
+Where `browser_profiles.json` should have a structure similar to placing `profiles{}` in `magellan.json`:
+
+```json
+{
+  "profiles": {
+    "tier_2": [
+      { "browser": "safari_7_OS_X_10_9_Desktop" },
+      { "browser": "IE_8_Windows_2008_Desktop" },
+      { "browser": "IE_9_Windows_2008_Desktop" },
+      { "browser": "IE_10_Windows_2008_Desktop" }
+    ]
+  }
+```
+
 
 Setting Up Setup and Teardown Tasks for CI
 ==========================================

@@ -35,6 +35,7 @@ module.exports = {
     console.log("  --browsers=all               Run all available browsers (sauce only).");
     console.log("  --create_tunnels             Create secure tunnels in sauce mode (for use with --sauce only)");
     console.log("  --profile=p1,p2,..           Specify lists of browsers to use defined in profiles in magellan.json config.")
+    console.log("  --profile=http://abc/p#p1,p2 Use profiles p1 and p2 hosted at JSON file http://abc/p (see README for details).")
     console.log("");
     console.log("  +------------------------------------------+-----------+-------------------+");
     console.log("  | Workflow / Output Examples               | # workers | output style      |");
