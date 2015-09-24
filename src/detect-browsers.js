@@ -79,7 +79,9 @@ module.exports = {
 
 
                 if (b.deviceBeta) {
-                  browsers.push(Browser(b));
+                  browsers.push(Browser(_.extend({
+                    id: b.deviceName.split(' ').join('_')
+                  }, b)));
                 } else {
                   browsers.push(Browser({
                     id: b.browser,
