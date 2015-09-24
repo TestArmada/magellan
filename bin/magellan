@@ -270,5 +270,6 @@ browsers.initialize(isSauce)
   .catch(function (err) {
     console.error(clc.redBright("Error initializing reporters: "));
     console.error(err.toString());
+    console.log(err.stack);
     process.exit(1);
   });
