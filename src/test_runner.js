@@ -21,10 +21,14 @@ var WORKER_POLL_INTERVAL = 250;
 var FINAL_REPORT_DELAY = 2500;
 
 var strictness = {
-  BAIL_NEVER: 1,     // never bail
-  BAIL_TIME_ONLY: 2, // kill tests that run too slow early, but not the build
-  BAIL_EARLY: 3,     // bail somewhat early, but within a threshold (see below), apply time rules
-  BAIL_FAST: 4,      // bail as soon as a test fails, apply time rules
+  // never bail
+  BAIL_NEVER: 1,
+  // kill tests that run too slow early, but not the build
+  BAIL_TIME_ONLY: 2,
+  // bail somewhat early, but within a threshold (see below), apply time rules 
+  BAIL_EARLY: 3,
+  // bail as soon as a test fails, apply time rules 
+  BAIL_FAST: 4,
 
   // Ratio of tests that need to fail before we abandon the build in BAIL_EARLY mode
   THRESHOLD: 0.1,
@@ -47,17 +51,17 @@ var strictness = {
     onSuccess           - function() callback
     onFailure           - function(failedTests) callback
 */
-var TestRunner = function (tests, options) {
+var TestRunner = function(tests, options) {
   var self = this;
 
   this.buildId = settings.buildId;
 
-  this.strictness = options.bailFast
-    ? strictness.BAIL_FAST
-    :(options.bailOnThreshold
-      ? strictness.BAIL_EARLY
-      : ( settings.bailTimeExplicitlySet
-        ? strictness.BAIL_TIME_ONLY
+  this.strictness = options.bailFast 
+    ? strictness.BAIL_FAST 
+    : (options.bailOnThreshold 
+      ? strictness.BAIL_EARLY 
+      : (settings.bailTimeExplicitlySet 
+        ? strictness.BAIL_TIME_ONLY 
         : strictness.BAIL_NEVER
       )
     );
@@ -65,8 +69,8 @@ var TestRunner = function (tests, options) {
   this.MAX_WORKERS = options.maxWorkers;
 
   // Attempt tests once only if we're in fast bail mode
-  this.MAX_TEST_ATTEMPTS = this.strictness === strictness.BAIL_FAST
-    ? 1
+  this.MAX_TEST_ATTEMPTS = this.strictness === strictness.BAIL_FAST 
+    ? 1 
     : options.maxTestAttempts;
 
   this.hasBailed = false;
@@ -86,10 +90,16 @@ var TestRunner = function (tests, options) {
   this.allocator = options.allocator;
 
   // For each actual test path, split out 
-  this.tests = _.flatten(tests.map(function (path) {
-    return options.browsers.map(function (requestedBrowser) {
+  this.tests = _.flatten(tests.map(function(path) {
+    return options.browsers.map(function(requestedBrowser) {
       // Note: For non-sauce browsers, this can come back empty, which is just fine.
-      var sauceBrowserSettings = sauceBrowsers.browser(requestedBrowser.browserId, requestedBrowser.resolution, requestedBrowser.orientation);
+      var sauceBrowserSettings;
+      if (requestedBrowser.deviceBeta) {
+        // if this is a sauce device beta 
+        sauceBrowserSettings = _.omit(requestedBrowser, ['slug', 'toString', 'browserId', 'resolution', 'orientation']);
+      } else {
+        sauceBrowserSettings = sauceBrowsers.browser(requestedBrowser.browserId, requestedBrowser.resolution, requestedBrowser.orientation);
+      }
       return new Test(path, requestedBrowser, sauceBrowserSettings, self.MAX_TEST_ATTEMPTS);
     });
   }));
@@ -110,16 +120,16 @@ var TestRunner = function (tests, options) {
 
   // When the entire suite is run through the queue, run our drain handler
   this.q.drain = this.buildFinished.bind(this);
-  
+
 };
 
 TestRunner.prototype = {
 
-  start: function () {
+  start: function() {
     this.startTime = (new Date()).getTime();
 
     var browserStatement = " with ";
-    browserStatement += this.browsers.map(function (b) { return b.toString(); }).join(", ");
+    browserStatement += this.browsers.map(function(b) { return b.toString(); }).join(", ");
 
     if (this.serial) {
       console.log("\nRunning " + this.numTests + " tests in serial mode" + browserStatement + "\n");
@@ -132,19 +142,19 @@ TestRunner.prototype = {
     } else {
       // Queue up tests; this will cause them to actually start
       // running immediately.
-      this.tests.forEach(function (test) {
+      this.tests.forEach(function(test) {
         this.q.push(test, this.onTestComplete.bind(this));
       }.bind(this));
     }
   },
 
   // Prepare a test to be run. Find a worker for the test and send it off to be run.
-  stageTest: function (test, onTestComplete) {
+  stageTest: function(test, onTestComplete) {
     var self = this;
-    this.allocator.get(function (error, worker) {
+    this.allocator.get(function(error, worker) {
       if (!error) {
         this.runTest(test, worker)
-          .then(function (runResults) {
+          .then(function(runResults) {
             // Give this worker back to the allocator
             self.allocator.release(worker);
 
@@ -162,7 +172,7 @@ TestRunner.prototype = {
 
             onTestComplete(null, test);
           })
-          .catch(function (error) {
+          .catch(function(error) {
             // Catch a testing infrastructure error unrelated to the test itself failing.
             // This indicates something went wrong with magellan itself. We still need
             // to drain the queue, so we fail the test, even though the test itself may
@@ -190,7 +200,7 @@ TestRunner.prototype = {
         test.error = undefined;
         test.stdout = "";
         test.stderr = error;
-        
+
         test.fail();
 
         onTestComplete(null, test);
@@ -202,7 +212,7 @@ TestRunner.prototype = {
   // Return a promise that resolves with test results after test has been run.
   // Rejections only happen if we encounter a problem with magellan itself, not
   // the test. The test will resolve with a test result whether it fails or passes.
-  spawnTestProcess: function (testRun) {
+  spawnTestProcess: function(testRun) {
     var deferred = Q.defer();
 
     var env;
@@ -217,7 +227,7 @@ TestRunner.prototype = {
       env: env,
       silent: true,
       detached: false,
-      stdio:  ['pipe', 'pipe', 'pipe']
+      stdio: ['pipe', 'pipe', 'pipe']
     };
 
     var childProcess;
@@ -238,7 +248,7 @@ TestRunner.prototype = {
     try {
       // Attach reporters that listen to messages sent from the running test.
       // These messages are sent with process.send()
-      this.reporters.forEach(function (reporter) {
+      this.reporters.forEach(function(reporter) {
         reporter.listenTo(testRun, childProcess);
         reporter.listenTo(testRun, crashEmitter);
       });
@@ -255,7 +265,7 @@ TestRunner.prototype = {
     //
     // Because "close" emits unpredictably some time after we fulfill case
     // #3, we wrap this callback in once() so that we only clean up once.
-    var workerClosed = once(function (code) {
+    var workerClosed = once(function(code) {
       testRun.test.stopClock();
       clearInterval(sentry);
 
@@ -270,7 +280,7 @@ TestRunner.prototype = {
         // If we managed to get a start message from the test, then we can at least
         // deliver a correct-looking finish message to reporters.
         if (startMessage) {
-          this.reporters.forEach(function (reporter) {
+          this.reporters.forEach(function(reporter) {
             crashEmitter.emit("message", {
               type: "worker-status",
               name: startMessage.name,
@@ -306,7 +316,7 @@ TestRunner.prototype = {
     //    to a reporter if we got a "started" event from a test, i.e. we don't
     //    finish tests that we never properly started in the first place.
     //
-    childProcess.on("message", function (message) {
+    childProcess.on("message", function(message) {
       if (message.type === "worker-status") {
         if (message.status === "finished") {
           workerCrashed = false;
@@ -318,11 +328,11 @@ TestRunner.prototype = {
       }
     });
 
-    childProcess.stdout.on("data", function (data) {
+    childProcess.stdout.on("data", function(data) {
       stdout += ("" + data);
     });
 
-    childProcess.stderr.on("data", function (data) {
+    childProcess.stderr.on("data", function(data) {
       stderr += ("" + data);
     });
 
@@ -332,7 +342,7 @@ TestRunner.prototype = {
     // strictness level except BAIL_NEVER, we kill a worker process and its 
     // process tree if its been running for too long.
     testRun.test.startClock();
-    var sentry = setInterval(function () {
+    var sentry = setInterval(function() {
       if (this.strictness === strictness.BAIL_NEVER) {
         return;
       }
@@ -355,7 +365,7 @@ TestRunner.prototype = {
           customMessage: "Killed by magellan after " + strictness.LONG_RUNNING_TEST + "ms (long running test)"
         });
 
-        setTimeout(function () {
+        setTimeout(function() {
           // We pass code 1 to simulate a failure return code from fork()
           workerClosed(1);
         }, WORKER_STOP_DELAY);
@@ -367,7 +377,7 @@ TestRunner.prototype = {
 
   // Run a test with a given worker.
   // with a modified version of the test that contains its run status
-  runTest: function (test, worker) {
+  runTest: function(test, worker) {
     var deferred = Q.defer();
 
     // do not report test starts if we've bailed.
@@ -405,7 +415,7 @@ TestRunner.prototype = {
     }
 
     if (testRun) {
-      setTimeout(function () {
+      setTimeout(function() {
         this.spawnTestProcess(testRun)
           .then(deferred.resolve)
           .catch(deferred.reject);
@@ -415,7 +425,7 @@ TestRunner.prototype = {
     return deferred.promise;
   },
 
-  gatherTrends: function () {
+  gatherTrends: function() {
     if (settings.gatherTrends) {
       console.log("Updating trends ...");
 
@@ -425,10 +435,12 @@ TestRunner.prototype = {
       try {
         existingTrends = JSON.parse(fs.readFileSync("./trends.json"));
       } catch (e) {
-        existingTrends = {failures: {}};
+        existingTrends = {
+          failures: {}
+        };
       }
 
-      Object.keys(this.trends.failures).forEach(function (key) {
+      Object.keys(this.trends.failures).forEach(function(key) {
         var localFailureCount = self.trends.failures[key];
         existingTrends.failures[key] = existingTrends.failures[key] > -1 ? existingTrends.failures[key] + localFailureCount : localFailureCount;
       });
@@ -439,10 +451,10 @@ TestRunner.prototype = {
     }
   },
 
-  logFailedTests: function () {
+  logFailedTests: function() {
     console.log(clc.redBright("\n============= Failed Tests:  =============\n"));
 
-    this.failedTests.forEach(function (failedTest) {
+    this.failedTests.forEach(function(failedTest) {
       console.log("\n- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - ")
       console.log("Failed Test: " + failedTest.toString());
       console.log(" # attempts: " + failedTest.attempts);
@@ -454,7 +466,7 @@ TestRunner.prototype = {
 
   // Print information about a completed build to the screen, showing failures and
   // bringing in any information from reporters  
-  summarizeCompletedBuild: function () {
+  summarizeCompletedBuild: function() {
     var deferred = Q.defer();
 
     this.gatherTrends();
@@ -486,7 +498,7 @@ TestRunner.prototype = {
       console.log("    Skipped: " + skipped);
     }
 
-    var flushNextReporter = function () {
+    var flushNextReporter = function() {
       if (this.reporters.length === 0) {
         // There are no reporters left to flush. We've summarized all build reports.
         deferred.resolve();
@@ -501,7 +513,7 @@ TestRunner.prototype = {
             // This is a reporter that returns a promise. Wait and then flush.
             promise
               .then(flushNextReporter)
-              .catch(function (error) {
+              .catch(function(error) {
                 console.log("Error when flushing reporter output: ", error);
                 flushNextReporter();
               });
@@ -523,11 +535,11 @@ TestRunner.prototype = {
 
   // Handle an empty work queue:
   // Display a build summary and then either signal success or failure.
-  buildFinished: function () {
-    setTimeout(function () {
+  buildFinished: function() {
+    setTimeout(function() {
       // We delay our report by a small yield time to allow bailed builds
       // to clean up before we start writing to the screen.
-      this.summarizeCompletedBuild().then(function () {
+      this.summarizeCompletedBuild().then(function() {
         if (this.failedTests.length === 0) {
           this.onSuccess();
         } else {
@@ -538,7 +550,7 @@ TestRunner.prototype = {
   },
 
   // Completion callback called by async.queue when a test is completed
-  onTestComplete: function (error, test) {
+  onTestComplete: function(error, test) {
     if (this.hasBailed) {
       // Ignore results from this test if we've bailed. This is likely a test that 
       // was killed when the build went into bail mode.
@@ -592,7 +604,7 @@ TestRunner.prototype = {
   },
 
   // Check to see how the build is going and optionally fail the build early.
-  checkBuild: function () {
+  checkBuild: function() {
     if (!this.hasBailed && this.shouldBail()) {
       // Kill the rest of the queue, preventing any new tests from running and shutting
       // down buildFinished
@@ -608,7 +620,7 @@ TestRunner.prototype = {
   },
 
   // Return true if this build should stop running and fail immediately.
-  shouldBail: function () {
+  shouldBail: function() {
     if (this.strictness === strictness.BAIL_NEVER || strictness.BAIL_TIME_ONLY) {
       // BAIL_NEVER means we don't apply any strictness rules at all
       return false;
@@ -619,12 +631,16 @@ TestRunner.prototype = {
       // This allows for useful data-gathering for debugging or trend 
       // analysis if we don't want to just bail on the first failed test.
 
-      var sumAttempts = function (memo, test) { return memo + test.attempts; };
+      var sumAttempts = function(memo, test) {
+        return memo + test.attempts;
+      };
       var totalAttempts = _.reduce(this.passedTests, sumAttempts, 0) + _.reduce(this.failedTests, sumAttempts, 0);
 
       // Failed attempts are not just the sum of all failed attempts but also 
       // of successful tests that eventually passed (i.e. total attempts - 1).
-      var sumExtraAttempts = function (memo, test) { return memo + Math.max(test.attempts - 1, 0); };
+      var sumExtraAttempts = function(memo, test) {
+        return memo + Math.max(test.attempts - 1, 0);
+      };
       var failedAttempts = _.reduce(this.failedTests, sumAttempts, 0) + _.reduce(this.passedTests, sumExtraAttempts, 0);
 
       // Fail to total work ratio.
