@@ -1,12 +1,14 @@
 var util = require("util")
 var BaseWorkerAllocator = require("../worker_allocator");
 var _ = require("lodash");
+var request = require("request");
 
 var exec = require("child_process").exec;
 
 var sauceSettings = require("./settings");
 var tunnel = require("./tunnel");
 var BASE_SELENIUM_PORT_OFFSET = 56000;
+var VM_POLLING_TIME = 2500;
 
 var SauceWorkerAllocator = function (_MAX_WORKERS) {
   BaseWorkerAllocator.call(this, _MAX_WORKERS);
@@ -42,6 +44,48 @@ SauceWorkerAllocator.prototype.initialize = function (callback) {
         }.bind(this));
       }
     }.bind(this));
+  }
+};
+
+SauceWorkerAllocator.prototype.get = function (callback) {
+  var self = this;
+
+  //
+  // http://0.0.0.0:3000/claim
+  //
+  // {"accepted":false,"message":"Claim rejected. No VMs available."}
+  // {"accepted":true,"token":null,"message":"Claim accepted"}
+  //
+  if (sauceSettings.locksServerURL) {
+    var attempts = 0;
+
+    // Poll the worker allocator until we have a known-good port, then run this test
+    var poll = function () {
+      console.log("asking for VM..");
+      request(sauceSettings.locksServerURL, function (error, response, body) {
+        try {
+          var result = JSON.parse(body);
+          if (result) {
+            if (result.accepted) {
+              console.log("VM claim accepted");
+              BaseWorkerAllocator.prototype.get.call(self, callback);
+            } else {
+              console.log("VM claim not accepted, trying again");
+              // If we didn't get a worker, try again
+              setTimeout(poll, VM_POLLING_TIME);
+            }
+          } else {
+            return callback(new Error("Result from locks server is invalid or empty: '" + result + "'" ));
+          }
+        } catch (e) {
+          return callback(new Error("Could not parse result from locks server: " + e));
+        }
+      });
+    };
+
+    poll();
+  } else {
+    BaseWorkerAllocator.prototype.get.call(this, callback);
   }
 };
 

@@ -14,7 +14,9 @@ var config = {
   // optional:
   tunnelTimeout:        process.env.SAUCE_TUNNEL_CLOSE_TIMEOUT,
   useTunnels:           !!argv.create_tunnels,
-  maxTunnels:           argv.num_tunnels || 1
+  maxTunnels:           argv.num_tunnels || 1,
+
+  locksServerURL:             argv.locks_server || "http://0.0.0.0:3000/claim"
 };
 
 var parameterWarnings = {
