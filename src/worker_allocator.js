@@ -145,8 +145,8 @@ Allocator.prototype = {
     }
   },
 
-  release: function (executor) {
-    executor.occupied = false;
+  release: function (worker) {
+    worker.occupied = false;
   }
 
 };
