@@ -1,12 +1,16 @@
 var util = require("util")
 var BaseWorkerAllocator = require("../worker_allocator");
 var _ = require("lodash");
+var request = require("request");
 
 var exec = require("child_process").exec;
 
 var sauceSettings = require("./settings");
+var settings = require("../settings");
+
 var tunnel = require("./tunnel");
 var BASE_SELENIUM_PORT_OFFSET = 56000;
+var VM_POLLING_TIME = 2500;
 
 var SauceWorkerAllocator = function (_MAX_WORKERS) {
   BaseWorkerAllocator.call(this, _MAX_WORKERS);
@@ -16,6 +20,10 @@ var SauceWorkerAllocator = function (_MAX_WORKERS) {
   this.MAX_WORKERS = _MAX_WORKERS;
   this.maxTunnels = sauceSettings.maxTunnels;
   this.tunnelPrefix = Math.round(Math.random() * 99999).toString(16);
+
+  if (sauceSettings.locksServerURL) {
+    console.log("Using locks server at " + sauceSettings.locksServerURL + " for VM traffic control.");
+  }
 };
 
 util.inherits(SauceWorkerAllocator, BaseWorkerAllocator);
@@ -42,6 +50,83 @@ SauceWorkerAllocator.prototype.initialize = function (callback) {
         }.bind(this));
       }
     }.bind(this));
+  }
+};
+
+SauceWorkerAllocator.prototype.release = function (worker) {
+  var self = this;
+  if (sauceSettings.locksServerURL) {
+    request({
+      method: "POST",
+      json: true,
+      body: {
+        token: worker.token
+      },
+      url: sauceSettings.locksServerURL + "/release"
+    }, function (error, response, body) {
+      // TODO: decide whether we care about an error at this stage. We're releasing
+      // this worker whether the remote release is successful or not, since it will
+      // eventually be timed out by the locks server.
+      BaseWorkerAllocator.prototype.release.call(self, worker);
+    });
+  } else {
+    BaseWorkerAllocator.prototype.release.call(self, worker);
+  }
+};
+
+SauceWorkerAllocator.prototype.get = function (callback) {
+  var self = this;
+
+  //
+  // http://0.0.0.0:3000/claim
+  //
+  // {"accepted":false,"message":"Claim rejected. No VMs available."}
+  // {"accepted":true,"token":null,"message":"Claim accepted"}
+  //
+  if (sauceSettings.locksServerURL) {
+    var attempts = 0;
+
+    // Poll the worker allocator until we have a known-good port, then run this test
+    var poll = function () {
+      if (settings.debug) {
+        console.log("asking for VM..");
+      }
+      request.post({
+        url: sauceSettings.locksServerURL + "/claim",
+        form: {}
+      }, function (error, response, body) {
+        try {
+          var result = JSON.parse(body);
+          if (result) {
+            if (result.accepted) {
+              if (settings.debug) {
+                console.log("VM claim accepted, token: " + result.token);
+              }
+              BaseWorkerAllocator.prototype.get.call(self, function (error, worker) {
+                if (worker) {
+                  worker.token = result.token;
+                }
+                callback(error, worker);
+              });
+            } else {
+              if (settings.debug) {
+                console.log("VM claim not accepted, waiting to try again ..");
+              }
+              // If we didn't get a worker, try again
+              setTimeout(poll, VM_POLLING_TIME);
+            }
+          } else {
+            return callback(new Error("Result from locks server is invalid or empty: '" + result + "'" ));
+          }
+        } catch (e) {
+          return callback(new Error("Could not parse result from locks server: " + e + "\n\nbody of response:" + body));
+        }
+      });
+    };
+
+    poll();
+  } else {
+    BaseWorkerAllocator.prototype.get.call(this, callback);
   }
 };
 
