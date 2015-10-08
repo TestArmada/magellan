@@ -6,6 +6,8 @@ var request = require("request");
 var exec = require("child_process").exec;
 
 var sauceSettings = require("./settings");
+var settings = require("../settings");
+
 var tunnel = require("./tunnel");
 var BASE_SELENIUM_PORT_OFFSET = 56000;
 var VM_POLLING_TIME = 2500;
@@ -18,6 +20,10 @@ var SauceWorkerAllocator = function (_MAX_WORKERS) {
   this.MAX_WORKERS = _MAX_WORKERS;
   this.maxTunnels = sauceSettings.maxTunnels;
   this.tunnelPrefix = Math.round(Math.random() * 99999).toString(16);
+
+  if (sauceSettings.locksServerURL) {
+    console.log("Using locks server at " + sauceSettings.locksServerURL + " for VM traffic control.");
+  }
 };
 
 util.inherits(SauceWorkerAllocator, BaseWorkerAllocator);
@@ -82,7 +88,9 @@ SauceWorkerAllocator.prototype.get = function (callback) {
 
     // Poll the worker allocator until we have a known-good port, then run this test
     var poll = function () {
-      console.log("asking for VM..");
+      if (settings.debug) {
+        console.log("asking for VM..");
+      }
       request.post({
         url: sauceSettings.locksServerURL + "/claim",
         form: {}
@@ -91,7 +99,9 @@ SauceWorkerAllocator.prototype.get = function (callback) {
           var result = JSON.parse(body);
           if (result) {
             if (result.accepted) {
-              console.log("VM claim accepted, token: " + result.token);
+              if (settings.debug) {
+                console.log("VM claim accepted, token: " + result.token);
+              }
               BaseWorkerAllocator.prototype.get.call(self, function (error, worker) {
                 if (worker) {
                   worker.token = result.token;
@@ -99,7 +109,9 @@ SauceWorkerAllocator.prototype.get = function (callback) {
                 callback(error, worker);
               });
             } else {
-              console.log("VM claim not accepted, trying again");
+              if (settings.debug) {
+                console.log("VM claim not accepted, waiting to try again ..");
+              }
               // If we didn't get a worker, try again
               setTimeout(poll, VM_POLLING_TIME);
             }
