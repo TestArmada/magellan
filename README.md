@@ -24,6 +24,7 @@ Features
       - Optional Sauce Connect tunnel management (`--create_tunnels`).
       - Create lists of browser tiers or browser testing groups with browser profiles (eg: tier1 browsers, tier2 browsers, mobile browsers, vintage IE versions, etc).
       - Manage not just browsers, but also devices for native application testing (iOS and Android)
+    - Can talk to a [locks service](https://github.com/TestArmada/locks) to control saucelabs virtual machine usage (beta).
 
 Test Framework Compatibility
 ============================
@@ -346,6 +347,20 @@ $ magellan --sauce --browser=chrome_42_Windows_2012_R2_Desktop --create_tunnels 
 ```
 
 In the above example, 4 tunnels will be distributed amongst 16 workers.
+
+SauceLabs VM Traffic Control (`locks`)
+======================================
+
+To specify a `locks` server, set the environment variable `LOCKS_SERVER_URL`:
+
+```
+export LOCKS_SERVER_URL=http://locks.server.example:4765
+```
+
+or use the `--locks_server` option:
+```
+$ magellan --locks_server=http://locks.server.example:4765 --sauce --browser=chrome_42_Windows_2012_R2_Desktop --create_tunnels --max_tunnels=4 --max_workers=16
+```
 
 Display Resolution and Orientation Support (SauceLabs Browsers)
 ===============================================================
