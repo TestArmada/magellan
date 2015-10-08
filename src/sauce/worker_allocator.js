@@ -48,21 +48,23 @@ SauceWorkerAllocator.prototype.initialize = function (callback) {
 };
 
 SauceWorkerAllocator.prototype.release = function (worker) {
+  var self = this;
   if (sauceSettings.locksServerURL) {
-    // notify `locks` server we're done with this VM
-    request.post({
-      url: sauceSettings.locksServerURL + "/release",
-      form: {
+    request({
+      method: "POST",
+      json: true,
+      body: {
         token: worker.token
-      }
+      },
+      url: sauceSettings.locksServerURL + "/release"
     }, function (error, response, body) {
       // TODO: decide whether we care about an error at this stage. We're releasing
       // this worker whether the remote release is successful or not, since it will
       // eventually be timed out by the locks server.
-      BaseWorkerAllocator.prototype.release.call(worker);
+      BaseWorkerAllocator.prototype.release.call(self, worker);
     });
   } else {
-    BaseWorkerAllocator.prototype.release.call(worker);
+    BaseWorkerAllocator.prototype.release.call(self, worker);
   }
 };
 
@@ -105,7 +107,7 @@ SauceWorkerAllocator.prototype.get = function (callback) {
             return callback(new Error("Result from locks server is invalid or empty: '" + result + "'" ));
           }
         } catch (e) {
-          return callback(new Error("Could not parse result from locks server: " + e));
+          return callback(new Error("Could not parse result from locks server: " + e + "\n\nbody of response:" + body));
         }
       });
     };

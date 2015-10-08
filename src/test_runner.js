@@ -185,6 +185,7 @@ TestRunner.prototype = {
         // If the allocator could not give us a worker, pass
         // back a failed test result with the allocator's error.
         console.error("Worker allocator error: " + error);
+        console.error(error.stack);
 
         test.workerIndex = -1;
         test.error = undefined;

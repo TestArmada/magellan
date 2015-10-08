@@ -16,7 +16,7 @@ var config = {
   useTunnels:           !!argv.create_tunnels,
   maxTunnels:           argv.num_tunnels || 1,
 
-  locksServerURL:             argv.locks_server || "http://0.0.0.0:3000/"
+  locksServerURL:       argv.locks_server || process.env.LOCKS_SERVER_URL
 };
 
 var parameterWarnings = {
