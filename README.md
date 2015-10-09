@@ -351,10 +351,10 @@ In the above example, 4 tunnels will be distributed amongst 16 workers.
 SauceLabs VM Traffic Control (`locks`)
 ======================================
 
-To specify a `locks` server, set the environment variable `LOCKS_SERVER_URL`:
+To specify a `locks` server, set the environment variable `LOCKS_SERVER`:
 
 ```
-export LOCKS_SERVER_URL=http://locks.server.example:4765
+export LOCKS_SERVER=http://locks.server.example:4765/
 ```
 
 or use the `--locks_server` option:

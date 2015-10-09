@@ -21,8 +21,8 @@ var SauceWorkerAllocator = function (_MAX_WORKERS) {
   this.maxTunnels = sauceSettings.maxTunnels;
   this.tunnelPrefix = Math.round(Math.random() * 99999).toString(16);
 
-  if (sauceSettings.locksServerURL) {
-    console.log("Using locks server at " + sauceSettings.locksServerURL + " for VM traffic control.");
+  if (sauceSettings.locksServerLocation) {
+    console.log("Using locks server at " + sauceSettings.locksServerLocation + " for VM traffic control.");
   }
 };
 
@@ -55,14 +55,14 @@ SauceWorkerAllocator.prototype.initialize = function (callback) {
 
 SauceWorkerAllocator.prototype.release = function (worker) {
   var self = this;
-  if (sauceSettings.locksServerURL) {
+  if (sauceSettings.locksServerLocation) {
     request({
       method: "POST",
       json: true,
       body: {
         token: worker.token
       },
-      url: sauceSettings.locksServerURL + "/release"
+      url: sauceSettings.locksServerLocation + "/release"
     }, function (error, response, body) {
       // TODO: decide whether we care about an error at this stage. We're releasing
       // this worker whether the remote release is successful or not, since it will
@@ -83,7 +83,7 @@ SauceWorkerAllocator.prototype.get = function (callback) {
   // {"accepted":false,"message":"Claim rejected. No VMs available."}
   // {"accepted":true,"token":null,"message":"Claim accepted"}
   //
-  if (sauceSettings.locksServerURL) {
+  if (sauceSettings.locksServerLocation) {
     var attempts = 0;
 
     // Poll the worker allocator until we have a known-good port, then run this test
@@ -92,7 +92,7 @@ SauceWorkerAllocator.prototype.get = function (callback) {
         console.log("asking for VM..");
       }
       request.post({
-        url: sauceSettings.locksServerURL + "/claim",
+        url: sauceSettings.locksServerLocation + "/claim",
         form: {}
       }, function (error, response, body) {
         try {
