@@ -16,8 +16,16 @@ var config = {
   useTunnels:           !!argv.create_tunnels,
   maxTunnels:           argv.num_tunnels || 1,
 
-  locksServerURL:       argv.locks_server || process.env.LOCKS_SERVER_URL
+  locksServerLocation:  argv.locks_server || process.env.LOCKS_SERVER
 };
+
+
+// Remove trailing / in locks server location if it's present.
+if (typeof config.locksServerLocation === "string" && config.locksServerLocation.length > 0) {
+  if (config.locksServerLocation.charAt(config.locksServerLocation.length - 1) === "/") {
+    config.locksServerLocation = config.locksServerLocation.substr(0,config.locksServerLocation.length - 1);
+  }
+}
 
 var parameterWarnings = {
   tunnelId: {
