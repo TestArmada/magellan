@@ -16,7 +16,10 @@ var config = {
   useTunnels:           !!argv.create_tunnels,
   maxTunnels:           argv.num_tunnels || 1,
 
-  locksServerLocation:  argv.locks_server || process.env.LOCKS_SERVER
+  locksServerLocation:  argv.locks_server || process.env.LOCKS_SERVER,
+  locksOutageTimeout:   1000 * 60 * 5,
+  locksPollingInterval: 2500,
+  locksRequestTimeout:  2500
 };
 
 
