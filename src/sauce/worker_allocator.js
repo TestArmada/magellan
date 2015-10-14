@@ -10,7 +10,14 @@ var settings = require("../settings");
 
 var tunnel = require("./tunnel");
 var BASE_SELENIUM_PORT_OFFSET = 56000;
-var VM_POLLING_TIME = 2500;
+
+// Allow polling to stall for 5 minutes. This means we can have a locks server
+// outage of 5 minutes or we can have the server return errors for that period
+// of time before Magellan gives up and fails a test for infrastructure reasons.
+var VM_POLLING_MAX_TIME = sauceSettings.locksOutageTimeout;
+
+var VM_POLLING_INTERVAL = sauceSettings.locksPollingInterval;
+var VM_REQUEST_TIMEOUT = sauceSettings.locksRequestTimeout;
 
 var SauceWorkerAllocator = function (_MAX_WORKERS) {
   BaseWorkerAllocator.call(this, _MAX_WORKERS);
@@ -59,6 +66,7 @@ SauceWorkerAllocator.prototype.release = function (worker) {
     request({
       method: "POST",
       json: true,
+      timeout: VM_REQUEST_TIMEOUT,
       body: {
         token: worker.token
       },
@@ -86,6 +94,8 @@ SauceWorkerAllocator.prototype.get = function (callback) {
   if (sauceSettings.locksServerLocation) {
     var attempts = 0;
 
+    var pollingStartTime = Date.now();
+
     // Poll the worker allocator until we have a known-good port, then run this test
     var poll = function () {
       if (settings.debug) {
@@ -93,9 +103,14 @@ SauceWorkerAllocator.prototype.get = function (callback) {
       }
       request.post({
         url: sauceSettings.locksServerLocation + "/claim",
+        timeout: VM_REQUEST_TIMEOUT,
         form: {}
       }, function (error, response, body) {
         try {
+          if (error) {
+            throw new Error(error);
+          }
+
           var result = JSON.parse(body);
           if (result) {
             if (result.accepted) {
@@ -113,13 +128,32 @@ SauceWorkerAllocator.prototype.get = function (callback) {
                 console.log("VM claim not accepted, waiting to try again ..");
               }
               // If we didn't get a worker, try again
-              setTimeout(poll, VM_POLLING_TIME);
+              setTimeout(poll, VM_POLLING_INTERVAL);
             }
           } else {
-            return callback(new Error("Result from locks server is invalid or empty: '" + result + "'" ));
+            throw new Error("Result from locks server is invalid or empty: '" + result + "'");
           }
         } catch (e) {
-          return callback(new Error("Could not parse result from locks server: " + e + "\n\nbody of response:" + body));
+          // NOTE: There are several errors that can happen in the above code:
+          //
+          // 1. Parsing - we got a response from locks, but it's malformed
+          // 2. Interpretation - we could parse a result, but it's empty or weird
+          // 3. Connection - we attempted to connect, but timed out, 404'd, etc.
+          //
+          // All of the above errors end up here so that we can indiscriminately
+          // choose to tolerate all types of errors until we've waited too long.
+          // This allows for the locks server to be in a bad state (whether due
+          // to restart, failure, network outage, or whatever) for some amount of
+          // time before we panic and start failing tests due to an outage.
+          if (Date.now() - pollingStartTime > VM_POLLING_MAX_TIME) {
+            // we've been polling for too long. Bail!
+            return callback(new Error("Gave up trying to get a saucelabs VM from locks server. " + e));
+          } else {
+            if (settings.debug) {
+              console.log("Error from locks server, tolerating error and waiting " + VM_POLLING_INTERVAL + "ms before trying again");
+            }
+            setTimeout(poll, VM_POLLING_INTERVAL);
+          }
         }
       });
     };
