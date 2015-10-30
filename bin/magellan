@@ -140,7 +140,7 @@ if (settings.aggregateScreenshots) {
 //
 var tests = getTests(testFilters.detectFromCLI(margs.argv));
 
-if (!tests || !tests.length) {
+if (_.isEmpty(tests)) {
   console.log("Error: no tests found");
   process.exit(1);
 }
