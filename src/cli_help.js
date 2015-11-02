@@ -21,6 +21,7 @@ module.exports = {
     console.log(" Configuration:");
     console.log("  --config=config-path         Specify Magellan configuration location.");
     console.log("  --nightwatch_config=path     Specify nightwatch.json location (magellan-nightwatch)");
+    console.log("  --temp_dir=path              Specify temporary file directory for Magellan (default: temp/).");
     console.log("");
     console.log(" Reporting and CI Integration:");
     console.log("  --aggregate_screenshots      Activate harvesting of screenshots for uploading to a screenshot service.");
