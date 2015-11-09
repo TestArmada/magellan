@@ -81,7 +81,7 @@ describe("test runner", function () {
       maxWorkers: MAX_WORKERS
     });
 
-    it("runs zero tests", function (done) {
+    it("runs zero tests @testtag @multi", function (done) {
       var options = _.extend({}, multiWorkerBaseOptions, {
         onSuccess: done
       });

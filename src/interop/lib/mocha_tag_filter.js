@@ -30,17 +30,17 @@ module.exports = function(tags, f) {
   }
 
   walk.findNodeAt(root, null, null, function (nodeType, node) {
-    if (nodeType === "CallExpression" && node.callee.name === "it" && node.arguments[0].value === f.path) {
+    if (!pass && nodeType === "CallExpression" && node.callee.name === "it" && node.arguments[0].value === f.path) {
       var name = node.arguments[0].value;
-      name.split(" ").forEach(function (token) {
-        // chop off the @ at beginning of @tag
-        if (_.indexOf(tags, token.trim().substr(1)) > -1) {
-          // FIXME: this seems to match if even one tag matches.
-          // i.e. if the token we're currently looking at matches any of our *requested*
-          // tags, we match. Meaning --tags functions like an OR instead of an AND
-          pass = true;
-        }
-      })
+      var matchedTags = 0;
+      var nodeTags = name.split(" ");
+
+      // check if each of tags exists in this test case
+      if (tags.every(function (wantedTag) {
+        return nodeTags.indexOf("@" + wantedTag) > -1;
+      })) {
+        pass = true;
+      }
     }
   });
 

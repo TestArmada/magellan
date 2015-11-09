@@ -30,17 +30,27 @@ module.exports = function(tags, f) {
   }
 
   walk.findNodeAt(root, null, null, function (nodeType, node) {
-    if (!foundTags && nodeType === "Property") {
-      if (node.key && node.key.name === "tags" && node.value && node.value.type === "ArrayExpression" && node.value.elements) {
+    // Don't continue scanning if we've already passed or if we've already 
+    // found the tags: [] structure.
+    if (!foundTags && !pass) {
+      if (nodeType === "Property" && node.key && node.key.name === "tags" && node.value && node.value.type === "ArrayExpression" && node.value.elements) {
         foundTags = true;
+
+        // Collect the tags this test matches
+        var localTags = [];
         node.value.elements.forEach(function (tagNode) {
           if (tagNode.value && typeof tagNode.value === "string") {
-            // FIXME: this seems to match if even one tag matches.
-            if (_.indexOf(tags, tagNode.value.trim()) > -1) {
-              pass = true;
-            }
+            localTags.push(tagNode.value.trim());
           }
         });
+
+        // check if each of tags exists in this test case (in localTags)
+        if (tags.every(function (wantedTag) {
+          return localTags.indexOf(wantedTag) > -1;
+        })) {
+          pass = true;
+        }
+
       }
     }
   });
