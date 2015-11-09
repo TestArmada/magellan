@@ -9,7 +9,8 @@ function getTests(suite) {
 	suite.tests.forEach(function(t) {
 		tests.push({
 			file: t.file,
-			fullTitle: t.fullTitle()
+			fullTitle: t.fullTitle(),
+			pending: t.pending
 		});
 	});
 
@@ -23,7 +24,7 @@ function getTests(suite) {
 /**
  * Used as a mocha repoter for the test capturing phase
  */
-module.exports = function(runner) {
+module.exports = function(runner, options) {
 	// capture but do not run tests
 	runner.run = function(done) {
 		done();
@@ -31,5 +32,13 @@ module.exports = function(runner) {
 
 	// traverse suite structure and flattened list of tests
 	var tests = getTests(runner.suite);
+
+	// process .only greps
+	if (options.grep) {
+		tests = tests.filter(function(t) {
+			return t.fullTitle.match(grep);
+		});
+	}
+
 	console.log(JSON.stringify(tests));
 };
