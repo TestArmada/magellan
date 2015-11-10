@@ -109,6 +109,38 @@ $ magellan --browser=chrome,firefox
 
 #### Controlling Which Tests Run
 
+##### Tag Support in Mocha-based Tests
+
+In Mocha-based tests, Magellan will find tags in `it()` strings in the form of a tagname preceded by an `@`. For example, to define a test that would match with `--tags=commerce` or `--tags=smoke`, we would write:
+
+```javascript
+it("should submit the purchase @commerce @smoke", function (done) {
+  ...
+});
+```
+
+##### Tag Support in Nightwatch.js-based Tests
+
+In Nightwatch-based tests, Magellan supports the standard Nightwatch convention of tags. To define a test that Magellan can match with `--tags=commerce` or `--tags=smoke`, we would write:
+
+```javascript
+module.exports = new Test({
+
+  tags: ["commerce", "smoke"],
+
+  "Load the order page": function (client) {
+    ...
+  },
+
+  "Submit the purchase": function (client) {
+    ...
+  }
+
+});
+```
+
+##### Selecting Tags at Runtime
+
 To filter by one or more tags, run `magellan` with the `--tag` or `--tags` option:
 ```console
 # Specify one tag:
