@@ -36,7 +36,7 @@ module.exports = function(runner, options) {
 	// process .only greps
 	if (options.grep) {
 		tests = tests.filter(function(t) {
-			return t.fullTitle.match(grep);
+			return t.fullTitle.match(options.grep);
 		});
 	}
 
