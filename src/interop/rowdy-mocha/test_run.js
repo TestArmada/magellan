@@ -43,7 +43,6 @@ RowdyMochaTestRun.prototype.getEnvironment = function (env) {
     NODE_CONFIG object ( i.e http://npmjs.org/packages/config )
     process.env.MOCKING_PORT
     process.env.FUNC_PORT
-    --mocking_port=NNN (process.argv)
   */
   var mockingSettings = {
     MOCKING_PORT: this.mockingPort,
