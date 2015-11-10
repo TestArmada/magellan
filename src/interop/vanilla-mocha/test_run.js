@@ -48,7 +48,7 @@ MochaTestRun.prototype.getEnvironment = function (env) {
 };
 
 MochaTestRun.prototype.getArguments = function () {
-  var grepString = this.path.toString();
+  var grepString = this.path.fullTitle;
   var escapees = "\\^$[]+*.\"";
   escapees.split("").forEach(function (ch) {
     grepString = grepString.split(ch).join("\\" + ch);
@@ -57,7 +57,7 @@ MochaTestRun.prototype.getArguments = function () {
   var args = [
     "--mocking_port=" + this.mockingPort,
     "--worker=1",
-    this.path.filename,
+    this.path.file,
     "-g",
     grepString
   ];
