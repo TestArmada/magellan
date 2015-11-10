@@ -9,7 +9,7 @@ var buildId = argv.external_build_id || "magellan-" + Math.round(Math.random() *
 
 // Create a temporary directory for temporary child build assets like configuration, screenshots, etc.
 var mkdirSync = require("./mkdir_sync");
-var TEMP_DIR = "./temp";
+var TEMP_DIR = argv.temp_dir || "./temp";
 var path = require("path");
 mkdirSync(path.resolve(TEMP_DIR));
 

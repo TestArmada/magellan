@@ -36,7 +36,7 @@ describe("test runner", function () {
       runner.start();
     });
 
-    it("runs one test", function (done) {
+    it("runs one test @testtag", function (done) {
       this.timeout(6000);
 
       var workerAllocator = new WorkerAllocator(MAX_WORKERS);
@@ -52,7 +52,7 @@ describe("test runner", function () {
       });
     });
 
-    it("fails one test", function (done) {
+    it("fails one test @testtag", function (done) {
       this.timeout(6000);
 
       var workerAllocator = new WorkerAllocator(MAX_WORKERS);
@@ -81,7 +81,7 @@ describe("test runner", function () {
       maxWorkers: MAX_WORKERS
     });
 
-    it("runs zero tests", function (done) {
+    it("runs zero tests @testtag @multi", function (done) {
       var options = _.extend({}, multiWorkerBaseOptions, {
         onSuccess: done
       });

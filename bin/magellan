@@ -48,6 +48,7 @@ if (margs.argv.list_browsers) {
     process.exit(0);
   }).catch(function (err) {
     console.log("Couldn't fetch browsers. Error: ", err);
+    console.log(err.stack);
   });
   return;
 }
@@ -139,7 +140,7 @@ if (settings.aggregateScreenshots) {
 //
 var tests = getTests(testFilters.detectFromCLI(margs.argv));
 
-if (!tests) {
+if (_.isEmpty(tests)) {
   console.log("Error: no tests found");
   process.exit(1);
 }
@@ -270,5 +271,6 @@ browsers.initialize(isSauce)
   .catch(function (err) {
     console.error(clc.redBright("Error initializing reporters: "));
     console.error(err.toString());
+    console.log(err.stack);
     process.exit(1);
   });

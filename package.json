@@ -1,6 +1,6 @@
 {
   "name": "testarmada-magellan",
-  "version": "1.6.11",
+  "version": "3.0.0",
   "description": "Massively parallel automated testing",
   "main": "src/main",
   "directories": {
@@ -29,7 +29,7 @@
     "test": "./bin/magellan"
   },
   "dependencies": {
-    "acorn": "^2.1.0",
+    "acorn": "2.1.0",
     "async": "^0.9.0",
     "cli-color": "^0.3.2",
     "cli-table": "^0.3.1",

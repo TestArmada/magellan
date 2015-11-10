@@ -14,8 +14,6 @@ module.exports = function() {
   }
 
   var tests = JSON.parse(capture.stdout);
-
-  //tests.splice(1);
   tests.forEach(function(t) {
     t.toString = function() {
       return this.fullTitle;

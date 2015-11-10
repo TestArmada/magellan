@@ -193,6 +193,7 @@ TestRunner.prototype = {
         // If the allocator could not give us a worker, pass
         // back a failed test result with the allocator's error.
         console.error("Worker allocator error: " + error);
+        console.error(error.stack);
 
         test.workerIndex = -1;
         test.error = undefined;
@@ -380,20 +381,24 @@ TestRunner.prototype = {
 
     // do not report test starts if we've bailed.
     if (!this.hasBailed) {
+      var msg = [];
+
+      msg.push("-->");
+      msg.push((this.serial ? "Serial mode" : "Worker " + worker.index) + ",");
+
       if (this.sauceSettings && worker.tunnelId) {
-        var tunnelId = worker.tunnelId;
-        if (this.serial) {
-          console.log("--> Serial mode, tunnel id: " + tunnelId + ", mock port:" + worker.portOffset + ", running test: " + test.toString());
-        } else {
-          console.log("--> Worker " + worker.index + ", tunnel id: " + tunnelId + ", mock port:" + worker.portOffset + ", running test: " + test.toString());
-        }
-      } else {
-        if (this.serial) {
-          console.log("--> Serial mode, mock port: " + worker.portOffset + ", running test: " + test.toString());
-        } else {
-          console.log("--> Worker " + worker.index + ", mock port: " + worker.portOffset + ", running test: " + test.toString());
-        }
+        msg.push("tunnel id: " + worker.tunnelId + ",");
       }
+
+      msg.push("mock port:" + worker.portOffset + ",");
+
+      if (worker.token) {
+        msg.push("VM token:" + worker.token + ",");
+      }
+
+      msg.push("running test: " + test.toString());
+
+      console.log(msg.join(" "));
     }
 
     var testRun;

@@ -14,8 +14,21 @@ var config = {
   // optional:
   tunnelTimeout:        process.env.SAUCE_TUNNEL_CLOSE_TIMEOUT,
   useTunnels:           !!argv.create_tunnels,
-  maxTunnels:           argv.num_tunnels || 1
+  maxTunnels:           argv.num_tunnels || 1,
+
+  locksServerLocation:  argv.locks_server || process.env.LOCKS_SERVER,
+  locksOutageTimeout:   1000 * 60 * 5,
+  locksPollingInterval: 2500,
+  locksRequestTimeout:  2500
 };
+
+
+// Remove trailing / in locks server location if it's present.
+if (typeof config.locksServerLocation === "string" && config.locksServerLocation.length > 0) {
+  if (config.locksServerLocation.charAt(config.locksServerLocation.length - 1) === "/") {
+    config.locksServerLocation = config.locksServerLocation.substr(0,config.locksServerLocation.length - 1);
+  }
+}
 
 var parameterWarnings = {
   tunnelId: {
