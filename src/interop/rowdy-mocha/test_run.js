@@ -77,25 +77,20 @@ RowdyMochaTestRun.prototype.getEnvironment = function (env) {
 
 RowdyMochaTestRun.prototype.getArguments = function () {
   var grepString = this.path.fullTitle;
-
   var escapees = "\\^$[]+*.\"";
   escapees.split("").forEach(function (ch) {
     grepString = grepString.split(ch).join("\\" + ch);
   });
 
   var args = [
-    "--mocking_port=" + this.mockingPort,
-    "--worker=1",
-    this.path.file
+    "-g",
+    grepString
   ];
 
   if (mochaSettings.mochaOpts) {
     args.push("--opts");
     args.push(mochaSettings.mochaOpts);
   }
-
-  args.push("-g");
-  args.push(grepString);
 
   return args;
 };

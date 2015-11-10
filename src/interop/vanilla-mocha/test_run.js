@@ -6,6 +6,7 @@ var _ = require("lodash");
 var BaseTestrun = require("../../test_run");
 
 var settings = require("../../settings");
+var mochaSettings = require("../lib/mocha_settings");
 
 var MochaTestRun = function (options) {
   BaseTestrun.call(this, options);
@@ -55,12 +56,14 @@ MochaTestRun.prototype.getArguments = function () {
   });
 
   var args = [
-    "--mocking_port=" + this.mockingPort,
-    "--worker=1",
-    this.path.file,
     "-g",
     grepString
   ];
+
+  if (mochaSettings.mochaOpts) {
+    args.push("--opts");
+    args.push(mochaSettings.mochaOpts);
+  }
 
   return args;
 };

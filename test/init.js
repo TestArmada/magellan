@@ -1,3 +1,3 @@
 before(function() {
-	global._magellan.rootLevelHook = true;
+	global._rootLevelHookRan = true;
 })
