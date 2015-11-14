@@ -3,15 +3,18 @@ var path = require('path');
 var spawnSync = require('spawn-sync');
 
 var reporter = path.resolve(__dirname, 'test_capture.js');
-var mochaOpts = require('./mocha_settings').mochaOpts;
+var mochaSettings = require("./mocha_settings");
 
 module.exports = function(settings) {
   var testOutputPath = path.resolve(settings.tempDir, 'get_mocha_tests.json');
   var cmd = './node_modules/.bin/mocha';
   var args = ['--reporter', reporter];
-  if (mochaOpts) {
-    args.push('--opts', mochaOpts);
+
+  if (mochaSettings.mochaOpts) {
+    args.push('--opts', mochaSettings.mochaOpts);
   }
+
+  args = args.concat(mochaSettings.mochaTestFolders);
 
   process.env.MOCHA_CAPTURE_PATH = testOutputPath;
   var capture = spawnSync(cmd, args, {env: process.env});

@@ -43,6 +43,7 @@ RowdyMochaTestRun.prototype.getEnvironment = function (env) {
     NODE_CONFIG object ( i.e http://npmjs.org/packages/config )
     process.env.MOCKING_PORT
     process.env.FUNC_PORT
+    --mocking_port=NNN (process.argv)
   */
   var mockingSettings = {
     MOCKING_PORT: this.mockingPort,
@@ -82,14 +83,17 @@ RowdyMochaTestRun.prototype.getArguments = function () {
   });
 
   var args = [
+    "--mocking_port=" + this.mockingPort,
+    "--worker=1",
     "-g",
     grepString
   ];
 
   if (mochaSettings.mochaOpts) {
-    args.push("--opts");
-    args.push(mochaSettings.mochaOpts);
+    args.push("--opts", mochaSettings.mochaOpts);
   }
+
+  args = args.concat(mochaSettings.mochaTestFolders);
 
   return args;
 };

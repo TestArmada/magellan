@@ -56,14 +56,17 @@ MochaTestRun.prototype.getArguments = function () {
   });
 
   var args = [
+    "--mocking_port=" + this.mockingPort,
+    "--worker=1",
     "-g",
     grepString
   ];
 
   if (mochaSettings.mochaOpts) {
-    args.push("--opts");
-    args.push(mochaSettings.mochaOpts);
+    args.push("--opts", mochaSettings.mochaOpts);
   }
+
+  args = args.concat(mochaSettings.mochaTestFolders);
 
   return args;
 };
