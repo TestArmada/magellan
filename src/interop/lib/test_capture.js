@@ -5,7 +5,6 @@ var fs = require('fs');
  * test found within
  */
 function getTests(suite) {
-	// TODO: filter pending/deactivated
 	var tests = [];
 
 	suite.tests.forEach(function(t) {
