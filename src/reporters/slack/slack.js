@@ -87,7 +87,7 @@ Reporter.prototype.flush = function () {
   if (this.failures.length > 0) {
     var output = _.map(this.failures, function (failure, i) {
       var browserErrorsNote = "";
-      if (failure.browserErrors.length > 0) {
+      if (failure.browserErrors && failure.browserErrors.length > 0) {
         browserErrorsNote = "(uncaught errors: " + failure.browserErrors.length + " detected)";
       }
 
