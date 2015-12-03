@@ -1,6 +1,6 @@
 {
   "name": "testarmada-magellan",
-  "version": "3.0.3",
+  "version": "3.1.0",
   "description": "Massively parallel automated testing",
   "main": "src/main",
   "directories": {
@@ -12,12 +12,12 @@
   },
   "contributors": [
     {
-      "name" : "Maciej Adwent",
-      "url" : "http://github.com/Maciek416"
+      "name": "Maciej Adwent",
+      "url": "http://github.com/Maciek416"
     },
     {
-      "name" : "Dave Cadwallader",
-      "url" : "http://github.com/geekdave"
+      "name": "Dave Cadwallader",
+      "url": "http://github.com/geekdave"
     },
     {
       "name": "Lei Zhu",
