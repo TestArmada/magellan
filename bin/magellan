@@ -59,12 +59,41 @@ if (margs.argv.list_browsers) {
 var setupHook = function (callback) { callback(); };
 var teardownHook = function (callback) { callback(); };
 
-if (margs.argv.setup && _.isFunction(margs.argv.setup)) {
-  setupHook = margs.argv.setup;
+var getHookModule = function (mPath, type) {
+  mPath = mPath.trim();
+
+  if (mPath.charAt(0) === ".") {
+    resolvedRequire = path.resolve(process.cwd() + "/" + mPath);
+  } else {
+    resolvedRequire = mPath;
+  }
+
+  var hookFunction;
+  try {
+    hookFunction = require(resolvedRequire);
+  } catch (e) {
+    if (e.code === "MODULE_NOT_FOUND") {
+      console.error("Error while loading a " + type + " hook module from configuration: " + resolvedRequire);
+      console.error(e);
+      process.exit(1);
+    }
+  }
+
+  if (!_.isFunction(hookFunction)) {
+    console.error("Error while loading a " + type + " hook module from configuration: " + resolvedRequire);
+    console.error("The exported module must be a function.");
+    process.exit(1);
+  }
+
+  return hookFunction;
+};
+
+if (margs.argv.setup && _.isString(margs.argv.setup)) {
+  setupHook = getHookModule(margs.argv.setup, "setup");
 }
 
 if (margs.argv.teardown && _.isFunction(margs.argv.teardown)) {
-  teardownHook = margs.argv.teardown;
+  teardownHook = getHookModule(margs.argv.teardown, "teardown");
 }
 
 //
