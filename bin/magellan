@@ -53,6 +53,20 @@ if (margs.argv.list_browsers) {
   return;
 }
 
+// Load Setup/Teardown Hooks
+// =========================
+
+var setupHook = function (callback) { callback(); };
+var teardownHook = function (callback) { callback(); };
+
+if (margs.argv.setup && _.isFunction(margs.argv.setup)) {
+  setupHook = margs.argv.setup;
+}
+
+if (margs.argv.teardown && _.isFunction(margs.argv.teardown)) {
+  teardownHook = margs.argv.teardown;
+}
+
 //
 // Initialize Reporters
 // ====================
@@ -145,31 +159,48 @@ if (_.isEmpty(tests)) {
   process.exit(1);
 }
 
-var initializeReporters = function () {
+// Run the global setup task and, if successful, initialize all attached reporters.
+var initializeSetupTasks = function () {
   var deferred = Q.defer();
-  async.each(reporters, function (reporter, done) {
-    reporter.initialize()
-      .then(function () {
-        done();
-      }).catch(function (err) {
-        done(err);
+
+  // Run global setup task
+  try {
+    setupHook(function (setupError) {
+      if (setupError) {
+        deferred.reject(setupError);
+        return;
+      }
+
+      // Initialize reporters
+      async.each(reporters, function (reporter, done) {
+        reporter.initialize()
+          .then(function () {
+            done();
+          }).catch(function (err) {
+            done(err);
+          });
+      }, function (err) {
+        if (err) {
+          deferred.reject(err);
+        } else {
+          deferred.resolve();
+        }
       });
-  }, function (err) {
-    if (err) {
-      deferred.reject(err);
-    } else {
-      deferred.resolve();
-    }
-  });
+    });
+  } catch (e) {
+    deferred.reject(e);
+  }
+
   return deferred.promise;
 };
 
 var startSuite = function () {
+  var deferred = Q.defer();
+
   workerAllocator.initialize(function (err) {
     if (err) {
-      console.error(clc.redBright("Could not start Magellan. Got error while initializing worker allocator: "));
-      console.error(clc.redBright(err.toString()));
-      process.exit(1);
+      console.error(clc.redBright("Could not start Magellan. Got error while initializing worker allocator"));
+      deferred.reject(err);
       return;
     }
 
@@ -195,13 +226,16 @@ var startSuite = function () {
 
       onSuccess: function () {
         workerAllocator.teardown(function () {
-          process.exit(0);
+          deferred.resolve();
         });
       },
 
       onFailure: function (failedTests) {
         workerAllocator.teardown(function () {
-          process.exit(1);
+          // Failed tests are not a failure in Magellan itself, so we pass an empty error
+          // here so that we don't confuse the user. Magellan already outputs a failure
+          // report to the screen in the case of failed tests.
+          deferred.reject(null);
         });
       }
     })
@@ -209,7 +243,11 @@ var startSuite = function () {
     testRunner.start();
 
   });
+
+  return deferred.promise;
 };
+
+var exitCode = 0;
 
 browsers.initialize(isSauce)
   .then(function () {
@@ -266,11 +304,48 @@ browsers.initialize(isSauce)
       workerAllocator = new WorkerAllocator(MAX_WORKERS);
     }
   })
-  .then(initializeReporters)
-  .then(startSuite)
+  .then(initializeSetupTasks)
   .catch(function (err) {
-    console.error(clc.redBright("Error initializing reporters: "));
+    console.error(clc.redBright("Error initializing the global setup task or reporter: "));
     console.error(err.toString());
     console.log(err.stack);
-    process.exit(1);
+    // If we fail to setup properly, we need to process.exit(), but we also need to run teardown
+    // NOTE: It's the responsibility of teardownHook() to ensure that it acts accordingly if
+    // whatever its tearing down wasn't set up properly in the first place.
+    try {
+      teardownHook(function (err) {
+        process.exit(1);
+      })
+    } catch (e) {
+      console.error(clc.redBright("Error executing teardown hook:"));
+      console.log(e.toString());
+      console.log(e.stack);
+      process.exit(1);
+    }
+  })
+  .finally(function () {
+    // Note: startSuite must cleanly resolve or reject a promise, since we must be able
+    // to run teardown even if there's a failure during setup, suite run, or teardown.
+    startSuite()
+      .catch(function (err) {
+        // We can end up here with a null error since this is also where we end up
+        // if the test suite fails. 
+        if (err) {
+          console.error(err.toString());
+        }
+        exitCode = 1;
+      })
+      .finally(function () {
+        try {
+          teardownHook(function (err) {
+            process.exit(exitCode);
+          })
+        } catch (e) {
+          console.error(clc.redBright("Error executing teardown hook:"));
+          console.log(e.toString());
+          console.log(e.stack);
+          process.exit(1);
+        }
+      });
+
   });
