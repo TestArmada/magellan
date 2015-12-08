@@ -240,8 +240,10 @@ TestRunner.prototype = {
       // Attach listeners that respond to messages sent from the running test.
       // These messages are sent with process.send()
       this.listeners.forEach(function (listener) {
-        listener.listenTo(testRun, childProcess);
-        listener.listenTo(testRun, crashEmitter);
+        if (listener.listenTo) {
+          listener.listenTo(testRun, childProcess);
+          listener.listenTo(testRun, crashEmitter);
+        }
       });
     } catch (e) {
       deferred.reject(e);

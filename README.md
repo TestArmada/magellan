@@ -327,36 +327,51 @@ Setup and Teardown
 
 If you need to run setup and teardown tasks before and after your test suite runs, respectively, it's recommended to write npm tasks for that purpose and simply sandwich your `magellan` call between them.
 
-Sometimes, however, you need a setup and teardown process that constructs state **within Node** and then cleans up afterwards. For this use case, Magellan also supports global `setup()` and `teardown()` hooks that will run before and after your suite. To register a setup and teardown, add require paths to your `magellan.json`:
+Sometimes, however, you need a setup and teardown process that constructs state **within Node** and then cleans up afterwards. For this use case, Magellan also supports a global setup and teardown hook that will run before and after your suite. To register a setup and teardown, add a path to your `magellan.json`:
 
 ```json
 {
-  "setup": "path/to/setup.js",
-  "teardown": "path/to/teardown.js"
+  "setup_teardown": "path/to/setup_teardown.js",
 }
 ```
 
 Magellan will `require()` these modules and run them as functions that should call a callback. Setup and teardown modules should look like this:
 
 ```javascript
-module.exports = function (callback) {
-  //
-  // do setup tasks here ...
-  //
-  callback();
+var Q = require("q");
+
+var SetupTeardown = function () {
 };
+
+SetupTeardown.prototype = {
+  initialize: function () {
+    var deferred = Q.defer();
+
+    // do asynchronous setup stuff here. Resolve (or reject) promise when ready.
+    doAsyncStuff(function (){
+      deferred.resolve();
+    });
+
+    return deferred.promise;
+  },
+
+  flush: function () {
+    var deferred = Q.defer();
+
+    // do asynchronous teardown stuff here. Resolve (or reject) promise when ready.
+    doAsyncStuff(function (){
+      deferred.resolve();
+    });
+
+    return deferred.promise;
+
+  }
+};
+
+module.exports = SetupTeardown;
 ```
 
-```javascript
-module.exports = function (callback) {
-  //
-  // do teardown tasks here ...
-  //
-  callback();
-};
-```
-
-Note: Magellan tries its best to ensure `teardown()` always runs no matter what (even if Magellan has an internal crash, or your test suite fails, or even if your `setup()` task fails).
+Note: Magellan should ensure that `flush()` always runs even if your test suite fails.
 
 SauceLabs Support
 =================
