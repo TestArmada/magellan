@@ -78,7 +78,7 @@ var TestRunner = function (tests, options) {
 
   this.sauceSettings = options.sauceSettings;
 
-  this.reporters = options.reporters || [];
+  this.listeners = options.listeners || [];
 
   this.onFailure = options.onFailure;
   this.onSuccess = options.onSuccess;
@@ -237,11 +237,13 @@ TestRunner.prototype = {
     var stderr = "";
 
     try {
-      // Attach reporters that listen to messages sent from the running test.
+      // Attach listeners that respond to messages sent from the running test.
       // These messages are sent with process.send()
-      this.reporters.forEach(function (reporter) {
-        reporter.listenTo(testRun, childProcess);
-        reporter.listenTo(testRun, crashEmitter);
+      this.listeners.forEach(function (listener) {
+        if (listener.listenTo) {
+          listener.listenTo(testRun, childProcess);
+          listener.listenTo(testRun, crashEmitter);
+        }
       });
     } catch (e) {
       deferred.reject(e);
@@ -260,7 +262,7 @@ TestRunner.prototype = {
       testRun.test.stopClock();
       clearInterval(sentry);
 
-      // Detach ALL reporter listeners that may have been attached 
+      // Detach ALL listeners that may have been attached 
       childProcess.stdout.removeAllListeners();
       childProcess.stderr.removeAllListeners();
       childProcess.stdout.unpipe();
@@ -269,9 +271,9 @@ TestRunner.prototype = {
 
       if (workerCrashed) {
         // If we managed to get a start message from the test, then we can at least
-        // deliver a correct-looking finish message to reporters.
+        // deliver a correct-looking finish message to listeners.
         if (startMessage) {
-          this.reporters.forEach(function (reporter) {
+          this.listeners.forEach(function (listener) {
             crashEmitter.emit("message", {
               type: "worker-status",
               name: startMessage.name,
@@ -297,14 +299,14 @@ TestRunner.prototype = {
     }
 
     // Exploit the reporting API to detect if a worker has crashed and manually
-    // notify reporters of "finished" if the test started.
+    // notify listeners of "finished" if the test started.
     //
     // 1) When a worker crashes, no "finished" status is sent from the worker and 
     //    we can conclude that the worker (test framework, or test) crashed before
     //    it was able to send out this message.
     //
     // 2) To avoid unexpected state transitions, we only send a "finished" event
-    //    to a reporter if we got a "started" event from a test, i.e. we don't
+    //    to a listener if we got a "started" event from a test, i.e. we don't
     //    finish tests that we never properly started in the first place.
     //
     childProcess.on("message", function (message) {
@@ -458,7 +460,7 @@ TestRunner.prototype = {
   },
 
   // Print information about a completed build to the screen, showing failures and
-  // bringing in any information from reporters  
+  // bringing in any information from listeners  
   summarizeCompletedBuild: function () {
     var deferred = Q.defer();
 
@@ -491,37 +493,37 @@ TestRunner.prototype = {
       console.log("    Skipped: " + skipped);
     }
 
-    var flushNextReporter = function () {
-      if (this.reporters.length === 0) {
-        // There are no reporters left to flush. We've summarized all build reports.
+    var flushNextListener = function () {
+      if (this.listeners.length === 0) {
+        // There are no listeners left to flush. We've summarized all build reports.
         deferred.resolve();
       } else {
-        // flush reporters in the same order we added them to the reporters list
-        var reporter = this.reporters.shift();
-        if (typeof reporter.flush === "function") {
-          // This reporter implements flush. Run it and check if the result is a promise
-          // in case we need to wait on the reporter to finish a long-running task first.
-          var promise = reporter.flush();
+        // flush listeners in the same order we added them to the listeners list
+        var listener = this.listeners.shift();
+        if (typeof listener.flush === "function") {
+          // This listener implements flush. Run it and check if the result is a promise
+          // in case we need to wait on the listener to finish a long-running task first.
+          var promise = listener.flush();
           if (promise && typeof promise.then === "function") {
-            // This is a reporter that returns a promise. Wait and then flush.
+            // This is a listener that returns a promise. Wait and then flush.
             promise
-              .then(flushNextReporter)
+              .then(flushNextListener)
               .catch(function (error) {
-                console.log("Error when flushing reporter output: ", error);
-                flushNextReporter();
+                console.log("Error when flushing listener output: ", error);
+                flushNextListener();
               });
           } else {
-            // This reporter that does not return a promise. Keep flushing!
-            flushNextReporter();
+            // This listener that does not return a promise. Keep flushing!
+            flushNextListener();
           }
         } else {
-          // This reporter doesn't implement flush(). Keep flushing!
-          flushNextReporter();
+          // This listener doesn't implement flush(). Keep flushing!
+          flushNextListener();
         }
       }
     }.bind(this);
 
-    flushNextReporter();
+    flushNextListener();
 
     return deferred.promise;
   },
