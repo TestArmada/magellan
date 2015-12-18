@@ -168,7 +168,7 @@ var createJob = function () {
     },
     function(response) {
       if (!response || !response.addjob || !response.addjob.id) {
-        deferred.reject(new Error("Admiral error: Response did not include job ID"));
+        deferred.reject(new Error("Admiral error: Response did not include job ID. Error payload: " + JSON.stringify(response)));
         return;
       }
 

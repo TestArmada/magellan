@@ -46,7 +46,9 @@ module.exports = function () {
   // Scan each file for calls to it("....");
   var tests = allFiles.map(function (filename) {
     filename = path.resolve(filename);
-    var root = acorn.parse(fs.readFileSync(path.resolve(filename)));
+    var root = acorn.parse(fs.readFileSync(path.resolve(filename)), {
+      ecmaVersion: 6
+    });
     var children = [];
 
     // walk all nodes in JS syntax tree, hunt for CallExpressions of the form it("..");
