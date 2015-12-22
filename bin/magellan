@@ -266,7 +266,9 @@ browsers.initialize(isSauce)
   .then(startSuite)
   .catch(function (err) {
     console.error(clc.redBright("Error initializing listeners (i.e. reporters, setup/teardown tasks): "));
-    console.error(err.toString());
-    console.log(err.stack);
+    if (err) {
+      console.error(err.toString());
+      console.log(err.stack);
+    }
     process.exit(1);
   });
