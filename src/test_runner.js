@@ -294,7 +294,7 @@ TestRunner.prototype = {
     if (this.debug) {
       // For debugging purposes.
       childProcess.on("message", function(msg) {
-        console.log("Message from worker " + testRun.worker.index + ":", msg);
+        console.log("Message from worker:", msg);
       });
     }
 
@@ -402,7 +402,9 @@ TestRunner.prototype = {
       testRun = new TestRunClass({
         buildId: this.buildId,
         test: test,
-        worker: worker,
+        seleniumPort: worker.portOffset + 1,
+        mockingPort: worker.portOffset,
+        tunnelId: worker.tunnelId,
         sauceSettings: this.sauceSettings,
         sauceBrowserSettings: test.sauceBrowserSettings,
         debug: this.debug

@@ -19,14 +19,14 @@ var MochaTestRun = function (options) {
   delete this.sauceBrowserSettings.id;
 
   if (options.sauceSettings && options.sauceSettings.useTunnels) {
-    this.sauceBrowserSettings.tunnelId = this.worker.tunnelId;
+    this.sauceBrowserSettings.tunnelId = options.tunnelId;
   }
 
   // needed if local testing
-  this.seleniumPort = this.worker.portOffset + 1;
+  this.seleniumPort = options.seleniumPort;
 
   // needed if you're using a mock
-  this.mockingPort = this.worker.portOffset;
+  this.mockingPort = options.mockingPort;
 };
 
 util.inherits(MochaTestRun, BaseTestrun);

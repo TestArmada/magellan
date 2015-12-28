@@ -18,14 +18,14 @@ var RowdyMochaTestRun = function (options) {
   }
 
   if (options.sauceSettings && options.sauceSettings.useTunnels) {
-    this.tunnelId = this.worker.tunnelId;
+    this.tunnelId = options.tunnelId;
   }
 
   // needed if local testing
-  this.seleniumPort = this.worker.portOffset + 1;
+  this.seleniumPort = options.seleniumPort;
 
   // needed if you're using a mock
-  this.mockingPort = this.worker.portOffset;
+  this.mockingPort = options.mockingPort;
 };
 
 util.inherits(RowdyMochaTestRun, BaseTestrun);

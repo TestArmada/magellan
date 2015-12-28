@@ -19,10 +19,13 @@ var NightwatchTestrun = function (options) {
   this.sauceBrowserSettings = options.sauceBrowserSettings;
 
   // needed if local testing
-  this.seleniumPort = this.worker.portOffset + 1;
+  this.seleniumPort = options.seleniumPort;
 
   // needed if you're using a mock
-  this.mockingPort = this.worker.portOffset;
+  this.mockingPort = options.mockingPort;
+
+  // needed if running a sauce connect tunnel
+  this.tunnelId = options.tunnelId;
 
   this._createTemporaryConfigFile();
 };
@@ -41,7 +44,7 @@ NightwatchTestrun.prototype._createTemporaryConfigFile = function () {
     if (this.sauceSettings.useTunnels) {
       // The sauce worker allocator has a specific tunnelId for this sauce run,
       // we have to use it to avoid using the tunnels of adjacent workers.
-      sauceSettings.tunnelId = this.worker.tunnelId;
+      sauceSettings.tunnelId = this.tunnelId;
     } else {
       delete sauceSettings.tunnelId;
     }
