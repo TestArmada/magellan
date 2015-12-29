@@ -3,6 +3,7 @@ var acorn = require("acorn");
 var walk = require("acorn/dist/walk");
 var path = require("path");
 var fs = require("fs");
+var readAll = require("fs-readdir-recursive")
 
 var mochaSettings = require("./mocha_settings");
 
@@ -26,10 +27,19 @@ module.exports = function () {
     if (folder.split(".").pop() === "js") {
       allFiles.push(folder);
     } else {
-      var files = fs.readdirSync(path.resolve(folder));
+      var files = [];
+      var folderName = folder;
+      // Check if folder ends with wildcard
+      if (folderName.match(/\/\*$/)) {
+        folderName = folderName.substring(0, folder.length - 2);
+        files = readAll(path.resolve(folderName)); 
+      }
+      else {
+        files = fs.readdirSync(path.resolve(folderName));
+      }
       if (files.length > 0) {
         allFiles = allFiles.concat(files.map(function (f) {
-          return path.resolve(folder) + "/" + f;
+          return path.resolve(folderName) + "/" + f;
         }));
       }
     }
@@ -42,6 +52,8 @@ module.exports = function () {
     return f.trim();
   });
 
+  // Remove possible duplicate files.
+  allFiles = _.uniq(allFiles);
 
   // Scan each file for calls to it("....");
   var tests = allFiles.map(function (filename) {
