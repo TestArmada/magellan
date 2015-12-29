@@ -70,7 +70,11 @@ describe("test runner", function () {
       });
     });
 
-
+    it("runs root level hooks", function () {
+      if (!global._rootLevelHookRan) {
+        throw new Error('Root level hook did not run');
+      }
+    });
   });
 
   describe("multi-worker", function () {

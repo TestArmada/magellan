@@ -76,8 +76,7 @@ RowdyMochaTestRun.prototype.getEnvironment = function (env) {
 };
 
 RowdyMochaTestRun.prototype.getArguments = function () {
-  var grepString = this.path.toString();
-
+  var grepString = this.path.fullTitle;
   var escapees = "\\^$[]+*.\"";
   escapees.split("").forEach(function (ch) {
     grepString = grepString.split(ch).join("\\" + ch);
@@ -86,16 +85,15 @@ RowdyMochaTestRun.prototype.getArguments = function () {
   var args = [
     "--mocking_port=" + this.mockingPort,
     "--worker=1",
-    this.path.filename
+    "-g",
+    grepString
   ];
 
   if (mochaSettings.mochaOpts) {
-    args.push("--opts");
-    args.push(mochaSettings.mochaOpts);
+    args.push("--opts", mochaSettings.mochaOpts);
   }
 
-  args.push("-g");
-  args.push(grepString);
+  args = args.concat(mochaSettings.mochaTestFolders);
 
   return args;
 };

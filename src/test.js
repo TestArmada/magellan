@@ -2,6 +2,7 @@ var TEST_STATUS_NEW = 1;
 var TEST_STATUS_FAILED = 2;
 var TEST_STATUS_SUCCESSFUL = 3;
 var TEST_STATUS_ATTEMPTING = 4;
+var TEST_STATUS_PENDING = 5;
 
 var Test = function (path, browser, sauceBrowserSettings, maxAttempts) {
   this.path = path;
@@ -39,6 +40,10 @@ Test.prototype.fail = function () {
   this.status = TEST_STATUS_FAILED;
 };
 
+Test.prototype.pending = function () {
+  this.status = TEST_STATUS_PENDING;
+};
+
 Test.prototype.startClock = function () {
   this.runningTime = undefined;
   this.startTime = (new Date()).getTime();
@@ -66,5 +71,6 @@ Test.prototype.getRuntime = function () {
 Test.TEST_STATUS_NEW = TEST_STATUS_NEW;
 Test.TEST_STATUS_FAILED = TEST_STATUS_FAILED;
 Test.TEST_STATUS_SUCCESSFUL = TEST_STATUS_SUCCESSFUL;
+Test.TEST_STATUS_PENDING = TEST_STATUS_PENDING;
 
 module.exports = Test;

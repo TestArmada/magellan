@@ -1,65 +1,38 @@
-var _ = require("lodash");
-var acorn = require("acorn");
-var walk = require("acorn/dist/walk");
-var path = require("path");
-var fs = require("fs");
+var fs = require('fs');
+var path = require('path');
+var spawnSync = require('spawn-sync');
 
+var reporter = path.resolve(__dirname, 'test_capture.js');
 var mochaSettings = require("./mocha_settings");
 
-var sourceFolders = mochaSettings.mochaTestFolders;
+module.exports = function(settings) {
+  var testOutputPath = path.resolve(settings.tempDir, 'get_mocha_tests.json');
+  var cmd = './node_modules/.bin/mocha';
+  var args = ['--reporter', reporter];
 
-var Path = function (path, filename) {
-  this.path = path;
-  this.filename = filename;
-};
+  if (mochaSettings.mochaOpts) {
+    args.push('--opts', mochaSettings.mochaOpts);
+  }
 
-Path.prototype.toString = function () {
-  return this.path;
-};
+  args = args.concat(mochaSettings.mochaTestFolders);
 
-module.exports = function () {
+  process.env.MOCHA_CAPTURE_PATH = testOutputPath;
+  var capture = spawnSync(cmd, args, {env: process.env});
 
-  // Gather up a list of files in each source folder
-  var allFiles = [];
-  sourceFolders.forEach(function (folder) {
-    // This folder is actually a file
-    if (folder.split(".").pop() === "js") {
-      allFiles.push(folder);
-    } else {
-      var files = fs.readdirSync(path.resolve(folder));
-      if (files.length > 0) {
-        allFiles = allFiles.concat(files.map(function (f) {
-          return path.resolve(folder) + "/" + f;
-        }));
-      }
-    }
+  if (capture.status !== 0 || capture.stderr.toString()) {
+    console.error('Could not capture mocha tests. To debug, run the following command:\nMOCHA_CAPTURE_PATH=%s %s %s', testOutputPath, cmd, args.join(' '));
+    process.exit(1);
+  }
+
+  var tests = fs.readFileSync(testOutputPath, 'utf-8');
+  fs.unlinkSync(testOutputPath);
+
+  tests = JSON.parse(tests);
+  tests.forEach(function(t) {
+    t.toString = function() {
+      return this.fullTitle;
+    };
   });
 
-  // Ensure we scan for JS only, ignoring README files, etc.
-  allFiles = allFiles.filter(function (f) {
-    return (f.indexOf(".js") === f.length - 3);
-  }).map(function (f) {
-    return f.trim();
-  });
-
-
-  // Scan each file for calls to it("....");
-  var tests = allFiles.map(function (filename) {
-    filename = path.resolve(filename);
-    var root = acorn.parse(fs.readFileSync(path.resolve(filename)), {
-      ecmaVersion: 6
-    });
-    var children = [];
-
-    // walk all nodes in JS syntax tree, hunt for CallExpressions of the form it("..");
-    walk.findNodeAt(root, null, null, function (nodeType, node) {
-      if (nodeType === "CallExpression" && node.callee.name === "it") {
-        var name = node.arguments[0].value;
-        children.push(new Path(name, filename));
-      }
-    });
-    return children;
-  });
-
-  return _.flatten(tests);
+  return tests;
 };

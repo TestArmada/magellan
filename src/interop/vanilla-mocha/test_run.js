@@ -6,6 +6,7 @@ var _ = require("lodash");
 var BaseTestrun = require("../../test_run");
 
 var settings = require("../../settings");
+var mochaSettings = require("../lib/mocha_settings");
 
 var MochaTestRun = function (options) {
   BaseTestrun.call(this, options);
@@ -48,7 +49,7 @@ MochaTestRun.prototype.getEnvironment = function (env) {
 };
 
 MochaTestRun.prototype.getArguments = function () {
-  var grepString = this.path.toString();
+  var grepString = this.path.fullTitle;
   var escapees = "\\^$[]+*.\"";
   escapees.split("").forEach(function (ch) {
     grepString = grepString.split(ch).join("\\" + ch);
@@ -57,10 +58,15 @@ MochaTestRun.prototype.getArguments = function () {
   var args = [
     "--mocking_port=" + this.mockingPort,
     "--worker=1",
-    this.path.filename,
     "-g",
     grepString
   ];
+
+  if (mochaSettings.mochaOpts) {
+    args.push("--opts", mochaSettings.mochaOpts);
+  }
+
+  args = args.concat(mochaSettings.mochaTestFolders);
 
   return args;
 };
