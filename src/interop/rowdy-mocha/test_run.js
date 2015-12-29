@@ -1,15 +1,12 @@
 /*
-  Provide
+  Provide Mocha support via Rowdy adapter
 */
-var util = require("util");
 var _ = require("lodash");
-var BaseTestrun = require("../../test_run");
-
 var settings = require("../../settings");
 var mochaSettings = require("../lib/mocha_settings");
 
 var RowdyMochaTestRun = function (options) {
-  BaseTestrun.call(this, options);
+  _.extend(this, options);
 
   if (options.sauceBrowserSettings) {
     this.rowdyBrowser = "sauceLabs." + options.sauceBrowserSettings.id;
@@ -17,18 +14,11 @@ var RowdyMochaTestRun = function (options) {
     this.rowdyBrowser = "local." + this.test.browser.browserId;
   }
 
+  // Copy tunnelId into sauce settings since this is not done for us
   if (options.sauceSettings && options.sauceSettings.useTunnels) {
     this.tunnelId = options.tunnelId;
   }
-
-  // needed if local testing
-  this.seleniumPort = options.seleniumPort;
-
-  // needed if you're using a mock
-  this.mockingPort = options.mockingPort;
 };
-
-util.inherits(RowdyMochaTestRun, BaseTestrun);
 
 // return the command line path to the test framework binary
 RowdyMochaTestRun.prototype.getCommand = function () {

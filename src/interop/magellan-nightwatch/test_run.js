@@ -1,38 +1,20 @@
 /*
   Provide support for running a nightwatch.js test
 */
-var util = require("util");
 var Q = require("q");
 var _ = require("lodash");
 var path = require("path");
-var BaseTestrun = require("../../test_run");
 
 var settings = require("../../settings");
 var nightwatchConfigPath = path.normalize(settings.nightwatchConfigFilePath);
 var rewriteNightwatchConfig = require("./rewrite_config");
 
 var NightwatchTestrun = function (options) {
-  BaseTestrun.call(this, options);
-
-  // needed if sauce testing
-  this.sauceSettings = options.sauceSettings;
-  this.sauceBrowserSettings = options.sauceBrowserSettings;
-
-  // needed if local testing
-  this.seleniumPort = options.seleniumPort;
-
-  // needed if you're using a mock
-  this.mockingPort = options.mockingPort;
-
-  // needed if running a sauce connect tunnel
-  this.tunnelId = options.tunnelId;
-
+  _.extend(this, options);
   this._createTemporaryConfigFile();
 };
 
-util.inherits(NightwatchTestrun, BaseTestrun);
-
-  // clone a custom configuration just for this test run
+// clone a custom configuration just for this test run
 NightwatchTestrun.prototype._createTemporaryConfigFile = function () {
   var sauceSettings;
 
@@ -59,12 +41,12 @@ NightwatchTestrun.prototype._createTemporaryConfigFile = function () {
   this.configPath = rewriteNightwatchConfig(nightwatchConfigPath, this.tempAssetPath, nightwatchConfigOptions);
 };
 
-  // return the command line path to the test framework binary
+// return the command line path to the test framework binary
 NightwatchTestrun.prototype.getCommand = function () {
   return "./node_modules/nightwatch/bin/nightwatch";
 };
 
-  // return the environment
+// return the environment
 NightwatchTestrun.prototype.getEnvironment = function (env) {
   return _.extend({}, env);
 };

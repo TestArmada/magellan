@@ -1,35 +1,25 @@
 /*
-  Provide basic support for running a mocha test
+  Provide basic support for running a mocha test without rowdy
+  (selenium integration, appium usage, or lack of either, is up to test framework code)
 */
-var util = require("util");
 var _ = require("lodash");
-var BaseTestrun = require("../../test_run");
 
 var settings = require("../../settings");
 
 var MochaTestRun = function (options) {
-  BaseTestrun.call(this, options);
+  _.extend(this, options);
 
-  // needed if sauce testing
-  this.sauceSettings = options.sauceSettings;
-  this.sauceBrowserSettings = _.extend({}, options.sauceBrowserSettings);
+  this.sauceBrowserSettings = _.extend({}, this.sauceBrowserSettings);
 
   // Remove things Appium doesn't care about
   delete this.sauceBrowserSettings.resolutions;
   delete this.sauceBrowserSettings.id;
 
+  // Copy tunnelId into sauce settings since this is not done for us
   if (options.sauceSettings && options.sauceSettings.useTunnels) {
     this.sauceBrowserSettings.tunnelId = options.tunnelId;
   }
-
-  // needed if local testing
-  this.seleniumPort = options.seleniumPort;
-
-  // needed if you're using a mock
-  this.mockingPort = options.mockingPort;
 };
-
-util.inherits(MochaTestRun, BaseTestrun);
 
 // return the command line path to the test framework binary
 MochaTestRun.prototype.getCommand = function () {

@@ -1,17 +1,12 @@
 /*
   Fake testing for unit testing purposes
 */
-var util = require("util");
 var Q = require("q");
 var _ = require("lodash");
-// var path = require("path");
-var BaseTestrun = require("../../test_run");
 
 var FakeTestrun = function (options) {
-  BaseTestrun.call(this, options);
+  _.extend(this, options);
 };
-
-util.inherits(FakeTestrun, BaseTestrun);
 
 FakeTestrun.prototype.getCommand = function () {
   return "./test_support/fake_test.js";
