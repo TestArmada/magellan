@@ -20,6 +20,7 @@ var sauceSettings = require("../src/sauce/settings");
 var async = require("async");
 var clc = require("cli-color");
 var browsers = require("../src/sauce/browsers");
+var loadRelativeModule = require("../src/util/load_relative_module");
 
 var isSauce = margs.argv.sauce ? true : false;
 var isNodeBased = margs.argv.framework === "mocha";
@@ -54,13 +55,22 @@ if (margs.argv.list_browsers) {
 }
 
 //
-// Initialize Reporters
+// Initialize Listeners
 // ====================
 //
-// All reporter types are optional and either activated through the existence
-// of configuration (usually via environment variables) or command line switches.
+// All listener/reporter types are optional and either activated through the existence
+// of configuration (i.e environment vars), CLI switches, or magellan.json config.
+var listeners = [];
+
 //
-var reporters = [];
+// Setup / Teardown
+// ================
+//
+// This is merely a listener like any other reporter, but with a developer-friendly name.
+
+if (margs.argv.setup_teardown) {
+  listeners.push(loadRelativeModule(margs.argv.setup_teardown));
+}
 
 //
 // Load reporters from magellan.json
@@ -71,29 +81,7 @@ var reporters = [];
 // either npm modules defined in package.json or to paths relative to the current
 // working directory of the calling script or shell.
 if (margs.argv.reporters && _.isArray(margs.argv.reporters)) {
-  margs.argv.reporters.forEach(function (mPath) {
-    var resolvedRequire;
-    mPath = mPath.trim();
-
-    if (mPath.charAt(0) === ".") {
-      resolvedRequire = path.resolve(process.cwd() + "/" + mPath);
-    } else {
-      resolvedRequire = mPath;
-    }
-
-    var reporterClass;
-    try {
-      reporterClass = require(resolvedRequire);
-    } catch (e) {
-      if (e.code === "MODULE_NOT_FOUND") {
-        console.error("Error while loading a reporter from configuration: " + resolvedRequire);
-        console.error(e);
-        process.exit(1);
-      }
-    }
-
-    reporters.push(new reporterClass());
-  });
+  listeners = listeners.concat(margs.argv.reporters.map(loadRelativeModule));
 }
 
 
@@ -105,7 +93,7 @@ if (admiralBuildSettings.enabled) {
   var admiral = require("../src/reporters/admiral/reporter");
   admiral.setConfig(admiralBuildSettings);
   var admiralReporter = new admiral.reporter();
-  reporters.push(admiralReporter);
+  listeners.push(admiralReporter);
 }
 
 //
@@ -115,7 +103,7 @@ var slackSettings = require("../src/reporters/slack/settings");
 if (slackSettings.enabled) {
   var Slack = require("../src/reporters/slack/slack");
   var slackReporter = new Slack(slackSettings);
-  reporters.push(slackReporter);
+  listeners.push(slackReporter);
 }
 
 //
@@ -123,7 +111,7 @@ if (slackSettings.enabled) {
 //
 if (useSerialMode) {
   var StdoutReporter = require("../src/reporters/stdout/reporter");
-  reporters.push(new StdoutReporter());
+  listeners.push(new StdoutReporter());
 }
 
 //
@@ -131,7 +119,7 @@ if (useSerialMode) {
 //
 if (settings.aggregateScreenshots) {
   var ScreenshotAggregator = require("../src/reporters/screenshot_aggregator/reporter");
-  reporters.push(new ScreenshotAggregator());
+  listeners.push(new ScreenshotAggregator());
 }
 
 
@@ -145,10 +133,10 @@ if (_.isEmpty(tests)) {
   process.exit(1);
 }
 
-var initializeReporters = function () {
+var initializeListeners = function () {
   var deferred = Q.defer();
-  async.each(reporters, function (reporter, done) {
-    reporter.initialize()
+  async.each(listeners, function (listener, done) {
+    listener.initialize()
       .then(function () {
         done();
       }).catch(function (err) {
@@ -165,11 +153,12 @@ var initializeReporters = function () {
 };
 
 var startSuite = function () {
+  var deferred = Q.defer();
+
   workerAllocator.initialize(function (err) {
     if (err) {
-      console.error(clc.redBright("Could not start Magellan. Got error while initializing worker allocator: "));
-      console.error(clc.redBright(err.toString()));
-      process.exit(1);
+      console.error(clc.redBright("Could not start Magellan. Got error while initializing worker allocator"));
+      deferred.reject(err);
       return;
     }
 
@@ -182,7 +171,7 @@ var startSuite = function () {
 
       browsers: selectedBrowsers,
 
-      reporters: reporters,
+      listeners: listeners,
 
       bailFast: (margs.argv.bail_fast ? true : false),
       bailOnThreshold: (margs.argv.bail_early ? true : false),
@@ -195,13 +184,16 @@ var startSuite = function () {
 
       onSuccess: function () {
         workerAllocator.teardown(function () {
-          process.exit(0);
+          deferred.resolve();
         });
       },
 
       onFailure: function (failedTests) {
         workerAllocator.teardown(function () {
-          process.exit(1);
+          // Failed tests are not a failure in Magellan itself, so we pass an empty error
+          // here so that we don't confuse the user. Magellan already outputs a failure
+          // report to the screen in the case of failed tests.
+          deferred.reject(null);
         });
       }
     })
@@ -209,7 +201,11 @@ var startSuite = function () {
     testRunner.start();
 
   });
+
+  return deferred.promise;
 };
+
+var exitCode = 0;
 
 browsers.initialize(isSauce)
   .then(function () {
@@ -266,11 +262,13 @@ browsers.initialize(isSauce)
       workerAllocator = new WorkerAllocator(MAX_WORKERS);
     }
   })
-  .then(initializeReporters)
+  .then(initializeListeners)
   .then(startSuite)
   .catch(function (err) {
-    console.error(clc.redBright("Error initializing reporters: "));
-    console.error(err.toString());
-    console.log(err.stack);
+    console.error(clc.redBright("Error initializing listeners (i.e. reporters, setup/teardown tasks): "));
+    if (err) {
+      console.error(err.toString());
+      console.log(err.stack);
+    }
     process.exit(1);
   });

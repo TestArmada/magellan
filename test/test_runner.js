@@ -13,7 +13,7 @@ var baseOptions = {
   maxWorkers: MAX_WORKERS,
   maxTestAttempts: 1,
   browsers: ["phantomjs"],
-  reporters: [],
+  listeners: [],
   bailFast: false,
   bailOnThreshold: false,
   serial: false,
