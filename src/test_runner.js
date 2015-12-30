@@ -399,7 +399,7 @@ TestRunner.prototype = {
     var testRun;
 
     try {
-      var TestRunClass = require("./interop/" + settings.framework + "/test_run");
+      var TestRunClass = settings.testFramework.TestRun;
       var childBuildId = Math.round(Math.random() * 9999999999).toString(16);
       var tempAssetPath = path.resolve(settings.tempDir + "/build-" + this.buildId + "_" + childBuildId + "_" + "_temp_assets");
       mkdirSync(tempAssetPath);

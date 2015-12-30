@@ -21,6 +21,7 @@ var async = require("async");
 var clc = require("cli-color");
 var browsers = require("../src/sauce/browsers");
 var loadRelativeModule = require("../src/util/load_relative_module");
+var testFramework;
 
 var isSauce = margs.argv.sauce ? true : false;
 var isNodeBased = margs.argv.framework === "mocha";
@@ -52,6 +53,31 @@ if (margs.argv.list_browsers) {
     console.log(err.stack);
   });
   return;
+}
+
+//
+// Initialize Framework Plugin
+// ===========================
+//
+
+if (settings.framework === "nightwatch") {
+  //
+  //
+  //
+  // NOTE: EXPERIMENTAL !! This will change before landing in master.
+  //
+  // NOTE: this should be required via settings/arguments. Note that
+  //       magellan will NOT be including plugins directly, instead it will
+  //       be necessary to include the plugin from a test suite project.
+  //
+  //
+  //
+  settings.testFramework = require("testarmada-magellan-nightwatch-plugin");
+  settings.testFramework.initialize(margs.argv);
+}
+
+if (!settings.testFramework) {
+  throw "No test framework plugin or incompatible framework plugin loaded";
 }
 
 //

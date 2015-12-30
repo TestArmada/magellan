@@ -45,11 +45,7 @@ module.exports = {
 
   buildId: buildId,
 
-  framework: argv.framework || "magellan-nightwatch",
-
-  // TODO: move this to interop
-  // Default to a config location that is the same as the magellan-boilerplate
-  nightwatchConfigFilePath: argv.nightwatch_config || (fs.existsSync("./nightwatch.json") ? "./nightwatch.json" : "./conf/nightwatch.json"),
+  framework: argv.framework || "nightwatch",
 
   customSauceBrowsers: argv.customSauceBrowsers || []
 };
