@@ -24,7 +24,7 @@ var loadRelativeModule = require("../src/util/load_relative_module");
 var testFramework;
 
 var isSauce = margs.argv.sauce ? true : false;
-var isNodeBased = margs.argv.framework === "mocha";
+var isNodeBased = margs.argv.framework && margs.argv.framework.indexOf("mocha") > -1;
 
 var debug = margs.argv.debug || false;
 var useSerialMode = margs.argv.serial;
@@ -60,19 +60,27 @@ if (margs.argv.list_browsers) {
 // ===========================
 //
 
+if (settings.framework === "rowdy-mocha" || settings.framework === "vanilla-mocha") {
+  settings.framework = "mocha";
+}
+
+//
+//
+//
+// NOTE: EXPERIMENTAL !! This will change before landing in master.
+//
+// NOTE: These should be required via settings/arguments. Note that
+//       magellan will NOT be including plugins directly, instead it will
+//       be necessary to include the plugin from a test suite project.
+//
+//
+//
+//
 if (settings.framework === "nightwatch") {
-  //
-  //
-  //
-  // NOTE: EXPERIMENTAL !! This will change before landing in master.
-  //
-  // NOTE: this should be required via settings/arguments. Note that
-  //       magellan will NOT be including plugins directly, instead it will
-  //       be necessary to include the plugin from a test suite project.
-  //
-  //
-  //
   settings.testFramework = require("testarmada-magellan-nightwatch-plugin");
+  settings.testFramework.initialize(margs.argv);
+} else if (settings.framework === "mocha") {
+  settings.testFramework = require("testarmada-magellan-mocha-plugin");
   settings.testFramework.initialize(margs.argv);
 }
 
