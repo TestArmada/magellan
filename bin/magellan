@@ -297,12 +297,17 @@ browsers.initialize(isSauce)
     }
   })
   .then(initializeListeners)
+  // NOTE: if we don't end up in catch() below, magellan exits with status code 0 naturally
   .then(startSuite)
   .catch(function (err) {
-    console.error(clc.redBright("Error initializing listeners (i.e. reporters, setup/teardown tasks): "));
     if (err) {
+      console.error(clc.redBright("Error initializing listeners (i.e. reporters, setup/teardown tasks): "));
       console.error(err.toString());
       console.log(err.stack);
+    } else {
+      // No err object means we didn't have an internal crash while setting up / tearing down
     }
+
+    // Fail the test suite or fail because of an internal crash
     process.exit(1);
   });
