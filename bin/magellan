@@ -33,6 +33,44 @@ var selectedBrowsers;
 var workerAllocator;
 var MAX_WORKERS;
 
+//
+// Initialize Framework Plugin
+// ===========================
+//
+
+if (settings.framework === "rowdy-mocha" || settings.framework === "vanilla-mocha") {
+  settings.framework = "mocha";
+}
+
+//
+//
+//
+// NOTE: EXPERIMENTAL !! This will change before landing in master.
+//
+// NOTE: These should be required via settings/arguments. Note that
+//       magellan will NOT be including plugins directly, instead it will
+//       be necessary to include the plugin from a test suite project.
+//
+// Note: We load frameworks early so that they can attach themselves to
+//       --help. We allow framework initialization to fail so that we can
+//       still potentially show --help, but if we aren't asking for --help,
+//       we will crash with an error *later*.
+//
+//
+console.log(clc.yellowBright(settings.framework));
+try {
+  if (settings.framework === "nightwatch") {
+    settings.testFramework = require("testarmada-magellan-nightwatch-plugin");
+    settings.testFramework.initialize(margs.argv);
+  } else if (settings.framework === "mocha") {
+    settings.testFramework = require("testarmada-magellan-mocha-plugin");
+    settings.testFramework.initialize(margs.argv);
+  }
+} catch (e) {
+  // we don't show an error until after we fail if --help is not active.
+}
+
+
 // Show help and exit if it's asked for
 if (margs.argv.help) {
   var help = require("../src/cli_help");
@@ -55,37 +93,9 @@ if (margs.argv.list_browsers) {
   return;
 }
 
-//
-// Initialize Framework Plugin
-// ===========================
-//
-
-if (settings.framework === "rowdy-mocha" || settings.framework === "vanilla-mocha") {
-  settings.framework = "mocha";
-}
-
-//
-//
-//
-// NOTE: EXPERIMENTAL !! This will change before landing in master.
-//
-// NOTE: These should be required via settings/arguments. Note that
-//       magellan will NOT be including plugins directly, instead it will
-//       be necessary to include the plugin from a test suite project.
-//
-//
-//
-//
-if (settings.framework === "nightwatch") {
-  settings.testFramework = require("testarmada-magellan-nightwatch-plugin");
-  settings.testFramework.initialize(margs.argv);
-} else if (settings.framework === "mocha") {
-  settings.testFramework = require("testarmada-magellan-mocha-plugin");
-  settings.testFramework.initialize(margs.argv);
-}
-
 if (!settings.testFramework) {
-  throw "No test framework plugin or incompatible framework plugin loaded";
+  console.error(clc.redBright("Could not start Magellan."));
+  process.exit(1);
 }
 
 //
