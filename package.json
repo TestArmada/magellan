@@ -46,8 +46,6 @@
     "sauce-connect-launcher": "0.11.0",
     "slugify": "^0.1.1",
     "sync-request": "^2.0.1",
-    "testarmada-magellan-mocha-plugin": "^2.0.0",
-    "testarmada-magellan-nightwatch-plugin": "^2.0.0",
     "yargs": "1.3.2"
   },
   "engineStrict": true,
