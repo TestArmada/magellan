@@ -57,7 +57,6 @@ if (settings.framework === "rowdy-mocha" || settings.framework === "vanilla-moch
 //       we will crash with an error *later*.
 //
 //
-console.log(clc.yellowBright(settings.framework));
 try {
   if (settings.framework === "nightwatch") {
     settings.testFramework = require("testarmada-magellan-nightwatch-plugin");
