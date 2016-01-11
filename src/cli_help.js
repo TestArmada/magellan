@@ -36,24 +36,6 @@ module.exports = {
     console.log("  --profile=http://abc/p#p1,p2 Use profiles p1 and p2 hosted at JSON file http://abc/p (see README for details).")
 
     var help;
-    help = {
-      tags: {
-        example: "tag1,tag2",
-        description: "Run all tests that match a list of comma-delimited tags (eg: tag1,tag2)"
-      },
-      group: {
-        example: "prefix/path",
-        description: "Run all tests that match a path prefix like ./tests/smoke"
-      },
-      test: {
-        example: "path/to/test.js",
-        description: "Run one test with a path like ./tests/smoke/test2.js"
-      },
-      nightwatch_config: {
-        example: "path",
-        description: "Specify nightwatch.json location (magellan-nightwatch)"
-      }
-    };
 
     if (settings.testFramework && settings.testFramework.help) {
       help = settings.testFramework.help;
@@ -76,11 +58,6 @@ module.exports = {
         str += help[key].description;
         console.log(str);        
       });
-
-      // console.log("  --tags=taglist               Run all tests that match a list of comma-delimited tags (eg: tag1,tag2)");
-      // console.log("  --group=prefix               Run all tests that match a path prefix like ./tests/smoke");
-      // console.log("  --test=path-to-test          Run one test with a path like ./tests/smoke/test2.js");
-      // console.log("  --nightwatch_config=path     Specify nightwatch.json location (magellan-nightwatch)");
     }
 
     console.log("");
