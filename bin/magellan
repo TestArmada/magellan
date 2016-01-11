@@ -21,9 +21,10 @@ var async = require("async");
 var clc = require("cli-color");
 var browsers = require("../src/sauce/browsers");
 var loadRelativeModule = require("../src/util/load_relative_module");
+var testFramework;
 
 var isSauce = margs.argv.sauce ? true : false;
-var isNodeBased = margs.argv.framework === "mocha";
+var isNodeBased = margs.argv.framework && margs.argv.framework.indexOf("mocha") > -1;
 
 var debug = margs.argv.debug || false;
 var useSerialMode = margs.argv.serial;
@@ -31,6 +32,42 @@ var MAX_TEST_ATTEMPTS = parseInt(margs.argv.max_test_attempts) || 3;
 var selectedBrowsers;
 var workerAllocator;
 var MAX_WORKERS;
+
+//
+// Initialize Framework Plugins
+// ============================
+//
+
+// We translate old names like "mocha" to the new module names for the
+// respective plugins that provide support for those frameworks. Officially,
+// moving forward, we should specify our framework (in magellan.json)
+var legacyFrameworkNameTranslations = {
+  "rowdy-mocha": "testarmada-magellan-mocha-plugin",
+  "vanilla-mocha": "testarmada-magellan-mocha-plugin",
+  "nightwatch": "testarmada-magellan-nightwatch-plugin",
+};
+
+if (legacyFrameworkNameTranslations[settings.framework]) {
+  settings.framework = legacyFrameworkNameTranslations[settings.framework];
+}
+
+var frameworkLoadException;
+try {
+  //
+  // HELP WANTED: If someone knows how to do this more gracefully, please contribute!
+  //
+  var frameworkModulePath = "./node_modules/" + settings.framework + "/index";
+  settings.testFramework = require(path.resolve(frameworkModulePath));
+} catch (e) {
+  frameworkLoadException = e;
+}
+
+var frameworkInitializationException;
+try {
+  settings.testFramework.initialize(margs.argv);
+} catch (e) {
+  frameworkInitializationException = e;
+}
 
 // Show help and exit if it's asked for
 if (margs.argv.help) {
@@ -52,6 +89,23 @@ if (margs.argv.list_browsers) {
     console.log(err.stack);
   });
   return;
+}
+
+if (!settings.testFramework) {
+  console.error(clc.redBright("Error: Could not start Magellan."));
+  if (frameworkLoadException) {
+    console.error(clc.redBright("Error: Could not load the testing framework plugin '" + settings.framework + "'."
+      + "\nCheck and make sure your package.json includes a module named '" + settings.framework + "'."
+      + "\nIf it does not, you can remedy this by typing:"
+      + "\n\nnpm install --save " + settings.framework));
+    console.log(frameworkLoadException);
+  } else if (frameworkInitializationException) {
+    console.error(clc.redBright("Error: Could not initialize the testing framework plugin '" + settings.framework + "'."
+      + "\nThis plugin was found and loaded, but an error occurred during initialization:"));
+    console.log(frameworkInitializationException);
+  }
+
+  process.exit(1);
 }
 
 //
@@ -263,12 +317,17 @@ browsers.initialize(isSauce)
     }
   })
   .then(initializeListeners)
+  // NOTE: if we don't end up in catch() below, magellan exits with status code 0 naturally
   .then(startSuite)
   .catch(function (err) {
-    console.error(clc.redBright("Error initializing listeners (i.e. reporters, setup/teardown tasks): "));
     if (err) {
+      console.error(clc.redBright("Error initializing listeners (i.e. reporters, setup/teardown tasks): "));
       console.error(err.toString());
       console.log(err.stack);
+    } else {
+      // No err object means we didn't have an internal crash while setting up / tearing down
     }
+
+    // Fail the test suite or fail because of an internal crash
     process.exit(1);
   });

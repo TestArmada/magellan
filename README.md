@@ -26,15 +26,61 @@ Features
       - Manage not just browsers, but also devices for native application testing (iOS and Android)
     - Can talk to a [locks service](https://github.com/TestArmada/locks) to control saucelabs virtual machine usage (beta).
 
-Test Framework Compatibility
-============================
+Test Framework Compatibility and Installation
+=============================================
 
-  - `mocha`:
-    - `wd` ( [example Mocha/wd project](https://github.com/TestArmada/boilerplate-mocha-wd) )
-    - `webdriver.io` ( [example Mocha/webdriver.io project](https://github.com/TestArmada/boilerplate-mocha-webdriverio) )
+Magellan supports test frameworks like Mocha and Nightwatch via the usage of **plugins**.
+
+#### Mocha
+
+Plugin:
+  - https://github.com/TestArmada/magellan-mocha-plugin
+
+Boilerplate / example projects:
+
+  - `wd` ( [example Mocha/wd project](https://github.com/TestArmada/boilerplate-mocha-wd) )
+  - `webdriver.io` ( [example Mocha/webdriver.io project](https://github.com/TestArmada/boilerplate-mocha-webdriverio) )
+  - `node.js` test suites - see `magellan`'s own test suite
+  - `appium.js` - example project coming soon.
+
+Installation:
+
+```shell
+npm install --save testarmada-magellan
+npm install --save testarmada-magellan-mocha-plugin
+```
+
+`magellan.json`
+```json
+{
+  "framework": "testarmada-magellan-mocha-plugin"
+}
+```
+
+#### Nightwatch
+
+Plugin:
+  - https://github.com/TestArmada/magellan-nightwatch-plugin
+
+Boilerplate / example project:
   - `Nightwatch.js` ( [example Nightwatch project](https://github.com/TestArmada/boilerplate-nightwatch) )
-  - `node.js` (non-browser) test suites (example project coming soon).
-  - `appium.js` (example project coming soon).
+
+Helper Library: (note: this is not required for nightwatch support)
+  - https://github.com/TestArmada/magellan-nightwatch
+
+Installation:
+
+```shell
+npm install --save testarmada-magellan
+npm install --save testarmada-magellan-nightwatch-plugin
+```
+
+`magellan.json`
+```json
+{
+  "framework": "testarmada-magellan-nightwatch-plugin"
+}
+```
 
 How Magellan Fits In
 ====================

@@ -9,6 +9,7 @@ var Q = require("q");
 var once = require("once");
 var EventEmitter = require("events").EventEmitter;
 var fs = require("fs");
+var mkdirSync = require("./mkdir_sync");
 
 var sauceBrowsers = require("./sauce/browsers");
 
@@ -294,7 +295,7 @@ TestRunner.prototype = {
     if (this.debug) {
       // For debugging purposes.
       childProcess.on("message", function(msg) {
-        console.log("Message from worker " + testRun.worker.index + ":", msg);
+        console.log("Message from worker:", msg);
       });
     }
 
@@ -398,11 +399,20 @@ TestRunner.prototype = {
     var testRun;
 
     try {
-      var TestRunClass = require("./interop/" + settings.framework + "/test_run");
+      var TestRunClass = settings.testFramework.TestRun;
+      var childBuildId = Math.round(Math.random() * 9999999999).toString(16);
+      var tempAssetPath = path.resolve(settings.tempDir + "/build-" + this.buildId + "_" + childBuildId + "_" + "_temp_assets");
+      mkdirSync(tempAssetPath);
+
       testRun = new TestRunClass({
         buildId: this.buildId,
+        tempAssetPath: tempAssetPath,
         test: test,
-        worker: worker,
+        // FIXME: update testrun implementations to dig into this
+        path: test.path,
+        seleniumPort: worker.portOffset + 1,
+        mockingPort: worker.portOffset,
+        tunnelId: worker.tunnelId,
         sauceSettings: this.sauceSettings,
         sauceBrowserSettings: test.sauceBrowserSettings,
         debug: this.debug

@@ -1,7 +1,5 @@
 {
   "mocha_tests": ["./test"],
   "framework": "vanilla-mocha",
-  "no_tunnels": true,
-  "sauce": false,
   "max_workers": 7
 }
