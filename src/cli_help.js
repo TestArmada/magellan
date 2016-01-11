@@ -48,7 +48,9 @@ module.exports = {
 
       Object.keys(help).forEach(function (key) {
         var str = "  --" + key;
-        var example = "=" + help[key].example || "";
+        if (help[key].example) {
+          str += "=" + help[key].example;
+        }
         // pad
         while (str.length < maxWidth) {
           str += " ";
