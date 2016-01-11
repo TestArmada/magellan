@@ -5,6 +5,9 @@
 // configuration must either be explicitly specified relative to that directory
 // or absolutely (or exist implicitly in the default location)
 
+var project = require('../package.json');
+console.log("Magellan " + project.version);
+
 var path = require("path");
 var margs = require("../src/margs");
 var _ = require("lodash");
