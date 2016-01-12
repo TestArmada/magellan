@@ -1,8 +1,7 @@
-var path = require("path"),
-  fs = require("fs"),
-  _ = require("lodash"),
-  clc = require("cli-color"),
-  settings = require("./settings");
+"use strict";
+
+var _ = require("lodash");
+var settings = require("./settings");
 
 module.exports = {
 
@@ -22,10 +21,10 @@ module.exports = {
 
   // Successively reduce files to a smaller set of files by
   // running a list of filters on the list repeatedly
-  filter: function(files, filters) {
+  filter: function (files, filters) {
     var allFiles = files;
 
-    _.forEach(filters, function(n, k) {
+    _.forEach(filters, function (n, k) {
       if (settings.testFramework.filters[k]) {
         // if we have this filter predefined in settings.js
         // do filter here
