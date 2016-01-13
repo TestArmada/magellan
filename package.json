@@ -26,7 +26,7 @@
   ],
   "license": "MIT",
   "scripts": {
-    "test": "./bin/magellan"
+    "test": "eslint src/** bin/** && ./bin/magellan"
   },
   "dependencies": {
     "acorn": "2.1.0",
