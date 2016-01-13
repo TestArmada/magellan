@@ -8,3 +8,4 @@ rules:
   "func-style": 0
   "no-extra-bind": 0
   "max-params": [2, 4]
+  "max-statements": 0

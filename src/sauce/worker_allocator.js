@@ -1,4 +1,6 @@
-var util = require("util")
+"use strict";
+
+var util = require("util");
 var BaseWorkerAllocator = require("../worker_allocator");
 var _ = require("lodash");
 var request = require("request");
@@ -10,6 +12,8 @@ var settings = require("../settings");
 
 var tunnel = require("./tunnel");
 var BASE_SELENIUM_PORT_OFFSET = 56000;
+var TUNNEL_PREFIX_RAND_MAX = 99999;
+var STRNUM_BASE = 16;
 
 // Allow polling to stall for 5 minutes. This means we can have a locks server
 // outage of 5 minutes or we can have the server return errors for that period
@@ -19,19 +23,20 @@ var VM_POLLING_MAX_TIME = sauceSettings.locksOutageTimeout;
 var VM_POLLING_INTERVAL = sauceSettings.locksPollingInterval;
 var VM_REQUEST_TIMEOUT = sauceSettings.locksRequestTimeout;
 
-var SauceWorkerAllocator = function (_MAX_WORKERS) {
+function SauceWorkerAllocator(_MAX_WORKERS) {
   BaseWorkerAllocator.call(this, _MAX_WORKERS);
 
   this.tunnels = [];
   this.tunnelErrors = [];
   this.MAX_WORKERS = _MAX_WORKERS;
   this.maxTunnels = sauceSettings.maxTunnels;
-  this.tunnelPrefix = Math.round(Math.random() * 99999).toString(16);
+  this.tunnelPrefix = Math.round(Math.random() * TUNNEL_PREFIX_RAND_MAX).toString(STRNUM_BASE);
 
   if (sauceSettings.locksServerLocation) {
-    console.log("Using locks server at " + sauceSettings.locksServerLocation + " for VM traffic control.");
+    console.log("Using locks server at " + sauceSettings.locksServerLocation
+      + " for VM traffic control.");
   }
-};
+}
 
 util.inherits(SauceWorkerAllocator, BaseWorkerAllocator);
 
@@ -39,20 +44,20 @@ SauceWorkerAllocator.prototype.initialize = function (callback) {
   this.initializeWorkers(this.MAX_WORKERS);
 
   if (!sauceSettings.useTunnels) {
-    callback();
+    return callback();
   } else {
-    tunnel.initialize(function (err) {
-      if (err) {
-        callback(err);
+    tunnel.initialize(function (initErr) {
+      if (initErr) {
+        return callback(initErr);
       } else {
-        this.openTunnels(function (err) {
-          if (err) {
-            callback(new Error("Cannot initialize worker allocator: " + err.toString()));
+        this.openTunnels(function (openErr) {
+          if (openErr) {
+            return callback(new Error("Cannot initialize worker allocator: " + openErr.toString()));
           } else {
             // NOTE: We wait until we know how many tunnels we actually got before
             // we assign tunnel ids to workers.
             this.assignTunnelsToWorkers(this.tunnels.length);
-            callback();
+            return callback();
           }
         }.bind(this));
       }
@@ -71,7 +76,7 @@ SauceWorkerAllocator.prototype.release = function (worker) {
         token: worker.token
       },
       url: sauceSettings.locksServerLocation + "/release"
-    }, function (error, response, body) {
+    }, function () {
       // TODO: decide whether we care about an error at this stage. We're releasing
       // this worker whether the remote release is successful or not, since it will
       // eventually be timed out by the locks server.
@@ -92,8 +97,6 @@ SauceWorkerAllocator.prototype.get = function (callback) {
   // {"accepted":true,"token":null,"message":"Claim accepted"}
   //
   if (sauceSettings.locksServerLocation) {
-    var attempts = 0;
-
     var pollingStartTime = Date.now();
 
     // Poll the worker allocator until we have a known-good port, then run this test
@@ -117,11 +120,11 @@ SauceWorkerAllocator.prototype.get = function (callback) {
               if (settings.debug) {
                 console.log("VM claim accepted, token: " + result.token);
               }
-              BaseWorkerAllocator.prototype.get.call(self, function (error, worker) {
+              BaseWorkerAllocator.prototype.get.call(self, function (getWorkerError, worker) {
                 if (worker) {
                   worker.token = result.token;
                 }
-                callback(error, worker);
+                callback(getWorkerError, worker);
               });
             } else {
               if (settings.debug) {
@@ -147,10 +150,12 @@ SauceWorkerAllocator.prototype.get = function (callback) {
           // time before we panic and start failing tests due to an outage.
           if (Date.now() - pollingStartTime > VM_POLLING_MAX_TIME) {
             // we've been polling for too long. Bail!
-            return callback(new Error("Gave up trying to get a saucelabs VM from locks server. " + e));
+            return callback(new Error("Gave up trying to get "
+                + "a saucelabs VM from locks server. " + e));
           } else {
             if (settings.debug) {
-              console.log("Error from locks server, tolerating error and waiting " + VM_POLLING_INTERVAL + "ms before trying again");
+              console.log("Error from locks server, tolerating error and"
+                + " waiting " + VM_POLLING_INTERVAL + "ms before trying again");
             }
             setTimeout(poll, VM_POLLING_INTERVAL);
           }
@@ -170,7 +175,7 @@ SauceWorkerAllocator.prototype.assignTunnelsToWorkers = function (numOpenedTunne
   // Assign a tunnel id for each worker.
   this.workers.forEach(function (worker, i) {
     worker.tunnelId = self.getTunnelId(i % numOpenedTunnels);
-    console.log("Assigning worker " + worker.index + " to tunnel " + worker.tunnelId)
+    console.log("Assigning worker " + worker.index + " to tunnel " + worker.tunnelId);
   });
 };
 
@@ -182,14 +187,14 @@ SauceWorkerAllocator.prototype.teardown = function (callback) {
   if (sauceSettings.useTunnels) {
     this.teardownTunnels(callback);
   } else {
-    callback();
+    return callback();
   }
 };
 
-SauceWorkerAllocator.prototype.openTunnels = function(callback) {
+SauceWorkerAllocator.prototype.openTunnels = function (callback) {
   var self = this;
 
-  var tunnelOpened = function(err, tunnelInfo) {
+  var tunnelOpened = function (err, tunnelInfo) {
 
     if (err) {
       self.tunnelErrors.push(err);
@@ -199,16 +204,16 @@ SauceWorkerAllocator.prototype.openTunnels = function(callback) {
 
     if (self.tunnels.length === self.maxTunnels) {
       console.log("All tunnels open!  Continuing...");
-      callback();
-    } else if (self.tunnels.length > 0 && (self.tunnels.length + self.tunnelErrors.length === self.maxTunnels)) {
+      return callback();
+    } else if (self.tunnels.length > 0 && self.tunnels.length + self.tunnelErrors.length === self.maxTunnels) {
       // We've accumulated some tunnels and some errors. Continue with a limited number of workers?
       console.log("Opened only " + self.tunnels.length + " tunnels out of " + self.maxTunnels + " requested (due to errors).");
       console.log("Continuing with a reduced number of workers (" + self.tunnels.length + ").")
-      callback();
+      return callback();
     } else if (self.tunnelErrors.length === self.maxTunnels) {
       // We've tried to open N tunnels but instead got N errors.
-      callback(new Error("\nCould not open any sauce tunnels (attempted to open " + self.maxTunnels + " total tunnels): \n" + 
-          self.tunnelErrors.map(function(err) {
+      return callback(new Error("\nCould not open any sauce tunnels (attempted to open " + self.maxTunnels + " total tunnels): \n" +
+          self.tunnelErrors.map(function (err) {
             return err.toString();
           }).join("\n") + "\nPlease check that there are no sauce-connect-launcher (sc) processes running."
         ));
@@ -220,7 +225,7 @@ SauceWorkerAllocator.prototype.openTunnels = function(callback) {
     }
   };
 
-  var openTunnel = function(tunnelIndex) {
+  var openTunnel = function (tunnelIndex) {
 
     var tunnelId = self.getTunnelId(tunnelIndex);
     console.log("Opening tunnel " + tunnelIndex + " of " + self.maxTunnels + " [id = " + tunnelId + "]");
@@ -239,23 +244,23 @@ SauceWorkerAllocator.prototype.openTunnels = function(callback) {
   _.times(this.maxTunnels, function (n) {
     // worker numbers are 1-indexed
     console.log("Waiting " + n + " sec to open tunnel #" + n);
-    _.delay(function() {
+    _.delay(function () {
       openTunnel(n);
     }, n * 1000);
   });
 
 };
 
-SauceWorkerAllocator.prototype.teardownTunnels = function(callback) {
+SauceWorkerAllocator.prototype.teardownTunnels = function (callback) {
   var self = this;
 
   var cleanupAndCallback = function () {
     self.cleanupTunnels(callback);
-  }
+  };
 
   var tunnelsOriginallyOpen = this.tunnels.length;
   var tunnelsOpen = this.tunnels.length;
-  var tunnelCloseTimeout = ( sauceSettings.tunnelTimeout || 60 ) * 1000;
+  var tunnelCloseTimeout = (sauceSettings.tunnelTimeout || 60) * 1000;
 
   var closeTimer = setTimeout(function () {
     // sometimes, due to network flake, we never get acknowledgement that the tunnel
@@ -264,7 +269,7 @@ SauceWorkerAllocator.prototype.teardownTunnels = function(callback) {
     cleanupAndCallback();
   }, tunnelCloseTimeout);
 
-  var tunnelClosed = function() {
+  var tunnelClosed = function () {
 
     if (--tunnelsOpen === 0) {
       console.log("All tunnels closed!  Continuing...");
@@ -275,12 +280,12 @@ SauceWorkerAllocator.prototype.teardownTunnels = function(callback) {
     }
   };
 
-  _.each(self.tunnels, function(tunnelInfo) {
+  _.each(self.tunnels, function (tunnelInfo) {
     tunnel.close(tunnelInfo, tunnelClosed);
   });
 };
 
-SauceWorkerAllocator.prototype.cleanupTunnels = function(callback) {
+SauceWorkerAllocator.prototype.cleanupTunnels = function (callback) {
   // at this point, all sauce tunnel processes have already been sent the SIGTERM signal,
   // meaning they've already been "asked politely" to exit.  if any sauce tunnel processes
   // are still active at this point, we need to forcefully kill them so that we're not
@@ -291,7 +296,7 @@ SauceWorkerAllocator.prototype.cleanupTunnels = function(callback) {
 
   console.log("Cleaning up any remaining sauce connect processes with: " + cmd);
 
-  exec(cmd, {}, function(error, stdout, stderr) {
+  exec(cmd, {}, function (error, stdout, stderr) {
     console.log(stdout);
     console.log(stderr);
     callback();
