@@ -1,3 +1,5 @@
+"use strict";
+
 var fs = require("fs");
 var glob = require("glob");
 var request = require("request");
@@ -11,7 +13,7 @@ var util = require("util");
 
 var MAX_CONCURRENT_UPLOADS = 2;
 
-var ScreenshotAggregator = function () {
+function ScreenshotAggregator() {
   // This is an URL where we've stored screenshots at for this entire build (regardless of subtests)
   // If we successfully upload any screenshots, this value will be assigned.
   this.buildURL = null;
@@ -21,7 +23,7 @@ var ScreenshotAggregator = function () {
   // If this property is set, then onQueueDrained must resolve this deferred's promise.
   this.deferFlush = null;
   this.counter = 0;
-};
+}
 
 util.inherits(ScreenshotAggregator, BaseReporter);
 
@@ -29,7 +31,8 @@ ScreenshotAggregator.prototype.initialize = function () {
   var deferred = Q.defer();
 
   if (!settings.aggregatorURL) {
-    deferred.reject(new Error("ScreenshotAggregator is missing an aggregatorURL in its configuration"));
+    deferred.reject(new Error("ScreenshotAggregator is missing an aggregatorURL"
+      + " in its configuration"));
   } else {
     deferred.resolve();
   }
@@ -45,6 +48,7 @@ ScreenshotAggregator.prototype._uploadImage = function (image, callback) {
   this.counter++;
 
   var formData = {
+    /*eslint-disable camelcase */
     build_id: image.buildId,
     child_build_id: image.childBuildId,
     imagefile: {
@@ -57,7 +61,7 @@ ScreenshotAggregator.prototype._uploadImage = function (image, callback) {
   };
 
   request.post({
-    url: settings.aggregatorURL, 
+    url: settings.aggregatorURL,
     formData: formData
   }, function (err, httpResponse, body) {
     var result;
@@ -79,7 +83,8 @@ ScreenshotAggregator.prototype._uploadImage = function (image, callback) {
 };
 
 ScreenshotAggregator.prototype._getScreenshots = function (tempDir) {
-  return glob.sync(path.resolve(tempDir) + "/*.png").concat(glob.sync(path.resolve(tempDir) + "/*.PNG"))
+  return glob.sync(path.resolve(tempDir) + "/*.png").concat(
+    glob.sync(path.resolve(tempDir) + "/*.PNG"));
 };
 
 ScreenshotAggregator.prototype._deleteScreenshots = function (tempDir) {
@@ -94,8 +99,8 @@ ScreenshotAggregator.prototype._collectScreenshots = function (tempDir, buildId,
   //
   //
   // TODO: resolve apparent ambiguity when the same browserId is used
-  //       multiple times in parallel but with different resolutions 
-  //       and/or orientations 
+  //       multiple times in parallel but with different resolutions
+  //       and/or orientations
   // TODO: consider shifting slug generation over to TestRun class to avoid specializing
   //       in disambiguating here.
   //
@@ -121,7 +126,7 @@ ScreenshotAggregator.prototype._collectScreenshots = function (tempDir, buildId,
 ScreenshotAggregator.prototype.onQueueDrained = function () {
   // if deferFlush has been set, it means we tried to call flush() while the upload queue
   // was still running. If this is the case, onQueueDrained has been called while an external
-  // test runner is paused, waiting for 
+  // test runner is paused, waiting for
   if (this.deferFlush) {
     this.deferFlush.resolve();
   }

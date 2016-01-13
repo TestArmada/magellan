@@ -300,11 +300,11 @@ browsers.initialize(isSauce)
     //
     // Non-sauce mode:
     //   Default to 8 workers if we're running phantomjs and *only* phantomjs, otherwise 3 if other browsers are involved
-    //   Default to 1 worker in serial mode. 
+    //   Default to 1 worker in serial mode.
     //
     // Sauce mode:
     //   Default to 3 workers in parallel mode (default).
-    //   Default to 1 worker in serial mode. 
+    //   Default to 1 worker in serial mode.
     //
     if (isSauce) {
       MAX_WORKERS = useSerialMode ? 1 : (parseInt(margs.argv.max_workers) || 3);
