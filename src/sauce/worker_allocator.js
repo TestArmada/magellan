@@ -14,6 +14,8 @@ var tunnel = require("./tunnel");
 var BASE_SELENIUM_PORT_OFFSET = 56000;
 var TUNNEL_PREFIX_RAND_MAX = 99999;
 var STRNUM_BASE = 16;
+var SECOND_MS = 1000;
+var SECONDS_MINUTE = 60;
 
 // Allow polling to stall for 5 minutes. This means we can have a locks server
 // outage of 5 minutes or we can have the server return errors for that period
@@ -205,21 +207,27 @@ SauceWorkerAllocator.prototype.openTunnels = function (callback) {
     if (self.tunnels.length === self.maxTunnels) {
       console.log("All tunnels open!  Continuing...");
       return callback();
-    } else if (self.tunnels.length > 0 && self.tunnels.length + self.tunnelErrors.length === self.maxTunnels) {
+    } else if (self.tunnels.length > 0
+        && self.tunnels.length + self.tunnelErrors.length === self.maxTunnels) {
       // We've accumulated some tunnels and some errors. Continue with a limited number of workers?
-      console.log("Opened only " + self.tunnels.length + " tunnels out of " + self.maxTunnels + " requested (due to errors).");
-      console.log("Continuing with a reduced number of workers (" + self.tunnels.length + ").")
+      console.log("Opened only " + self.tunnels.length + " tunnels out of "
+        + self.maxTunnels + " requested (due to errors).");
+      console.log("Continuing with a reduced number of workers ("
+        + self.tunnels.length + ").");
       return callback();
     } else if (self.tunnelErrors.length === self.maxTunnels) {
       // We've tried to open N tunnels but instead got N errors.
-      return callback(new Error("\nCould not open any sauce tunnels (attempted to open " + self.maxTunnels + " total tunnels): \n" +
-          self.tunnelErrors.map(function (err) {
-            return err.toString();
-          }).join("\n") + "\nPlease check that there are no sauce-connect-launcher (sc) processes running."
+      return callback(new Error("\nCould not open any sauce tunnels (attempted to open "
+        + self.maxTunnels + " total tunnels): \n" +
+          self.tunnelErrors.map(function (tunnelErr) {
+            return tunnelErr.toString();
+          }).join("\n") + "\nPlease check that there are no "
+            + "sauce-connect-launcher (sc) processes running."
         ));
     } else {
       if (err) {
-        console.log("Failed to open a tunnel, number of failed tunnels: " + self.tunnelErrors.length);
+        console.log("Failed to open a tunnel, number of failed tunnels: "
+          + self.tunnelErrors.length);
       }
       console.log(self.tunnels.length + " of " + self.maxTunnels + " tunnels open.  Waiting...");
     }
@@ -228,7 +236,8 @@ SauceWorkerAllocator.prototype.openTunnels = function (callback) {
   var openTunnel = function (tunnelIndex) {
 
     var tunnelId = self.getTunnelId(tunnelIndex);
-    console.log("Opening tunnel " + tunnelIndex + " of " + self.maxTunnels + " [id = " + tunnelId + "]");
+    console.log("Opening tunnel " + tunnelIndex + " of "
+      + self.maxTunnels + " [id = " + tunnelId + "]");
 
     var options = {
       tunnelId: tunnelId,
@@ -246,7 +255,7 @@ SauceWorkerAllocator.prototype.openTunnels = function (callback) {
     console.log("Waiting " + n + " sec to open tunnel #" + n);
     _.delay(function () {
       openTunnel(n);
-    }, n * 1000);
+    }, n * SECOND_MS);
   });
 
 };
@@ -260,7 +269,7 @@ SauceWorkerAllocator.prototype.teardownTunnels = function (callback) {
 
   var tunnelsOriginallyOpen = this.tunnels.length;
   var tunnelsOpen = this.tunnels.length;
-  var tunnelCloseTimeout = (sauceSettings.tunnelTimeout || 60) * 1000;
+  var tunnelCloseTimeout = (sauceSettings.tunnelTimeout || SECONDS_MINUTE) * SECOND_MS;
 
   var closeTimer = setTimeout(function () {
     // sometimes, due to network flake, we never get acknowledgement that the tunnel
@@ -276,7 +285,8 @@ SauceWorkerAllocator.prototype.teardownTunnels = function (callback) {
       clearTimeout(closeTimer);
       cleanupAndCallback();
     } else {
-      console.log(tunnelsOpen + " of " + tunnelsOriginallyOpen + " tunnels still open... waiting...");
+      console.log(tunnelsOpen + " of " + tunnelsOriginallyOpen
+        + " tunnels still open... waiting...");
     }
   };
 
@@ -301,7 +311,6 @@ SauceWorkerAllocator.prototype.cleanupTunnels = function (callback) {
     console.log(stderr);
     callback();
   });
-}
-
+};
 
 module.exports = SauceWorkerAllocator;
