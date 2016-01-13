@@ -653,7 +653,8 @@ TestRunner.prototype = {
 
   // Return true if this build should stop running and fail immediately.
   shouldBail: function () {
-    if (this.strictness === strictness.BAIL_NEVER || this.strictness === strictness.BAIL_TIME_ONLY) {
+    if (this.strictness === strictness.BAIL_NEVER
+      || this.strictness === strictness.BAIL_TIME_ONLY) {
       // BAIL_NEVER means we don't apply any strictness rules at all
       return false;
     } else if (this.strictness === strictness.BAIL_EARLY) {
