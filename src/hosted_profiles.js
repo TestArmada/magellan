@@ -1,3 +1,5 @@
+"use strict";
+
 var syncRequest = require("sync-request");
 var URL = require("url");
 
@@ -10,6 +12,7 @@ module.exports = {
     try {
       url = URL.parse(url);
     } catch (e) {
+      // don't do anything with this exception
     }
     if (url && url.hash) {
       return url.hash.split("#")[1];
@@ -30,9 +33,9 @@ module.exports = {
       throw new Error("Profiles supplied at " + url + " are malformed.");
     }
 
-    // return an object that can be used for extending and which 
+    // return an object that can be used for extending and which
     // is not polluted with any other properties.
     return { profiles: data.profiles };
-  },
+  }
 
 };

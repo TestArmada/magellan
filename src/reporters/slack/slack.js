@@ -1,3 +1,5 @@
+"use strict";
+
 /*
 * Slack integration for Magellan runs
 *
@@ -15,10 +17,10 @@ var Q = require("q");
 var BaseReporter = require("../reporter");
 var util = require("util");
 
-var Reporter = function (config) {
+function Reporter(config) {
   this.config = config;
   this.failures = [];
-};
+}
 
 util.inherits(Reporter, BaseReporter);
 
@@ -42,7 +44,7 @@ Reporter.prototype.initialize = function () {
     "jobName",
     "buildDisplayName",
     "buildURL"
-  ].forEach(function(key) {
+  ].forEach(function (key) {
     if (!self.config.hasOwnProperty(key)) {
       hasAllConfig = false;
       console.error("Missing Slack configuration variable: " + key);
@@ -59,6 +61,7 @@ Reporter.prototype.initialize = function () {
   this.slack = new Slack(this.config.account, this.config.key, {
     channel: this.config.channel,
     username: this.config.username,
+    /*eslint-disable camelcase*/
     icon_url: this.config.iconURL
   });
 
@@ -95,9 +98,8 @@ Reporter.prototype.flush = function () {
       return "  " + (i + 1) + ") " + failure.testName + " " + url + " " + browserErrorsNote;
     }).join("\n");
 
-    var msg =  "================ FAILURES in " + this.jobName + " " + this.buildDisplayName + " ================\n" +
-      output + "\n" +
-      "Build Log: " + this.buildURL;
+    var msg = "================ FAILURES in " + this.jobName + " " + this.buildDisplayName
+      + " ================\n" + output + "\nBuild Log: " + this.buildURL;
 
     this.slack.notify(msg);
   }
@@ -109,7 +111,7 @@ Reporter.prototype._handleMessage = function (testRun, message) {
 
       // Remove any already-existing record of this test (i.e. assume a pass on this test).
       // Note: We could just keep and not add on re-fail, but then the sauceURL would be incorrect.
-      this.failures = _.filter(this.failures, function(failure) {
+      this.failures = _.filter(this.failures, function (failure) {
         return failure.testName !== message.name;
       });
 
@@ -119,7 +121,8 @@ Reporter.prototype._handleMessage = function (testRun, message) {
         var url = "";
         var browserErrors;
         if (message.metadata) {
-          url = (message.metadata.sauceURL ? message.metadata.sauceURL : "") || message.metadata.buildURL;
+          url = (message.metadata.sauceURL ? message.metadata.sauceURL : "")
+            || message.metadata.buildURL;
           browserErrors = message.metadata.browserErrors;
         }
         this._addFailure(message.name, browserErrors, url);

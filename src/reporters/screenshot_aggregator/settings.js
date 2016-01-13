@@ -1,3 +1,5 @@
+"use strict";
+
 var argv = require("../../margs").argv;
 
 module.exports = {
