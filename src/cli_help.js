@@ -1,6 +1,10 @@
-var project = require('../package.json');
+"use strict";
+
+var project = require("../package.json");
 var settings = require("./settings");
 
+/*eslint max-len: 0*/
+/*eslint max-statements: 0*/
 module.exports = {
   help: function () {
     console.log("Usage: magellan [options]");
@@ -13,7 +17,7 @@ module.exports = {
     console.log("  --max_test_attempts=N        Retry tests N times (default: 3).");
     console.log("  --bail_early                 Kill builds that have failed at least 10% of tests, after 10 or more test runs.");
     console.log("  --bail_fast                  Kill builds that fail any test.");
-    console.log("  --bail_time                  Set test kill time in milliseconds. *CAN* be used without bail_early/bail_fast.")
+    console.log("  --bail_time                  Set test kill time in milliseconds. *CAN* be used without bail_early/bail_fast.");
     console.log("  --debug                      Enable debugging magellan messages (dev mode).");
     console.log("");
     console.log(" Configuration:");
@@ -32,8 +36,8 @@ module.exports = {
     console.log("  --browsers=b1,b2,..          Run multiple browsers in parallel.");
     console.log("  --browsers=all               Run all available browsers (sauce only).");
     console.log("  --create_tunnels             Create secure tunnels in sauce mode (for use with --sauce only)");
-    console.log("  --profile=p1,p2,..           Specify lists of browsers to use defined in profiles in magellan.json config.")
-    console.log("  --profile=http://abc/p#p1,p2 Use profiles p1 and p2 hosted at JSON file http://abc/p (see README for details).")
+    console.log("  --profile=p1,p2,..           Specify lists of browsers to use defined in profiles in magellan.json config.");
+    console.log("  --profile=http://abc/p#p1,p2 Use profiles p1 and p2 hosted at JSON file http://abc/p (see README for details).");
 
     var help;
 
@@ -58,7 +62,7 @@ module.exports = {
         // truncate just in case the example was too long to begin with
         str = str.substr(0, maxWidth);
         str += help[key].description;
-        console.log(str);        
+        console.log(str);
       });
     }
 
