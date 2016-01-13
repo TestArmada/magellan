@@ -1,9 +1,11 @@
-var querystring = require('qs'),
-  _ = require("lodash"),
-  http = require('http'),
-  Q = require("q"),
-  settings = require("./settings"),
-  verbose = require("../../settings").debug;
+"use strict";
+
+var querystring = require("qs");
+var _ = require("lodash");
+var http = require("http");
+var Q = require("q");
+var settings = require("./settings");
+var verbose = require("../../settings").debug;
 
 var config = {};
 
@@ -25,7 +27,7 @@ var setConfig = function (_config) {
    *
    * authId
    * authToken
-   * path 
+   * path
    * hostname
    * buildId
    * buildName
@@ -40,21 +42,21 @@ var validateConfig = function () {
     console.log("Validating admiral integration configuration");
   }
   var allConfigPresent = true;
-  [
+  var configVars = [
     "authId",
     "authToken",
     "path",
     "hostname",
     "buildId",
     "buildName"
-  ].forEach(function (k) {
+  ];
+
+  configVars.forEach(function (k) {
     if (!config[k]) {
       console.error("Missing admiral configuration variable: ", k);
       allConfigPresent = false;
-    } else {
-      if (verbose) {
-        console.log(" ✓ " + k + " configuration variable found (value=" + config[k] + ")");
-      }
+    } else if (verbose) {
+      console.log(" ✓ " + k + " configuration variable found (value=" + config[k] + ")");
     }
   });
 
@@ -70,14 +72,14 @@ var setJobNum = function (jobNum) {
 var doAction = function (actionName, options, callback) {
   if (verbose) {
     console.info("========= Invoking Admiral Action: " + actionName + " =========");
-    _.each(options, function(key, value) {
-      console.info(" * " + value + ": " + key );
+    _.each(options, function (key, value) {
+      console.info(" * " + value + ": " + key);
     });
   }
 
   var defaultOptions = {
     "authID": config.authId,
-    "authToken" : config.authToken
+    "authToken": config.authToken
   };
 
   if (verbose) {
@@ -87,32 +89,36 @@ var doAction = function (actionName, options, callback) {
 
   var data = querystring.stringify(_.extend(defaultOptions, options));
 
-  var requestPath = config.path + '/api.php?action=' + actionName;
+  var requestPath = config.path + "/api.php?action=" + actionName;
   try {
     if (verbose) {
-      console.log('Updating admiral', requestPath);
+      console.log("Updating admiral", requestPath);
     }
     var req = http.request({
       hostname: config.hostname,
       path: requestPath,
-      method: 'POST',
-      headers : {
-        'Content-Type': 'application/x-www-form-urlencoded',
-        'Content-Length' : data.length
+      method: "POST",
+      headers: {
+        "Content-Type": "application/x-www-form-urlencoded",
+        "Content-Length": data.length
       }
-    }, function(res) {
-      res.setEncoding('utf8');
+    }, function (res) {
+      res.setEncoding("utf8");
+
       if (verbose) {
-        console.log('Response: ', res.statusCode, JSON.stringify(res.headers));
+        console.log("Response: ", res.statusCode, JSON.stringify(res.headers));
       }
+
       var responseData = "";
-      res.on('data', function (chunk) {
+
+      res.on("data", function (chunk) {
         responseData += chunk;
         if (verbose) {
           console.log("got: " + chunk);
         }
       });
-      res.on('end', function () {
+
+      res.on("end", function () {
         var jsonData = {};
 
         if (verbose) {
@@ -121,22 +127,22 @@ var doAction = function (actionName, options, callback) {
 
         try {
           jsonData = JSON.parse(responseData);
-        } catch(e) {
+        } catch (e) {
           console.error("Could not parse response as JSON: " + responseData);
         }
 
-        callback(jsonData);
+        return callback(jsonData);
       });
     });
 
-    req.on('error', function(e) {
-      console.log('problem with request: ' + e.message);
+    req.on("error", function (e) {
+      console.log("problem with request: " + e.message);
     });
     req.write(data);
     req.end();
   } catch (err) {
-    console.log('Error', err);
-    callback();
+    console.log("Error", err);
+    return callback();
   }
 };
 
@@ -148,8 +154,8 @@ var createJob = function () {
   // individual tests & browser results under one single report.
   var buildId = config.buildId;
   if (!buildId) {
-    deferred.reject(new Error("Admiral config.buildId must be set to the current Jenkins build number"));
-    return;
+    return deferred.reject(new Error("Admiral config.buildId must be set to the current"
+      + " Jenkins build number"));
   }
 
   // config.buildName is a text value that gives some descriptive meaning to this build.
@@ -158,17 +164,19 @@ var createJob = function () {
   // the developer's name.
   var buildName = config.buildName;
   if (!buildName) {
-    deferred.reject(new Error("Admiral config.buildName must be set to the current build name"));
-    return;
+    return deferred.reject(new Error("Admiral config.buildName must be set to the current"
+      + " build name"));
   }
 
-  doAction("addjob", {
+  var payload = {
     "buildId": buildId,
     "jobName": buildName
-    },
-    function(response) {
+  };
+  doAction("addjob", payload,
+    function (response) {
       if (!response || !response.addjob || !response.addjob.id) {
-        deferred.reject(new Error("Admiral error: Response did not include job ID. Error payload: " + JSON.stringify(response)));
+        deferred.reject(new Error("Admiral error: Response did not include job ID. Error payload: "
+          + JSON.stringify(response)));
         return;
       }
 
@@ -187,7 +195,7 @@ var createJob = function () {
 };
 
 
-var Reporter = function () {
+function Reporter() {
 
   console.log("Magellan Admiral Reporter initializing");
   console.log("Checking required configuration variables..");
@@ -195,18 +203,19 @@ var Reporter = function () {
   // Check configuration and throw an error if we don't have everything we need.
   validateConfig();
 
-  var getCurrentJobNum = function() {
+  var getCurrentJobNum = function () {
     if (!currentJobNum) {
-      throw new Error("getCurrentJobNum(): currentJobNum not set -- make sure admiral job initialization succeeded");
+      throw new Error("getCurrentJobNum(): currentJobNum not set -- make sure admiral job"
+        + " initialization succeeded");
     }
     return currentJobNum;
   };
 
-  var startTest = function(testName, browserId, callback) {
+  var startTest = function (testName, browserId) {
     var deferred = Q.defer();
 
     if (!browserId) {
-      throw new Error("browserId must be set when calling startTest()")
+      throw new Error("browserId must be set when calling startTest()");
     }
 
     doAction("starttest", {
@@ -215,19 +224,22 @@ var Reporter = function () {
       //
       //
       // TODO: resolve apparent ambiguity when the same browserId is used
-      //       multiple times in parallel but with different resolutions 
-      //       and/or orientations 
+      //       multiple times in parallel but with different resolutions
+      //       and/or orientations
       //       (module-wide)
       //
       //
       "ua_id": browserId
-    }, function(result) {
+    }, function (result) {
 
+      /*eslint-disable no-magic-numbers */
       if (!result) {
         deferred.reject(new Error("Result not sent"));
         return;
-      } else if (result && result.error && result.error.info && result.error.info.indexOf("Duplicate") > -1) {
-        deferred.reject(new Error("The Admiral server reported a duplicate job number entry. This can be fixed by changing the Magellan build number."));
+      } else if (result && result.error && result.error.info
+          && result.error.info.indexOf("Duplicate") > -1) {
+        deferred.reject(new Error("The Admiral server reported a duplicate job number entry."
+          + " This can be fixed by changing the Magellan build number."));
         return;
       } else if (!result.starttest) {
         deferred.reject(new Error("Unexpected result: " + JSON.stringify(result)));
@@ -244,7 +256,7 @@ var Reporter = function () {
     return deferred.promise;
   };
 
-  var finishTest = function(testName, browserId, total, fail, numRetries, resultUrl, callback) {
+  var finishTest = function (testName, browserId, total, fail, numRetries, resultUrl, callback) {
 
     doAction("finishtest", {
       "job_id": getCurrentJobNum(),
@@ -255,13 +267,13 @@ var Reporter = function () {
       "num_retries": numRetries,
       "result_url": resultUrl,
       "build_url": config.buildURL
-    }, function(result) {
+    }, function () {
       currentResult = 0;
       callback();
     });
   };
 
-  var markForRetry = function(testName, browserId, total, fail, resultUrl, callback) {
+  var markForRetry = function (testName, browserId, total, fail, resultUrl, callback) {
 
     doAction("pendingretry", {
       "job_id": getCurrentJobNum(),
@@ -271,7 +283,7 @@ var Reporter = function () {
       "fail": fail,
       "result_url": resultUrl,
       "build_url": config.buildURL
-    }, function(result) {
+    }, function () {
       currentResult = 0;
       callback();
     });
@@ -294,30 +306,30 @@ var Reporter = function () {
     //    A test is being run for the very first time in a given browser, with attempts at 0
     //
     // 2) Mark for retry (with a result, eg: sauceURL)
-    //    We are retrying a test, with attempts not yet at the maximum number 
+    //    We are retrying a test, with attempts not yet at the maximum number
     //    of allowable attempts.
     //
     // 3) Finish (with a result, eg: sauceURL + pass/fail)
-    //    We have either run a test with a passing result or we've exhausted 
+    //    We have either run a test with a passing result or we've exhausted
     //    the maximum number of allowable attempts
     //
     if (message.type === "worker-status") {
       if (message.status === "started") {
         //
-        // We only call startTest for admiral purposes if this test is 
+        // We only call startTest for admiral purposes if this test is
         // coming to life for the first time. We ignore start messages
         // thereafter because those are emited by retries.
         //
         if (test.attempts === 0) {
           startTest(message.name, test.browser.browserId)
-            .then(function() {
+            .then(function () {
 
             })
             .catch(function (e) {
               console.error("Error starting Admiral test:");
               console.error(e);
               // We don't have access to listeners here, so instead we self-disable
-              console.log("Owlwarm reporter is self-disabling and ignoring further messages");
+              console.log("Owlswarm reporter is self-disabling and ignoring further messages");
               this.ignoreMessages = true;
             }.bind(this));
         }
@@ -327,20 +339,20 @@ var Reporter = function () {
 
         if (pass) {
           // We've finished a test and it passed
-          finishTest(message.name, test.browser.browserId, 1, 0, test.attempts, resultURL, function () {});
+          finishTest(message.name, test.browser.browserId, 1, 0, test.attempts, resultURL,
+            function () {});
+        } else if (test.attempts === test.maxAttempts - 1) {
+          // Is this our last attempt ever? Then mark the test as finished and failed.
+          finishTest(message.name, test.browser.browserId, 1, 1, test.attempts, resultURL,
+            function () {});
         } else {
-          if (test.attempts === ( test.maxAttempts - 1 )) {
-            // Is this our last attempt ever? Then mark the test as finished and failed.
-            finishTest(message.name, test.browser.browserId, 1, 1, test.attempts, resultURL, function () {});
-          } else {
-            // We've failed a test and we're going to retry it
-            markForRetry(message.name, test.browser.browserId, 1, 1, resultURL, function () {});
-          }
+          // We've failed a test and we're going to retry it
+          markForRetry(message.name, test.browser.browserId, 1, 1, resultURL, function () {});
         }
       }
     }
   };
-};
+}
 
 Reporter.prototype = {
   initialize: function () {
@@ -349,7 +361,7 @@ Reporter.prototype = {
     var deferred = Q.defer();
     if (settings.enabled) {
       console.log("Admiral is enabled; Requesting job number...");
-      createJob().then(function(jobNum) {
+      createJob().then(function (jobNum) {
         console.log("Admiral Job Number: " + jobNum);
         setJobNum(jobNum);
         deferred.resolve();

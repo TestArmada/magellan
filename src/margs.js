@@ -1,3 +1,5 @@
+"use strict";
+
 // Magellan Arguments:
 //
 // 1. Attempt to source arguments from magellan.json in the current working directory
@@ -16,6 +18,7 @@ var argsFromFile;
 var filename = path.resolve(magellanConfigFilePath);
 
 try {
+  /*eslint-disable global-require*/
   argsFromFile = require(filename);
   console.log("Loaded magellan configuration from: ", filename);
 } catch (e) {
@@ -27,7 +30,8 @@ try {
         console.log("Error loading Magellan configuration from: " + filename);
         process.exit(1);
       } else {
-        // We're just trying the default location and it's not required, so only print a warning (in debug mode)
+        // We're just trying the default location and it's not required, so only print a
+        // warning (in debug mode)
         console.log("No magellan configuration found. Tried path:");
         console.log(filename);
       }

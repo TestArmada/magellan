@@ -1,9 +1,11 @@
+"use strict";
+
 var sauceBrowsers = require("./sauce/browsers.js");
 var Q = require("q");
 var hostedProfiles = require("./hosted_profiles");
 var _ = require("lodash");
 
-var Browser = function (id, resolution, orientation) {
+var createBrowser = function (id, resolution, orientation) {
   var result = {
     slug: function () {
       return this.browserId
@@ -11,9 +13,9 @@ var Browser = function (id, resolution, orientation) {
         + (this.orientation ? "_" + this.orientation : "");
     },
     toString: function () {
-      return (this.browserId
+      return this.browserId
         + (this.resolution ? " @" + this.resolution : "")
-        + (this.orientation ? " orientation: " + this.orientation : ""));
+        + (this.orientation ? " orientation: " + this.orientation : "");
     },
     browserId: id,
     resolution: resolution ? resolution.trim() : undefined,
@@ -24,6 +26,9 @@ var Browser = function (id, resolution, orientation) {
 
 module.exports = {
 
+  // FIXME: reduce complexity so we can pass lint without this disable
+  /*eslint-disable complexity*/
+  /*eslint-disable no-magic-numbers*/
   // Return a promise that we'll resolve with a list of browsers selected
   // by the user from command line arguments
   detectFromCLI: function (argv, sauceEnabled, isNodeBased) {
@@ -31,7 +36,7 @@ module.exports = {
     var browsers;
 
     // If a profile key is specified, look to argv for it and use it. If
-    // a browser is set ia CLI, we assume details from the stored profile 
+    // a browser is set ia CLI, we assume details from the stored profile
     // and override with anything else explicitly set.
     if (argv.profile) {
 
@@ -60,10 +65,8 @@ module.exports = {
         // Generate a list of profiles, which may typically be just one profile.
         if (argv.profile.indexOf(",") > -1) {
           requestedProfiles = argv.profile.split(",");
-        } else {
-          if (argv.profiles.hasOwnProperty(argv.profile)) {
-            requestedProfiles = [argv.profile];
-          }
+        } else if (argv.profiles.hasOwnProperty(argv.profile)) {
+          requestedProfiles = [argv.profile];
         }
 
         // Search for the requested profiles and copy their browsers to browsers[]
@@ -74,7 +77,7 @@ module.exports = {
           requestedProfiles.forEach(function (requestedProfile) {
             if (argv.profiles.hasOwnProperty(requestedProfile)) {
               argv.profiles[requestedProfile].forEach(function (b) {
-                browsers.push(Browser(b.browser, b.resolution, b.orientation));
+                browsers.push(createBrowser(b.browser, b.resolution, b.orientation));
               });
             } else {
               notFoundProfiles.push(requestedProfile);
@@ -102,12 +105,12 @@ module.exports = {
     // anything from a profile completely.
     if (argv.browsers) {
       browsers = argv.browsers.split(",").map(function (browser) {
-        // NOTE: This applies the same orientation value to all browsers, regardless of whether it's appropriate or not
-        // For better per-browser control, it's better to use browser profiles.
-        return Browser(browser.trim(), argv.resolution, argv.orientation);
+        // NOTE: This applies the same orientation value to all browsers, regardless of whether it's
+        // appropriate or not. For better per-browser control, it's better to use browser profiles.
+        return createBrowser(browser.trim(), argv.resolution, argv.orientation);
       });
     } else if (argv.browser) {
-      var singleBrowser = Browser(argv.browser, argv.resolution, argv.orientation);
+      var singleBrowser = createBrowser(argv.browser, argv.resolution, argv.orientation);
 
       if (argv.profile) {
         // If we've loaded a profile from magellan.json, the --browser option
@@ -121,6 +124,7 @@ module.exports = {
         browsers = [singleBrowser];
       }
     } else {
+      /*eslint-disable no-lonely-if*/
       // If we don't have a browser list yet from profiles or wherever else, then
       // we fall back on default behavior.
       if (browsers) {
@@ -139,9 +143,9 @@ module.exports = {
         } else {
           var fallbackBrowser;
           if (isNodeBased) {
-            fallbackBrowser = Browser("nodejs", argv.resolution, argv.orientation);
+            fallbackBrowser = createBrowser("nodejs", argv.resolution, argv.orientation);
           } else {
-            fallbackBrowser = Browser("phantomjs", argv.resolution, argv.orientation);
+            fallbackBrowser = createBrowser("phantomjs", argv.resolution, argv.orientation);
           }
           browsers = [fallbackBrowser];
         }
@@ -153,7 +157,7 @@ module.exports = {
       sauceBrowsers.initialize(sauceEnabled).then(function () {
         var unrecognizedBrowsers = browsers.filter(function (browser) {
           var browserId = browser.browserId;
-          // If we've specified a resolution, validate that this browser supports that exact resolution.
+          // If we've specified a resolution, validate that this browser supports that exact one.
           if (browser.resolution) {
             var b = sauceBrowsers.browser(browserId);
             if (b && b.resolutions && b.resolutions.indexOf(browser.resolution) > -1) {
@@ -170,7 +174,8 @@ module.exports = {
         if (unrecognizedBrowsers.length > 0) {
           console.log("Error! Unrecognized saucelabs browsers specified:");
           unrecognizedBrowsers.forEach(function (browser) {
-            console.log("  " + browser.browserId + " " + (browser.resolution ? " at resolution: " + browser.resolution : ""));
+            console.log("  " + browser.browserId + " " + (browser.resolution ? " at resolution: "
+              + browser.resolution : ""));
           });
 
           // invalidate our result
@@ -183,6 +188,7 @@ module.exports = {
       deferred.resolve(browsers);
     }
 
+    /*eslint-disable consistent-return*/
     return deferred.promise;
   }
 };

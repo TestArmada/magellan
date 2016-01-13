@@ -1,4 +1,5 @@
-var exec = require("child_process").exec;
+"use strict";
+
 var fork = require("child_process").fork;
 var async = require("async");
 var _ = require("lodash");
@@ -15,6 +16,9 @@ var sauceBrowsers = require("./sauce/browsers");
 
 var settings = require("./settings");
 var Test = require("./test");
+
+var RAND_SIZE = 9999999999;
+var STRNUM_BASE = 16;
 
 var WORKER_START_DELAY = 1000;
 var WORKER_STOP_DELAY = 1500;
@@ -37,27 +41,31 @@ var strictness = {
   LONG_RUNNING_TEST: settings.bailTime
 };
 
-/**
-  A parallel test runner with retry logic and port allocation
-
-  options:
-    maxWorkers          - maximum number of workers for queue
-    maxTestAttempts     - max number of test attempts
-    getEnvironment      - function(worker, test) that returns a key value object to use as the process environment
-    debug               - true/false flag for magellan debugging mode
-    onSuccess           - function() callback
-    onFailure           - function(failedTests) callback
-*/
-var TestRunner = function (tests, options) {
+//
+// A parallel test runner with retry logic and port allocation
+//
+// options:
+//   maxWorkers          - maximum number of workers for queue
+//   maxTestAttempts     - max number of test attempts
+//   getEnvironment      - function(worker, test) that returns a key value object to use as the
+//                         process environment
+//   debug               - true/false flag for magellan debugging mode
+//   onSuccess           - function() callback
+//   onFailure           - function(failedTests) callback
+//
+function TestRunner(tests, options) {
   var self = this;
 
   this.buildId = settings.buildId;
 
+  // FIXME: remove these eslint disables when this is simplified and has a test
+  /*eslint-disable no-nested-ternary*/
+  /*eslint-disable no-extra-parens*/
   this.strictness = options.bailFast
     ? strictness.BAIL_FAST
-    :(options.bailOnThreshold
+    : (options.bailOnThreshold
       ? strictness.BAIL_EARLY
-      : ( settings.bailTimeExplicitlySet
+      : (settings.bailTimeExplicitlySet
         ? strictness.BAIL_TIME_ONLY
         : strictness.BAIL_NEVER
       )
@@ -86,12 +94,13 @@ var TestRunner = function (tests, options) {
 
   this.allocator = options.allocator;
 
-  // For each actual test path, split out 
-  this.tests = _.flatten(tests.map(function (path) {
+  // For each actual test path, split out
+  this.tests = _.flatten(tests.map(function (testPath) {
     return options.browsers.map(function (requestedBrowser) {
       // Note: For non-sauce browsers, this can come back empty, which is just fine.
-      var sauceBrowserSettings = sauceBrowsers.browser(requestedBrowser.browserId, requestedBrowser.resolution, requestedBrowser.orientation);
-      return new Test(path, requestedBrowser, sauceBrowserSettings, self.MAX_TEST_ATTEMPTS);
+      var sauceBrowserSettings = sauceBrowsers.browser(requestedBrowser.browserId,
+        requestedBrowser.resolution, requestedBrowser.orientation);
+      return new Test(testPath, requestedBrowser, sauceBrowserSettings, self.MAX_TEST_ATTEMPTS);
     });
   }));
 
@@ -111,8 +120,8 @@ var TestRunner = function (tests, options) {
 
   // When the entire suite is run through the queue, run our drain handler
   this.q.drain = this.buildFinished.bind(this);
-  
-};
+
+}
 
 TestRunner.prototype = {
 
@@ -125,7 +134,8 @@ TestRunner.prototype = {
     if (this.serial) {
       console.log("\nRunning " + this.numTests + " tests in serial mode" + browserStatement + "\n");
     } else {
-      console.log("\nRunning " + this.numTests + " tests with " + this.MAX_WORKERS + " workers" + browserStatement + "\n");
+      console.log("\nRunning " + this.numTests + " tests with " + this.MAX_WORKERS
+        + " workers" + browserStatement + "\n");
     }
 
     if (this.tests.length === 0) {
@@ -163,24 +173,24 @@ TestRunner.prototype = {
 
             onTestComplete(null, test);
           })
-          .catch(function (error) {
+          .catch(function (runTestError) {
             // Catch a testing infrastructure error unrelated to the test itself failing.
             // This indicates something went wrong with magellan itself. We still need
             // to drain the queue, so we fail the test, even though the test itself may
             // have not actually failed.
-            console.log(clc.redBright("Fatal internal error while running a test:", error));
-            console.log(clc.redBright(error.stack));
+            console.log(clc.redBright("Fatal internal error while running a test:", runTestError));
+            console.log(clc.redBright(runTestError.stack));
 
             // Give this worker back to the allocator
             self.allocator.release(worker);
 
             test.workerIndex = worker.index;
-            test.error = error;
+            test.error = runTestError;
             test.stdout = "";
-            test.stderr = error;
+            test.stderr = runTestError;
 
             test.fail();
-            onTestComplete(error, test);
+            onTestComplete(runTestError, test);
           });
       } else {
         // If the allocator could not give us a worker, pass
@@ -188,11 +198,12 @@ TestRunner.prototype = {
         console.error("Worker allocator error: " + error);
         console.error(error.stack);
 
+        /*eslint-disable no-magic-numbers*/
         test.workerIndex = -1;
         test.error = undefined;
         test.stdout = "";
         test.stderr = error;
-        
+
         test.fail();
 
         onTestComplete(null, test);
@@ -219,7 +230,7 @@ TestRunner.prototype = {
       env: env,
       silent: true,
       detached: false,
-      stdio:  ['pipe', 'pipe', 'pipe']
+      stdio: ["pipe", "pipe", "pipe"]
     };
 
     var childProcess;
@@ -233,6 +244,7 @@ TestRunner.prototype = {
     var startMessage;
     var workerCrashed = true;
     var crashEmitter = new EventEmitter();
+    var sentry;
 
     var stdout = "";
     var stderr = "";
@@ -263,7 +275,7 @@ TestRunner.prototype = {
       testRun.test.stopClock();
       clearInterval(sentry);
 
-      // Detach ALL listeners that may have been attached 
+      // Detach ALL listeners that may have been attached
       childProcess.stdout.removeAllListeners();
       childProcess.stderr.removeAllListeners();
       childProcess.stdout.unpipe();
@@ -274,12 +286,14 @@ TestRunner.prototype = {
         // If we managed to get a start message from the test, then we can at least
         // deliver a correct-looking finish message to listeners.
         if (startMessage) {
-          this.listeners.forEach(function (listener) {
+          // FIXME: refactor so we don't have to disable this lint rule
+          /*eslint-disable no-invalid-this*/
+          this.listeners.forEach(function () {
             crashEmitter.emit("message", {
               type: "worker-status",
               name: startMessage.name,
               status: "finished"
-            })
+            });
           });
         }
       }
@@ -294,7 +308,7 @@ TestRunner.prototype = {
 
     if (this.debug) {
       // For debugging purposes.
-      childProcess.on("message", function(msg) {
+      childProcess.on("message", function (msg) {
         console.log("Message from worker:", msg);
       });
     }
@@ -302,7 +316,7 @@ TestRunner.prototype = {
     // Exploit the reporting API to detect if a worker has crashed and manually
     // notify listeners of "finished" if the test started.
     //
-    // 1) When a worker crashes, no "finished" status is sent from the worker and 
+    // 1) When a worker crashes, no "finished" status is sent from the worker and
     //    we can conclude that the worker (test framework, or test) crashed before
     //    it was able to send out this message.
     //
@@ -333,10 +347,10 @@ TestRunner.prototype = {
     childProcess.on("close", workerClosed);
 
     // A sentry monitors how long a given worker has been working. In every
-    // strictness level except BAIL_NEVER, we kill a worker process and its 
+    // strictness level except BAIL_NEVER, we kill a worker process and its
     // process tree if its been running for too long.
     testRun.test.startClock();
-    var sentry = setInterval(function () {
+    sentry = setInterval(function () {
       if (this.strictness === strictness.BAIL_NEVER) {
         return;
       }
@@ -356,7 +370,8 @@ TestRunner.prototype = {
         // Tell the child to shut down the running test immediately
         childProcess.send({
           signal: "bail",
-          customMessage: "Killed by magellan after " + strictness.LONG_RUNNING_TEST + "ms (long running test)"
+          customMessage: "Killed by magellan after " + strictness.LONG_RUNNING_TEST
+            + "ms (long running test)"
         });
 
         setTimeout(function () {
@@ -400,8 +415,9 @@ TestRunner.prototype = {
 
     try {
       var TestRunClass = settings.testFramework.TestRun;
-      var childBuildId = Math.round(Math.random() * 9999999999).toString(16);
-      var tempAssetPath = path.resolve(settings.tempDir + "/build-" + this.buildId + "_" + childBuildId + "_" + "_temp_assets");
+      var childBuildId = Math.round(Math.random() * RAND_SIZE).toString(STRNUM_BASE);
+      var tempAssetPath = path.resolve(settings.tempDir + "/build-" + this.buildId + "_"
+        + childBuildId + "__temp_assets");
       mkdirSync(tempAssetPath);
 
       testRun = new TestRunClass({
@@ -447,7 +463,9 @@ TestRunner.prototype = {
 
       Object.keys(this.trends.failures).forEach(function (key) {
         var localFailureCount = self.trends.failures[key];
-        existingTrends.failures[key] = existingTrends.failures[key] > -1 ? existingTrends.failures[key] + localFailureCount : localFailureCount;
+        /*eslint-disable no-magic-numbers*/
+        existingTrends.failures[key] = existingTrends.failures[key] > -1
+          ? existingTrends.failures[key] + localFailureCount : localFailureCount;
       });
 
       fs.writeFileSync("./trends.json", JSON.stringify(existingTrends, null, 2));
@@ -460,7 +478,8 @@ TestRunner.prototype = {
     console.log(clc.redBright("\n============= Failed Tests:  =============\n"));
 
     this.failedTests.forEach(function (failedTest) {
-      console.log("\n- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - ")
+      console.log("\n- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -"
+        + " - - - - - - - - - - - - - - - ");
       console.log("Failed Test: " + failedTest.toString());
       console.log(" # attempts: " + failedTest.attempts);
       console.log("     output: ");
@@ -470,7 +489,7 @@ TestRunner.prototype = {
   },
 
   // Print information about a completed build to the screen, showing failures and
-  // bringing in any information from listeners  
+  // bringing in any information from listeners
   summarizeCompletedBuild: function () {
     var deferred = Q.defer();
 
@@ -557,9 +576,10 @@ TestRunner.prototype = {
   // Completion callback called by async.queue when a test is completed
   onTestComplete: function (error, test) {
     if (this.hasBailed) {
-      // Ignore results from this test if we've bailed. This is likely a test that 
+      // Ignore results from this test if we've bailed. This is likely a test that
       // was killed when the build went into bail mode.
-      console.log("\u2716 " + clc.redBright("KILLED ") + " " + test.toString() + (this.serial ? "\n" : ""));
+      console.log("\u2716 " + clc.redBright("KILLED ") + " " + test.toString()
+        + (this.serial ? "\n" : ""));
       return;
     }
 
@@ -567,7 +587,7 @@ TestRunner.prototype = {
     var testRequeued = false;
 
     if (successful) {
-      // Add this test to the passed test list, then remove it from the failed test 
+      // Add this test to the passed test list, then remove it from the failed test
       // list (just in case it's a test we just retried after a previous failure).
       this.passedTests.push(test);
       this.failedTests = _.difference(this.failedTests, this.passedTests);
@@ -575,15 +595,18 @@ TestRunner.prototype = {
 
       if (settings.gatherTrends) {
         var key = test.toString();
-        this.trends.failures[key] = this.trends.failures[key] > -1 ? this.trends.failures[key] + 1 : 1;
+        /*eslint-disable no-magic-numbers*/
+        this.trends.failures[key] = this.trends.failures[key] > -1
+          ? this.trends.failures[key] + 1 : 1;
       }
 
+      /*eslint-disable no-magic-numbers*/
       if (this.failedTests.indexOf(test) === -1) {
         this.failedTests.push(test);
       }
 
       // Note: Tests that failed but can still run again are pushed back into the queue.
-      // This push happens before the queue is given back flow control (at the end of 
+      // This push happens before the queue is given back flow control (at the end of
       // this callback), which means that the queue isn't given the chance to drain.
       if (!test.canRun(true)) {
         this.q.push(test, this.onTestComplete.bind(this));
@@ -595,15 +618,19 @@ TestRunner.prototype = {
     var suffix;
 
     if (this.serial) {
-      prefix = "\n(" + (this.passedTests.length + this.failedTests.length) + " / " + this.numTests + ")";
+      prefix = "\n(" + (this.passedTests.length + this.failedTests.length) + " / "
+        + this.numTests + ")";
       suffix = "\n";
     } else {
-      prefix = "(" + (this.passedTests.length + this.failedTests.length) + " / " + this.numTests + ") <-- Worker " + test.workerIndex;
+      prefix = "(" + (this.passedTests.length + this.failedTests.length) + " / "
+        + this.numTests + ") <-- Worker " + test.workerIndex;
       suffix = "";
     }
 
     var requeueNote = testRequeued ? clc.cyanBright("(will retry)") : "";
-    console.log(prefix + " " + (successful ? clc.greenBright("PASS ") : clc.redBright("FAIL ")) + requeueNote + " " + test.toString() + " " + suffix);
+    console.log(prefix + " "
+      + (successful ? clc.greenBright("PASS ") : clc.redBright("FAIL ")) + requeueNote + " "
+      + test.toString() + " " + suffix);
 
     this.checkBuild();
   },
@@ -632,17 +659,21 @@ TestRunner.prototype = {
     } else if (this.strictness === strictness.BAIL_EARLY) {
       // --bail_early
       // Bail on a threshold. By default, if we've run at least 10 tests
-      // and at least 10% of them (1) have failed, we bail out early. 
-      // This allows for useful data-gathering for debugging or trend 
+      // and at least 10% of them (1) have failed, we bail out early.
+      // This allows for useful data-gathering for debugging or trend
       // analysis if we don't want to just bail on the first failed test.
 
       var sumAttempts = function (memo, test) { return memo + test.attempts; };
-      var totalAttempts = _.reduce(this.passedTests, sumAttempts, 0) + _.reduce(this.failedTests, sumAttempts, 0);
+      var totalAttempts = _.reduce(this.passedTests, sumAttempts, 0)
+        + _.reduce(this.failedTests, sumAttempts, 0);
 
-      // Failed attempts are not just the sum of all failed attempts but also 
+      // Failed attempts are not just the sum of all failed attempts but also
       // of successful tests that eventually passed (i.e. total attempts - 1).
-      var sumExtraAttempts = function (memo, test) { return memo + Math.max(test.attempts - 1, 0); };
-      var failedAttempts = _.reduce(this.failedTests, sumAttempts, 0) + _.reduce(this.passedTests, sumExtraAttempts, 0);
+      var sumExtraAttempts = function (memo, test) {
+        return memo + Math.max(test.attempts - 1, 0);
+      };
+      var failedAttempts = _.reduce(this.failedTests, sumAttempts, 0)
+        + _.reduce(this.passedTests, sumExtraAttempts, 0);
 
       // Fail to total work ratio.
       var ratio = failedAttempts / totalAttempts;

@@ -1,8 +1,10 @@
+"use strict";
+
 var Q = require("q");
 
-var BaseListener = function () {
-  
-};
+function BaseListener() {
+
+}
 
 BaseListener.prototype = {
 
@@ -12,7 +14,7 @@ BaseListener.prototype = {
     return deferred.promise;
   },
 
-  listenTo: function (testRun, source) {
+  listenTo: function (/* testRun, source */) {
 
   },
 

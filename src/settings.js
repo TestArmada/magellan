@@ -1,13 +1,17 @@
-var fs = require("fs");
+"use strict";
+
+/*eslint-disable no-magic-numbers*/
+
 var margs = require("./margs");
 var argv = margs.argv;
 var env = process.env;
 
 // Allow an external build id (eg: from CI system, for example) to be used. If we're not given one,
 // we generate a random build id instead. NOTE: This build id must work as a part of a filename.
-var buildId = argv.external_build_id || "magellan-" + Math.round(Math.random() * 9999999999).toString(16);
+var buildId = argv.external_build_id || "magellan-"
+  + Math.round(Math.random() * 9999999999).toString(16);
 
-// Create a temporary directory for temporary child build assets like configuration, screenshots, etc.
+// Create a temporary directory for child build assets like configuration, screenshots, etc.
 var mkdirSync = require("./mkdir_sync");
 var TEMP_DIR = argv.temp_dir || "./temp";
 var path = require("path");

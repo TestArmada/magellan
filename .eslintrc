@@ -7,5 +7,5 @@ rules:
   "operator-assignment": 0
   "func-style": 0
   "no-extra-bind": 0
-  "max-params": [2, 4]
+  "max-params": [2, 7]
   "max-statements": 0

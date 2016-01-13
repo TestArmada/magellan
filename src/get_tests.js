@@ -1,5 +1,5 @@
-var fs = require("fs");
-var path  = require("path");
+"use strict";
+
 var testFilter = require("./test_filter");
 var settings = require("./settings");
 
