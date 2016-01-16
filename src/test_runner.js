@@ -95,12 +95,12 @@ function TestRunner(tests, options) {
   this.allocator = options.allocator;
 
   // For each actual test path, split out
-  this.tests = _.flatten(tests.map(function (testPath) {
+  this.tests = _.flatten(tests.map(function (testLocator) {
     return options.browsers.map(function (requestedBrowser) {
       // Note: For non-sauce browsers, this can come back empty, which is just fine.
       var sauceBrowserSettings = sauceBrowsers.browser(requestedBrowser.browserId,
         requestedBrowser.resolution, requestedBrowser.orientation);
-      return new Test(testPath, requestedBrowser, sauceBrowserSettings, self.MAX_TEST_ATTEMPTS);
+      return new Test(testLocator, requestedBrowser, sauceBrowserSettings, self.MAX_TEST_ATTEMPTS);
     });
   }));
 
@@ -425,7 +425,7 @@ TestRunner.prototype = {
         tempAssetPath: tempAssetPath,
         test: test,
         // FIXME: update testrun implementations to dig into this
-        path: test.path,
+        locator: test.locator,
         seleniumPort: worker.portOffset + 1,
         mockingPort: worker.portOffset,
         tunnelId: worker.tunnelId,
