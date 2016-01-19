@@ -1,1 +1,0 @@
-module.exports = require("../lib/mocha_tag_filter");

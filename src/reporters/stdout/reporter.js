@@ -1,3 +1,5 @@
+"use strict";
+
 /*
 * Stdout Reporter
 *
@@ -5,7 +7,6 @@
 * for easier live debugging at the console.
 */
 
-var Q = require("q");
 var util = require("util");
 var BaseReporter = require("../reporter");
 

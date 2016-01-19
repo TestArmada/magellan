@@ -5,6 +5,8 @@ var settings = require("../src/settings");
 var WorkerAllocator = require("../src/worker_allocator");
 
 settings.framework = "magellan-fake";
+settings.testFramework = require("../test_support/magellan-selftest-plugin/index");
+settings.testFramework.initialize({});
 
 var MAX_WORKERS = 1;
 

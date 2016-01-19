@@ -1,9 +1,16 @@
 #!/usr/bin/env node
 
+"use strict";
+/*eslint-disable no-magic-numbers*/
+/*eslint-disable global-require*/
+
 // Note: this script assumes you run this from the same directory as where
 // the package.json that contains magellan resides. In addition
 // configuration must either be explicitly specified relative to that directory
 // or absolutely (or exist implicitly in the default location)
+
+var project = require("../package.json");
+console.log("Magellan " + project.version);
 
 var path = require("path");
 var margs = require("../src/margs");
@@ -13,7 +20,7 @@ var getTests = require("../src/get_tests");
 var testFilters = require("../src/test_filter");
 var WorkerAllocator = require("../src/worker_allocator");
 var SauceWorkerAllocator = require("../src/sauce/worker_allocator");
-var browserOptions = require("../src/detect-browsers");
+var browserOptions = require("../src/detect_browsers");
 var settings = require("../src/settings");
 var Q = require("q");
 var sauceSettings = require("../src/sauce/settings");
@@ -23,7 +30,7 @@ var browsers = require("../src/sauce/browsers");
 var loadRelativeModule = require("../src/util/load_relative_module");
 
 var isSauce = margs.argv.sauce ? true : false;
-var isNodeBased = margs.argv.framework === "mocha";
+var isNodeBased = margs.argv.framework && margs.argv.framework.indexOf("mocha") > -1;
 
 var debug = margs.argv.debug || false;
 var useSerialMode = margs.argv.serial;
@@ -31,6 +38,42 @@ var MAX_TEST_ATTEMPTS = parseInt(margs.argv.max_test_attempts) || 3;
 var selectedBrowsers;
 var workerAllocator;
 var MAX_WORKERS;
+
+//
+// Initialize Framework Plugins
+// ============================
+//
+
+// We translate old names like "mocha" to the new module names for the
+// respective plugins that provide support for those frameworks. Officially,
+// moving forward, we should specify our framework (in magellan.json)
+var legacyFrameworkNameTranslations = {
+  "rowdy-mocha": "testarmada-magellan-mocha-plugin",
+  "vanilla-mocha": "testarmada-magellan-mocha-plugin",
+  "nightwatch": "testarmada-magellan-nightwatch-plugin"
+};
+
+if (legacyFrameworkNameTranslations[settings.framework]) {
+  settings.framework = legacyFrameworkNameTranslations[settings.framework];
+}
+
+var frameworkLoadException;
+try {
+  //
+  // HELP WANTED: If someone knows how to do this more gracefully, please contribute!
+  //
+  var frameworkModulePath = "./node_modules/" + settings.framework + "/index";
+  settings.testFramework = require(path.resolve(frameworkModulePath));
+} catch (e) {
+  frameworkLoadException = e;
+}
+
+var frameworkInitializationException;
+try {
+  settings.testFramework.initialize(margs.argv);
+} catch (e) {
+  frameworkInitializationException = e;
+}
 
 // Show help and exit if it's asked for
 if (margs.argv.help) {
@@ -52,6 +95,26 @@ if (margs.argv.list_browsers) {
     console.log(err.stack);
   });
   return;
+}
+
+if (!settings.testFramework) {
+  console.error(clc.redBright("Error: Could not start Magellan."));
+  if (frameworkLoadException) {
+    console.error(clc.redBright("Error: Could not load the testing framework plugin '"
+      + settings.framework + "'."
+      + "\nCheck and make sure your package.json includes a module named '"
+      + settings.framework + "'."
+      + "\nIf it does not, you can remedy this by typing:"
+      + "\n\nnpm install --save " + settings.framework));
+    console.log(frameworkLoadException);
+  } else if (frameworkInitializationException) {
+    console.error(clc.redBright("Error: Could not initialize the testing framework plugin '"
+      + settings.framework + "'."
+      + "\nThis plugin was found and loaded, but an error occurred during initialization:"));
+    console.log(frameworkInitializationException);
+  }
+
+  process.exit(1);
 }
 
 //
@@ -92,6 +155,7 @@ var admiralBuildSettings = require("../src/reporters/admiral/settings");
 if (admiralBuildSettings.enabled) {
   var admiral = require("../src/reporters/admiral/reporter");
   admiral.setConfig(admiralBuildSettings);
+  /*eslint-disable new-cap*/
   var admiralReporter = new admiral.reporter();
   listeners.push(admiralReporter);
 }
@@ -157,7 +221,8 @@ var startSuite = function () {
 
   workerAllocator.initialize(function (err) {
     if (err) {
-      console.error(clc.redBright("Could not start Magellan. Got error while initializing worker allocator"));
+      console.error(clc.redBright("Could not start Magellan. Got error while initializing"
+        + " worker allocator"));
       deferred.reject(err);
       return;
     }
@@ -173,8 +238,8 @@ var startSuite = function () {
 
       listeners: listeners,
 
-      bailFast: (margs.argv.bail_fast ? true : false),
-      bailOnThreshold: (margs.argv.bail_early ? true : false),
+      bailFast: margs.argv.bail_fast ? true : false,
+      bailOnThreshold: margs.argv.bail_early ? true : false,
 
       serial: useSerialMode,
 
@@ -188,7 +253,7 @@ var startSuite = function () {
         });
       },
 
-      onFailure: function (failedTests) {
+      onFailure: function (/*failedTests*/) {
         workerAllocator.teardown(function () {
           // Failed tests are not a failure in Magellan itself, so we pass an empty error
           // here so that we don't confuse the user. Magellan already outputs a failure
@@ -196,7 +261,7 @@ var startSuite = function () {
           deferred.reject(null);
         });
       }
-    })
+    });
 
     testRunner.start();
 
@@ -205,15 +270,13 @@ var startSuite = function () {
   return deferred.promise;
 };
 
-var exitCode = 0;
-
 browsers.initialize(isSauce)
   .then(function () {
     if (margs.argv.device_additions) {
       browsers.addDevicesFromFile(margs.argv.device_additions);
     }
   })
-  .then(browserOptions.detectFromCLI.bind(this, margs.argv, isSauce, isNodeBased))
+  .then(browserOptions.detectFromCLI.bind({}, margs.argv, isSauce, isNodeBased))
   .then(function (_selectedBrowsers) {
     selectedBrowsers = _selectedBrowsers;
     if (_selectedBrowsers.length === 0) {
@@ -223,17 +286,15 @@ browsers.initialize(isSauce)
         process.exit(1);
       });
       return;
-    } else {
-      if (debug) {
-        console.log("Selected browsers: ");
-        console.log(_selectedBrowsers.map(function (b) {
-          return [
-            b.browserId,
-            b.resolution ? b.resolution : "(any resolution)",
-            b.orientation ? b.orientation : "(any orientation)"
-          ].join(" ");
-        }).join("\n"));
-      }
+    } else if (debug) {
+      console.log("Selected browsers: ");
+      console.log(_selectedBrowsers.map(function (b) {
+        return [
+          b.browserId,
+          b.resolution ? b.resolution : "(any resolution)",
+          b.orientation ? b.orientation : "(any orientation)"
+        ].join(" ");
+      }).join("\n"));
     }
   })
   .then(function () {
@@ -242,17 +303,20 @@ browsers.initialize(isSauce)
     // =============
     //
     // Non-sauce mode:
-    //   Default to 8 workers if we're running phantomjs and *only* phantomjs, otherwise 3 if other browsers are involved
-    //   Default to 1 worker in serial mode. 
+    //   Default to 8 workers if we're running phantomjs and *only* phantomjs,
+    //                otherwise 3 if other browsers are involved
+    //   Default to 1 worker in serial mode.
     //
     // Sauce mode:
     //   Default to 3 workers in parallel mode (default).
-    //   Default to 1 worker in serial mode. 
+    //   Default to 1 worker in serial mode.
     //
+    /*eslint-disable no-extra-parens*/
     if (isSauce) {
       MAX_WORKERS = useSerialMode ? 1 : (parseInt(margs.argv.max_workers) || 3);
     } else {
-      var DEFAULT_MAX_WORKERS = (selectedBrowsers.length === 1 && selectedBrowsers[0] === "phantomjs") ? 8 : 3;
+      var DEFAULT_MAX_WORKERS = (selectedBrowsers.length === 1
+        && selectedBrowsers[0] === "phantomjs") ? 8 : 3;
       MAX_WORKERS = useSerialMode ? 1 : (parseInt(margs.argv.max_workers) || DEFAULT_MAX_WORKERS);
     }
 
@@ -263,12 +327,18 @@ browsers.initialize(isSauce)
     }
   })
   .then(initializeListeners)
+  // NOTE: if we don't end up in catch() below, magellan exits with status code 0 naturally
   .then(startSuite)
   .catch(function (err) {
-    console.error(clc.redBright("Error initializing listeners (i.e. reporters, setup/teardown tasks): "));
     if (err) {
+      console.error(clc.redBright("Error initializing listeners (i.e. reporters,"
+        + " setup/teardown tasks): "));
       console.error(err.toString());
       console.log(err.stack);
+    } else {
+      // No err object means we didn't have an internal crash while setting up / tearing down
     }
+
+    // Fail the test suite or fail because of an internal crash
     process.exit(1);
   });

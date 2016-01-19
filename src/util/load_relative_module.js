@@ -1,3 +1,5 @@
+"use strict";
+
 var path = require("path");
 
 module.exports = function (mPath) {
@@ -12,6 +14,7 @@ module.exports = function (mPath) {
 
   var RequiredModule;
   try {
+    /*eslint global-require: 0*/
     RequiredModule = require(resolvedRequire);
   } catch (e) {
     if (e.code === "MODULE_NOT_FOUND") {
@@ -21,5 +24,5 @@ module.exports = function (mPath) {
     }
   }
 
-  return (new RequiredModule());
+  return new RequiredModule();
 };
