@@ -17,7 +17,7 @@ FakeTestrun.prototype.getEnvironment = function (env) {
 };
 
 FakeTestrun.prototype.getArguments = function () {
-  return [this.path];
+  return [this.locator.toString()];
 };
 
 module.exports = FakeTestrun;
