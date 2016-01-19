@@ -4,8 +4,8 @@ var TEST_STATUS_NEW = 1;
 var TEST_STATUS_FAILED = 2;
 var TEST_STATUS_SUCCESSFUL = 3;
 
-function Test(path, browser, sauceBrowserSettings, maxAttempts) {
-  this.path = path;
+function Test(locator, browser, sauceBrowserSettings, maxAttempts) {
+  this.locator = locator;
   this.maxAttempts = maxAttempts;
 
   this.attempts = 0;
@@ -51,7 +51,7 @@ Test.prototype.stopClock = function () {
 
 // return an unambiguous representation of this test: path, browserId, resolution, orientation
 Test.prototype.toString = function () {
-  return this.path + " @" + this.browser.browserId
+  return this.locator.toString() + " @" + this.browser.browserId
     + " " + (this.browser.resolution ? "res:" + this.browser.resolution : "")
     + (this.browser.orientation ? "orientation:" + this.browser.orientation : "");
 };
