@@ -114,6 +114,7 @@ function TestRunner(tests, options) {
   this.numTests = this.tests.length;
   this.passedTests = [];
   this.failedTests = [];
+  this.pendingTests = [];
 
   // Set up a worker queue to process tests in parallel
   this.q = async.queue(this.stageTest.bind(this), this.MAX_WORKERS);
@@ -152,6 +153,13 @@ TestRunner.prototype = {
   // Prepare a test to be run. Find a worker for the test and send it off to be run.
   stageTest: function (test, onTestComplete) {
     var self = this;
+
+    if (test.locator.pending) {
+      test.pending();
+      onTestComplete(null, test);
+      return;
+    }
+
     this.allocator.get(function (error, worker) {
       if (!error) {
         this.runTest(test, worker)
@@ -448,6 +456,11 @@ TestRunner.prototype = {
     return deferred.promise;
   },
 
+  // Return the number of tests run (success, fail, pending)
+  getRunTotal: function () {
+    return this.passedTests.length + this.failedTests.length + this.pendingTests.length;
+  },
+
   gatherTrends: function () {
     if (settings.gatherTrends) {
       console.log("Updating trends ...");
@@ -514,10 +527,14 @@ TestRunner.prototype = {
     console.log(" Successful: " + this.passedTests.length + " / " + this.numTests);
 
     if (this.failedTests.length > 0) {
-      console.log("     Failed: " + this.failedTests.length + " / " + this.numTests);
+      console.log("     Failed: " + this.pendingTests.length + " / " + this.numTests);
     }
 
-    var skipped = this.numTests - (this.passedTests.length + this.failedTests.length);
+    if (this.pendingTests.length > 0) {
+      console.log("    Pending: " + this.failedTests.length + " / " + this.numTests);
+    }
+
+    var skipped = this.numTests - (this.getRunTotal());
     if (this.hasBailed && skipped > 0) {
       console.log("    Skipped: " + skipped);
     }
@@ -584,6 +601,7 @@ TestRunner.prototype = {
     }
 
     var successful = test.status === Test.TEST_STATUS_SUCCESSFUL;
+    var pending = test.status === Test.TEST_STATUS_PENDING;
     var testRequeued = false;
 
     if (successful) {
@@ -591,6 +609,8 @@ TestRunner.prototype = {
       // list (just in case it's a test we just retried after a previous failure).
       this.passedTests.push(test);
       this.failedTests = _.difference(this.failedTests, this.passedTests);
+    } else if (pending) {
+      this.pendingTests.push(test);
     } else {
 
       if (settings.gatherTrends) {
@@ -618,19 +638,19 @@ TestRunner.prototype = {
     var suffix;
 
     if (this.serial) {
-      prefix = "\n(" + (this.passedTests.length + this.failedTests.length) + " / "
+      prefix = "\n(" + (this.getRunTotal()) + " / "
         + this.numTests + ")";
       suffix = "\n";
     } else {
-      prefix = "(" + (this.passedTests.length + this.failedTests.length) + " / "
+      prefix = "(" + (this.getRunTotal()) + " / "
         + this.numTests + ") <-- Worker " + test.workerIndex;
       suffix = "";
     }
 
     var requeueNote = testRequeued ? clc.cyanBright("(will retry)") : "";
-    console.log(prefix + " "
-      + (successful ? clc.greenBright("PASS ") : clc.redBright("FAIL ")) + requeueNote + " "
-      + test.toString() + " " + suffix);
+    var statusText = successful ? clc.greenBright("PASS") :
+        pending ? clc.yellowBright("PENDING") : clc.redBright("FAIL");
+    console.log([prefix, statusText, requeueNote, test.toString(), suffix].join(" "));
 
     this.checkBuild();
   },
