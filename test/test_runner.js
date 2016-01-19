@@ -72,11 +72,7 @@ describe("test runner", function () {
       });
     });
 
-    it("runs root level hooks", function () {
-      if (!global._magellan.rootLevelHook) {
-        throw new Error('Root level hook not run');
-      }
-    });
+
   });
 
   describe("multi-worker", function () {
