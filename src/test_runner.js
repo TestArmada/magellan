@@ -527,11 +527,11 @@ TestRunner.prototype = {
     console.log(" Successful: " + this.passedTests.length + " / " + this.numTests);
 
     if (this.failedTests.length > 0) {
-      console.log("     Failed: " + this.pendingTests.length + " / " + this.numTests);
+      console.log("     Failed: " + this.failedTests.length + " / " + this.numTests);
     }
 
     if (this.pendingTests.length > 0) {
-      console.log("    Pending: " + this.failedTests.length + " / " + this.numTests);
+      console.log("    Pending: " + this.pendingTests.length + " / " + this.numTests);
     }
 
     var skipped = this.numTests - (this.getRunTotal());
