@@ -5,7 +5,7 @@ var settings = require("./settings");
 
 module.exports = function (filters) {
   var getTests = settings.testFramework.iterator;
-  var allFiles = getTests();
+  var allFiles = getTests(settings);
 
   return testFilter.filter(allFiles, filters);
 };
