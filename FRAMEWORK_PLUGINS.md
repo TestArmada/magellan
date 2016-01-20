@@ -22,6 +22,8 @@ A magellan test framework plugin is just a node module that exports the followin
   TestRun: //<< constructor for TestRun class (see "TestRun Class" below) >>
 
   filters: //<< test filter definitions (see "Test Filters" below) >>
+  
+  help: //<< command line help definitions (see "Command Line Help" below) >>
 }
 ```
 
@@ -147,3 +149,37 @@ filters: {
   }
 },
 ```
+
+Command Line Help
+=================
+
+Your test framework plugin can expose a help object which will explain the usage of the command line options
+added by your plugin. Here's an example, from the nightwatch plugin:
+
+```javascript
+{
+  // document the --tags option
+  tags: {
+    // is rendered as --tags=tag1,tag2
+    example: "tag1,tag2",
+    description: "Run all tests that match a list of comma-delimited tags (eg: tag1,tag2)"
+  },
+  group: {
+    // is rendered as --group=prefix/path
+    example: "prefix/path",
+    description: "Run all tests that match a path prefix like ./tests/smoke"
+  },
+  test: {
+    // is rendered as --test=path/to/test.js
+    example: "path/to/test.js",
+    description: "Run one test with a path like ./tests/smoke/test2.js"
+  },
+  nightwatch_config: {
+    example: "path",
+    description: "Specify nightwatch.json location (magellan-nightwatch)"
+  }
+};
+```
+
+Note that your plugin has access to magellan's `argv` object via `initialize()` (see above). You can
+document any switches your plugin supports in the above help object.
