@@ -130,8 +130,20 @@ We recommend adding at least `--tags`, `--group`, and `--test` to preserve user'
 
 ```javascript
 filters: {
-  tags: function (tags, testLocator) { /* return true if testLocator satisfies tags from --tags=t1,t2,.. */ },
-  group: function (prefix, testLocator) { /* return true if testLocator satisfies prefix from --group=a/b/c*/ },
-  test: function (testidentity, testLocator) { /* return true if testLocator is the same as --test=path-or-name */ }
+
+  // Adds --tags=xxxx command line switch
+  tags: function (tags, testLocator) {
+    /* return true if testLocator satisfies tags from --tags=t1,t2,.. */
+  },
+
+  // Adds --group=xxxx command line switch
+  group: function (prefix, testLocator) {
+    /* return true if testLocator satisfies prefix from --group=a/b/c*/
+  },
+
+  // Adds --test=xxxx command line switch
+  test: function (testidentity, testLocator) {
+    /* return true if testLocator is the same as --test=path-or-name */
+  }
 },
 ```
