@@ -421,17 +421,21 @@ TestRunner.prototype = {
       mkdirSync(tempAssetPath);
 
       testRun = new TestRunClass({
-        buildId: this.buildId,
+        // Temporary asset path that Magellan guarantees exists and only belongs to this
+        // individual test run. Temporary files, logs, screenshots, etc can be put here.
         tempAssetPath: tempAssetPath,
-        test: test,
-        // FIXME: update testrun implementations to dig into this
+
+        // Magellan environment id (i.e. id of browser, id of device, version, etc.),
+        // typically reflects one of the items from --browsers=item1,item2,item3 options
+        environmentId: test.browser.browserId,
         locator: test.locator,
+
         seleniumPort: worker.portOffset + 1,
         mockingPort: worker.portOffset,
+
         tunnelId: worker.tunnelId,
         sauceSettings: this.sauceSettings,
-        sauceBrowserSettings: test.sauceBrowserSettings,
-        debug: this.debug
+        sauceBrowserSettings: test.sauceBrowserSettings
       });
     } catch (e) {
       deferred.reject(e);

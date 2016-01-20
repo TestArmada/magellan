@@ -1,7 +1,6 @@
 /*
   Fake testing for unit testing purposes
 */
-var Q = require("q");
 var _ = require("lodash");
 
 var FakeTestrun = function (options) {
