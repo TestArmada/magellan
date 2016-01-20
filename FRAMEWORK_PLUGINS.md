@@ -19,9 +19,9 @@ A magellan test framework plugin is just a node module that exports the followin
 
   iterator: //<< returns list of tests (see "Generating Lists of Tests" below) >>
 
-  TestRun: //<< constructor for TestRun class (see below) >>
+  TestRun: //<< constructor for TestRun class (see "TestRun Class" below) >>
 
-  filters: //<< test filter definitions, >>
+  filters: //<< test filter definitions (see "Test Filters" below) >>
 }
 ```
 
@@ -120,4 +120,18 @@ properties:
   // Saucelabs desired capabilities object
   sauceBrowserSettings: {}
 }
+```
+
+Test Filters
+============
+
+The `filters` object allows for a test framework plugin to add command line switches related to filtering tests.
+We recommend adding at least `--tags`, `--group`, and `--test` to preserve user's expectations of 
+
+```javascript
+filters: {
+  tags: function (tags, testLocator) { /* return true if testLocator satisfies tags from --tags=t1,t2,.. */ },
+  group: function (prefix, testLocator) { /* return true if testLocator satisfies prefix from --group=a/b/c*/ },
+  test: function (testidentity, testLocator) { /* return true if testLocator is the same as --test=path-or-name */ }
+},
 ```
