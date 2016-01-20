@@ -14,7 +14,7 @@ BaseListener.prototype = {
     return deferred.promise;
   },
 
-  listenTo: function (/* testRun, source */) {
+  listenTo: function (/* testRun, test, source */) {
 
   },
 

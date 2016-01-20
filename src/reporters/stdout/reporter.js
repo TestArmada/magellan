@@ -15,7 +15,7 @@ var Reporter = function () {
 
 util.inherits(Reporter, BaseReporter);
 
-Reporter.prototype.listenTo = function (testRun, source) {
+Reporter.prototype.listenTo = function (testRun, test, source) {
   // Stream stdout and stderr directly to stdout, assuming this source is
   // a process that has those properties.
   if (source.stdout) {

@@ -69,10 +69,10 @@ Reporter.prototype.initialize = function () {
   return deferred.promise;
 };
 
-Reporter.prototype.listenTo = function (testRun, source) {
+Reporter.prototype.listenTo = function (testRun, test, source) {
   // Every time a message is received regarding this test, we also get the test object
   // itself so that we're able to reason about retries, worker index, etc.
-  source.addListener("message", this._handleMessage.bind(this, testRun));
+  source.addListener("message", this._handleMessage.bind(this, testRun, test));
 };
 
 /*
@@ -105,7 +105,7 @@ Reporter.prototype.flush = function () {
   }
 };
 
-Reporter.prototype._handleMessage = function (testRun, message) {
+Reporter.prototype._handleMessage = function (testRun, test, message) {
   if (message.type === "worker-status") {
     if (message.status === "finished") {
 
