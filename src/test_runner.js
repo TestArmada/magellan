@@ -437,6 +437,11 @@ TestRunner.prototype = {
         sauceSettings: this.sauceSettings,
         sauceBrowserSettings: test.sauceBrowserSettings
       });
+
+      // FIXME: admiral and screenshot reporters and test_runner depend on this property,
+      // but plugins no longer have access to this internal magellan object. There needs
+      // to be a better way to pass the identity of the test around for the purposes of reporters.
+      testRun.test = test;
     } catch (e) {
       deferred.reject(e);
     }
