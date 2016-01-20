@@ -421,13 +421,15 @@ TestRunner.prototype = {
       mkdirSync(tempAssetPath);
 
       testRun = new TestRunClass({
-        // The id of this build, used by some reporters to identify the overall suite run.
-        // This must appear as an externally accessible property on the TestRun instance
+        // The id of this build, used by some reporters to identify the overall suite run. This
+        // can also be used by test run implementations to identify an individual suite run as
+        // part of some larger suite run.
+        // NOTE: This must appear as an externally accessible property on the TestRun instance
         buildId: this.buildId,
 
         // Temporary asset path that Magellan guarantees exists and only belongs to this
         // individual test run. Temporary files, logs, screenshots, etc can be put here.
-        // This must appear as an externally accessible property on the TestRun instance
+        // NOTE: This must appear as an externally accessible property on the TestRun instance
         tempAssetPath: tempAssetPath,
 
         // Magellan environment id (i.e. id of browser, id of device, version, etc.),
