@@ -93,7 +93,7 @@ properties:
   // can also be used by test run implementations to identify an individual suite run as
   // part of some larger suite run.
   // NOTE: This must appear as an externally accessible property on the TestRun instance
-  buildId: this.buildId,
+  buildId: "...",
 
   // Temporary asset path that Magellan guarantees exists and only belongs to this
   // individual test run. Temporary files, logs, screenshots, etc can be put here.
