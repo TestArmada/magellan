@@ -292,12 +292,10 @@ function Reporter() {
   // Defined here for the moment so that we have all the above functions in scope
   // and don't need to touch any of the previously-working admiral code.
 
-  this._handleMessage = function (testRun, message) {
+  this._handleMessage = function (test, message) {
     if (this.ignoreMessages) {
       return;
     }
-
-    var test = testRun.test;
 
     //
     // admiral's test lifecycle model:
@@ -375,10 +373,10 @@ Reporter.prototype = {
     return deferred.promise;
   },
 
-  listenTo: function (testRun, source) {
+  listenTo: function (testRun, test, source) {
     // Every time a message is received regarding this test, we also get the test object
     // itself so that we're able to reason about retries, worker index, etc.
-    source.addListener("message", this._handleMessage.bind(this, testRun));
+    source.addListener("message", this._handleMessage.bind(this, test));
   },
 
   flush: function () {
