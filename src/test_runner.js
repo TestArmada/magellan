@@ -254,8 +254,8 @@ TestRunner.prototype = {
       // These messages are sent with process.send()
       this.listeners.forEach(function (listener) {
         if (listener.listenTo) {
-          listener.listenTo(testRun, childProcess);
-          listener.listenTo(testRun, crashEmitter);
+          listener.listenTo(testRun, test, childProcess);
+          listener.listenTo(testRun, test, crashEmitter);
         }
       });
     } catch (e) {
