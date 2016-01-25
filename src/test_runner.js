@@ -425,7 +425,7 @@ TestRunner.prototype = {
       // get exact selenium-server version
       var seleniumServerVersion = null;
       if(pkg.dependencies["selenium-server"]){
-        seleniumServerVersion = require(path.join(__dirname, "/node_modules/selenium-server/package.json")).version;
+        seleniumServerVersion = require(path.join(process.cwd(), "/node_modules/selenium-server/package.json")).version;
       }
 
       testRun = new TestRunClass({
