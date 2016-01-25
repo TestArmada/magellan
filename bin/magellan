@@ -87,7 +87,7 @@ try {
 if (margs.argv.help) {
   var help = require("../src/cli_help");
   help.help();
-  process.exit(0);
+  process.exit(0); //eslint-disable-line no-process-exit
   return;
 }
 
@@ -97,7 +97,7 @@ if (margs.argv.list_browsers) {
       browsers.addDevicesFromFile(margs.argv.device_additions);
     }
     browsers.listBrowsers();
-    process.exit(0);
+    process.exit(0); //eslint-disable-line no-process-exit
   }).catch(function (err) {
     console.log("Couldn't fetch browsers. Error: ", err);
     console.log(err.stack);
@@ -122,7 +122,7 @@ if (!settings.testFramework) {
     console.log(frameworkInitializationException);
   }
 
-  process.exit(1);
+  process.exit(1); //eslint-disable-line no-process-exit
 }
 
 //
@@ -206,7 +206,7 @@ var tests = getTests(testFilters.detectFromCLI(margs.argv));
 
 if (_.isEmpty(tests)) {
   console.log("Error: no tests found");
-  process.exit(1);
+  process.exit(1);  //eslint-disable-line no-process-exit
 }
 
 var initializeListeners = function () {
@@ -292,12 +292,9 @@ browsers.initialize(isSauce)
   .then(function (_selectedBrowsers) {
     selectedBrowsers = _selectedBrowsers;
     if (_selectedBrowsers.length === 0) {
-      console.log("\nError: To use --sauce mode, you need to specify a browser\n");
-      browsers.initialize(true).then(function () {
-        browsers.listBrowsers();
-        process.exit(1);
-      });
-      return;
+      console.log(clc.redBright("\nError: To use --sauce mode, you need to specify a browser."
+        + "\nTo see a list of sauce browsers, use the --list_browsers option.\n"));
+      throw new Error("No browser specified for Sauce support");
     } else if (debug) {
       console.log("Selected browsers: ");
       console.log(_selectedBrowsers.map(function (b) {
@@ -343,14 +340,15 @@ browsers.initialize(isSauce)
   .then(startSuite)
   .catch(function (err) {
     if (err) {
-      console.error(clc.redBright("Error initializing listeners (i.e. reporters,"
-        + " setup/teardown tasks): "));
+      console.error(clc.redBright("Error initializing Magellan"));
+      console.log(clc.redBright("\nError description:"));
       console.error(err.toString());
+      console.log(clc.redBright("\nError stack trace:"));
       console.log(err.stack);
     } else {
       // No err object means we didn't have an internal crash while setting up / tearing down
     }
 
     // Fail the test suite or fail because of an internal crash
-    process.exit(1);
+    process.exit(1); //eslint-disable-line no-process-exit
   });
