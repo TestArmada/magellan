@@ -420,6 +420,8 @@ TestRunner.prototype = {
         + childBuildId + "__temp_assets");
       mkdirSync(tempAssetPath);
 
+      var pkg = require(path.join(__dirname, "package.json"));
+
       testRun = new TestRunClass({
         // The id of this build, used by some reporters to identify the overall suite run. This
         // can also be used by test run implementations to identify an individual suite run as
@@ -441,6 +443,11 @@ TestRunner.prototype = {
 
         seleniumPort: worker.portOffset + 1,
         mockingPort: worker.portOffset,
+
+        // Nightwatch framework usage only -  Extra params needed to rewrite nightwatch.json
+        seleniumVersion : pkg.dependencies["selenium-server"],
+        chromedriverVersion: pkg.dependencies["chromedriver"],
+        phantomjsVersion: pkg.dependencies["phantomjs"],
 
         tunnelId: worker.tunnelId,
         sauceSettings: this.sauceSettings,
