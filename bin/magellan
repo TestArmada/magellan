@@ -16,6 +16,9 @@ var yargs = require("yargs");
 var defaultConfigFilePath = "./magellan.json";
 var configFilePath = yargs.argv.config;
 var margs = require("marge");
+
+// NOTE: marge can throw an error here if --config points at a file that doesn't exist
+// FIXME: handle this error nicely instead of printing an ugly stack trace
 margs.init(defaultConfigFilePath, configFilePath);
 
 var path = require("path");
@@ -137,6 +140,8 @@ var listeners = [];
 // This is merely a listener like any other reporter, but with a developer-friendly name.
 
 if (margs.argv.setup_teardown) {
+  // NOTE: loadRelativeModule can throw an error here if the setup module doesn't exist
+  // FIXME: handle this error nicely instead of printing an ugly stack trace
   listeners.push(loadRelativeModule(margs.argv.setup_teardown));
 }
 
@@ -149,6 +154,8 @@ if (margs.argv.setup_teardown) {
 // either npm modules defined in package.json or to paths relative to the current
 // working directory of the calling script or shell.
 if (margs.argv.reporters && _.isArray(margs.argv.reporters)) {
+  // NOTE: loadRelativeModule can throw an error here if any of the reporter modules don't exist
+  // FIXME: handle this error nicely instead of printing an ugly stack trace
   listeners = listeners.concat(margs.argv.reporters.map(loadRelativeModule));
 }
 

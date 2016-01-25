@@ -1,6 +1,7 @@
 "use strict";
 
 var path = require("path");
+var clc = require("cli-color");
 
 module.exports = function (mPath) {
   var resolvedRequire;
@@ -18,9 +19,9 @@ module.exports = function (mPath) {
     RequiredModule = require(resolvedRequire);
   } catch (e) {
     if (e.code === "MODULE_NOT_FOUND") {
-      console.error("Error while loading a module from configuration: " + resolvedRequire);
-      console.error(e);
-      process.exit(1);
+      console.error(clc.redBright("Error loading a module from user configuration."));
+      console.error(clc.redBright("Cannot find module: " + resolvedRequire));
+      throw new Error(e);
     }
   }
 
