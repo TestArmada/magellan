@@ -4,7 +4,8 @@
 //
 // Cobble together settings for sauce either from process.env or from a sauce configuration file
 
-var argv = require("../margs").argv;
+var argv = require("marge").argv;
+var clc = require("cli-color");
 
 /*eslint-disable no-magic-numbers*/
 var config = {
@@ -61,18 +62,19 @@ if (argv.sauce) {
 
     if (!config[key]) {
       if (param.required) {
-        console.log("Error! Sauce requires " + key + " to be set. Check if the environment"
-          + " variable $" + param.envKey + " is defined.");
+        console.log(clc.redBright("Error! Sauce requires " + key + " to be set. Check if the"
+          + " environment variable $" + param.envKey + " is defined."));
         valid = false;
       } else {
-        console.log("Warning! No " + key + " is set. This is set via the environment variable $"
-          + param.envKey + " . This isn't required, but can cause problems with Sauce if not set");
+        console.log(clc.yellowBright("Warning! No " + key + " is set. This is set via the"
+          + " environment variable $" + param.envKey + " . This isn't required, but can cause "
+          + "problems with Sauce if not set"));
       }
     }
   });
 
   if (!valid) {
-    process.exit(1);
+    throw new Error("Missing configuration for Saucelabs connection.");
   }
 }
 

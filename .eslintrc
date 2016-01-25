@@ -9,4 +9,3 @@ rules:
   "no-extra-bind": 0
   "max-params": [2, 7]
   "max-statements": 0
-  "no-process-exit": 0

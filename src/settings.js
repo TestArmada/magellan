@@ -2,8 +2,7 @@
 
 /*eslint-disable no-magic-numbers*/
 
-var margs = require("./margs");
-var argv = margs.argv;
+var argv = require("marge").argv;
 var env = process.env;
 
 // Allow an external build id (eg: from CI system, for example) to be used. If we're not given one,
