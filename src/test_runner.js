@@ -420,7 +420,7 @@ TestRunner.prototype = {
         + childBuildId + "__temp_assets");
       mkdirSync(tempAssetPath);
 
-      var pkg = require(path.join(__dirname, "package.json"));
+      var pkg = require(path.join(process.cwd(), "package.json"));
       
       // get exact selenium-server version
       var seleniumServerVersion = null;
