@@ -452,8 +452,8 @@ TestRunner.prototype = {
 
         // Nightwatch framework usage only -  Extra params needed to rewrite nightwatch.json
         seleniumServerVersion : seleniumServerVersion,
-        isFixingChromedriver: pkg.dependencies["chromedriver"],
-        isFixingPhantomjs: pkg.dependencies["phantomjs"],
+        isFixingChromedriver: pkg.dependencies["chromedriver"] !== undefined,
+        isFixingPhantomjs: pkg.dependencies["phantomjs"] !== undefined,
 
         tunnelId: worker.tunnelId,
         sauceSettings: this.sauceSettings,
