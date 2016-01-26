@@ -420,14 +420,6 @@ TestRunner.prototype = {
         + childBuildId + "__temp_assets");
       mkdirSync(tempAssetPath);
 
-      var pkg = require(path.join(process.cwd(), "package.json"));
-      
-      // get exact selenium-server version
-      var seleniumServerVersion = null;
-      if(pkg.dependencies["selenium-server"]){
-        seleniumServerVersion = require(path.join(process.cwd(), "/node_modules/selenium-server/package.json")).version;
-      }
-
       testRun = new TestRunClass({
         // The id of this build, used by some reporters to identify the overall suite run. This
         // can also be used by test run implementations to identify an individual suite run as
@@ -449,11 +441,6 @@ TestRunner.prototype = {
 
         seleniumPort: worker.portOffset + 1,
         mockingPort: worker.portOffset,
-
-        // Nightwatch framework usage only -  Extra params needed to rewrite nightwatch.json
-        seleniumServerVersion : seleniumServerVersion,
-        isFixingChromedriver: pkg.dependencies["chromedriver"] !== undefined,
-        isFixingPhantomjs: pkg.dependencies["phantomjs"] !== undefined,
 
         tunnelId: worker.tunnelId,
         sauceSettings: this.sauceSettings,

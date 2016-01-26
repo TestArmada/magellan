@@ -70,7 +70,15 @@ try {
 
 var frameworkInitializationException;
 try {
-  settings.testFramework.initialize(margs.argv);
+  var pkg = require(path.join(process.cwd(), "package.json"));
+
+  settings.pluginOptions = null
+  if(settings.testFramework.getPluginOptions 
+    && typeof settings.testFramework.getPluginOptions === "function"){
+    // backward support
+    settings.pluginOptions = settings.testFramework.getPluginOptions(pkg, process.cwd());
+  }
+  settings.testFramework.initialize(margs.argv, settings.pluginOptions);
 } catch (e) {
   frameworkInitializationException = e;
 }
