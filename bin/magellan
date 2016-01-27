@@ -72,14 +72,16 @@ var frameworkInitializationException;
 try {
   var pkg = require(path.join(process.cwd(), "package.json"));
 
-  settings.pluginOptions = null
-  if(settings.testFramework.getPluginOptions 
-    && typeof settings.testFramework.getPluginOptions === "function"){
+  settings.pluginOptions = null;
+  if (settings.testFramework.getPluginOptions
+    && typeof settings.testFramework.getPluginOptions === "function") {
     // backward support
-    settings.pluginOptions = settings.testFramework.getPluginOptions({
-        rootPackage: pkg, 
-        rootWorkingDirectory: process.cwd()
-      });
+    settings.pluginOptions
+      = settings.testFramework.getPluginOptions(
+        {
+          rootPackage: pkg,
+          rootWorkingDirectory: process.cwd()
+        });
   }
   settings.testFramework.initialize(margs.argv, settings.pluginOptions);
 } catch (e) {
