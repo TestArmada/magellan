@@ -154,8 +154,10 @@ var createJob = function () {
   // individual tests & browser results under one single report.
   var buildId = config.buildId;
   if (!buildId) {
-    return deferred.reject(new Error("Admiral config.buildId must be set to the current"
+    console.log("Missing configuration. Admiral settings object: ", settings);
+    deferred.reject(new Error("Admiral config.buildId must be set to the current"
       + " Jenkins build number"));
+    return deferred.promise;
   }
 
   // config.buildName is a text value that gives some descriptive meaning to this build.
@@ -164,8 +166,10 @@ var createJob = function () {
   // the developer's name.
   var buildName = config.buildName;
   if (!buildName) {
-    return deferred.reject(new Error("Admiral config.buildName must be set to the current"
+    console.log("Missing configuration. Admiral settings object: ", settings);
+    deferred.reject(new Error("Admiral config.buildName must be set to the current"
       + " build name"));
+    return deferred.promise;
   }
 
   var payload = {
@@ -175,6 +179,7 @@ var createJob = function () {
   doAction("addjob", payload,
     function (response) {
       if (!response || !response.addjob || !response.addjob.id) {
+        console.log("Debug information. Admiral settings object: ", settings);
         deferred.reject(new Error("Admiral error: Response did not include job ID. Error payload: "
           + JSON.stringify(response)));
         return;
