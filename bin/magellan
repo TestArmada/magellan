@@ -172,19 +172,6 @@ if (margs.argv.reporters && _.isArray(margs.argv.reporters)) {
   listeners = listeners.concat(margs.argv.reporters.map(loadRelativeModule));
 }
 
-
-//
-// Admiral integration (enabled if settings exist)
-//
-var admiralBuildSettings = require("../src/reporters/admiral/settings");
-if (admiralBuildSettings.enabled) {
-  var admiral = require("../src/reporters/admiral/reporter");
-  admiral.setConfig(admiralBuildSettings);
-  /*eslint-disable new-cap*/
-  var admiralReporter = new admiral.reporter();
-  listeners.push(admiralReporter);
-}
-
 //
 // Slack integration (enabled if settings exist)
 //

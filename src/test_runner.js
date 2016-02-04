@@ -333,6 +333,13 @@ TestRunner.prototype = {
           // to later send a "finished" if the test ends up crashing.
           startMessage = message;
         }
+      } else if (message.type === "selenium-session-info") {
+        //
+        //
+        // TODO: 1) read selenium session info here
+        //       2) put it into the current test object so it can be mixed in with emitted messages
+        //
+        //
       }
     });
 

@@ -25,5 +25,7 @@ module.exports = function (mPath) {
     }
   }
 
+  console.log(RequiredModule);
+
   return new RequiredModule();
 };
