@@ -185,10 +185,17 @@ if (slackSettings.enabled) {
 //
 // Serial Mode Reporter (enabled with --serial)
 //
-if (useSerialMode) {
-  var StdoutReporter = require("../src/reporters/stdout/reporter");
-  listeners.push(new StdoutReporter());
-}
+//
+//
+//
+// TODO: revive this reporter
+//
+//
+//
+// if (useSerialMode) {
+//   var StdoutReporter = require("../src/reporters/stdout/reporter");
+//   listeners.push(new StdoutReporter());
+// }
 
 //
 // Screenshot Aggregation (enabled with --aggregate_screenshots)

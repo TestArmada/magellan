@@ -242,8 +242,7 @@ TestRunner.prototype = {
     }
 
     var startMessage;
-    var workerCrashed = true;
-    var crashEmitter = new EventEmitter();
+    var statusEmitter = new EventEmitter();
     var sentry;
 
     var stdout = "";
@@ -254,10 +253,26 @@ TestRunner.prototype = {
       // These messages are sent with process.send()
       this.listeners.forEach(function (listener) {
         if (listener.listenTo) {
-          listener.listenTo(testRun, test, childProcess);
+          //
+          //
+          //
+          // TODO: still need to find a way to connect stdout/stderr from tests
+          // TODO: still need to find a way to get selenium session id from tests
+          //
+          //
+          //
+          // listener.listenTo(testRun, test, childProcess);
           listener.listenTo(testRun, test, crashEmitter);
+          listener.listenTo(testRun, test, statusEmitter);
         }
       });
+
+      statusEmitter.emit("message", {
+        type: "worker-status",
+        status: "started",
+        name: test.locator.toString()
+      });
+
     } catch (e) {
       deferred.reject(e);
       return deferred.promise;
@@ -275,28 +290,32 @@ TestRunner.prototype = {
       test.stopClock();
       clearInterval(sentry);
 
+      statusEmitter.emit("message", {
+        type: "worker-status",
+        status: "finished",
+        name: test.locator.toString(),
+        passed: code === 0,
+        metadata: {
+          //
+          //
+          //
+          //
+          // TODO: we need to determine this result URL
+          // TODO: we need to make this not necessarily sauce-centric
+          //
+          //
+          //
+          //
+          resultURL: "https://saucelabs.com/{selenium_session_id}"
+        }
+      });
+
       // Detach ALL listeners that may have been attached
       childProcess.stdout.removeAllListeners();
       childProcess.stderr.removeAllListeners();
       childProcess.stdout.unpipe();
       childProcess.stderr.unpipe();
       childProcess.removeAllListeners();
-
-      if (workerCrashed) {
-        // If we managed to get a start message from the test, then we can at least
-        // deliver a correct-looking finish message to listeners.
-        if (startMessage) {
-          // FIXME: refactor so we don't have to disable this lint rule
-          /*eslint-disable no-invalid-this*/
-          this.listeners.forEach(function () {
-            crashEmitter.emit("message", {
-              type: "worker-status",
-              name: startMessage.name,
-              status: "finished"
-            });
-          });
-        }
-      }
 
       // Resolve the promise
       deferred.resolve({
@@ -324,16 +343,9 @@ TestRunner.prototype = {
     //    to a listener if we got a "started" event from a test, i.e. we don't
     //    finish tests that we never properly started in the first place.
     //
+
     childProcess.on("message", function (message) {
-      if (message.type === "worker-status") {
-        if (message.status === "finished") {
-          workerCrashed = false;
-        } else if (message.status === "started") {
-          // Store the startmessage for this test, we'll need some of the details
-          // to later send a "finished" if the test ends up crashing.
-          startMessage = message;
-        }
-      } else if (message.type === "selenium-session-info") {
+      if (message.type === "selenium-session-info") {
         //
         //
         // TODO: 1) read selenium session info here
@@ -343,6 +355,13 @@ TestRunner.prototype = {
       }
     });
 
+    //
+    //
+    //
+    // TODO: wire these directly to the stdout reporter and sunset IPC comm link
+    //
+    //
+    //
     childProcess.stdout.on("data", function (data) {
       stdout += ("" + data);
     });

@@ -1,13 +1,3 @@
-process.send({
-  type: "test-message",
-  index: 0
-});
-
-process.send({
-  type: "test-message",
-  index: 1
-});
-
 setTimeout(function () {
   if (process.argv.filter(function (token) {
     return token.indexOf("fail") > -1;

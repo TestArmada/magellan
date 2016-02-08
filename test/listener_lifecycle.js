@@ -49,21 +49,6 @@ describe("test runner", function () {
       });
     });
 
-
-    it("receives messages from tests", function (done) {
-      this.timeout(6000);
-
-      workerAllocator.initialize(function (err) {
-        var runner = new TestRunner(["fake_test1"], _.extend({}, options, {
-          onSuccess: function () {
-            expect(listener.testMessages).to.have.length(2);
-            done();
-          }
-        }));
-        runner.start();
-      });
-    });
-
     it("initializes", function (done) {
       this.timeout(6000);
 
