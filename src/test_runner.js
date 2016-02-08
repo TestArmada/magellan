@@ -241,8 +241,12 @@ TestRunner.prototype = {
       return deferred.promise;
     }
 
-    var startMessage;
+    // Simulate some of the aspects of a node process by adding stdout and stderr streams
+    // that can be used by listeners and reporters.
     var statusEmitter = new EventEmitter();
+    statusEmitter.stdout = childProcess.stdout;
+    statusEmitter.stderr = childProcess.stderr;
+
     var sentry;
 
     var stdout = "";
@@ -253,16 +257,6 @@ TestRunner.prototype = {
       // These messages are sent with process.send()
       this.listeners.forEach(function (listener) {
         if (listener.listenTo) {
-          //
-          //
-          //
-          // TODO: still need to find a way to connect stdout/stderr from tests
-          // TODO: still need to find a way to get selenium session id from tests
-          //
-          //
-          //
-          // listener.listenTo(testRun, test, childProcess);
-          listener.listenTo(testRun, test, crashEmitter);
           listener.listenTo(testRun, test, statusEmitter);
         }
       });
