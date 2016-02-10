@@ -1,8 +1,15 @@
 "use strict";
 
+var clc = require("cli-color");
+
 var settings = require("../settings");
+var sauceSettings = require("./settings");
+
 var path = require("path");
 var sauceConnectLauncher = require("sauce-connect-launcher");
+
+var username;
+var accessKey;
 
 var connectFailures = 1;
 /*eslint-disable no-magic-numbers*/
@@ -12,13 +19,25 @@ var BAILED = false;
 module.exports = {
 
   initialize: function (callback) {
+    username = sauceSettings.username;
+    accessKey = sauceSettings.accessKey;
+
+    if (!username) {
+      return callback("Sauce tunnel support is missing configuration: Sauce username.");
+    }
+
+    if (!accessKey) {
+      return callback("Sauce tunnel support is missing configuration: Sauce access key.");
+    }
+
     sauceConnectLauncher.download({
       logger: console.log.bind(console)
     }, function (err) {
       if (err) {
-        console.log("Failed to download sauce connect binary:", err);
-        console.log("sauce-connect-launcher will attempt to re-download " +
-          "next time it is run.");
+        console.log(clc.redBright("Failed to download sauce connect binary:"));
+        console.log(clc.redBright(err));
+        console.log(clc.redBright("sauce-connect-launcher will attempt to re-download " +
+          "next time it is run."));
       }
       callback(err);
     });
@@ -28,19 +47,7 @@ module.exports = {
 
     var tunnelInfo = {};
     var tunnelId = options.tunnelId;
-    var username = options.username;
-    var accessKey = options.accessKey;
     var callback = options.callback;
-
-    if (!username) {
-      console.error("\nPlease set the SAUCE_USERNAME environment variable\n");
-      process.exit(1);
-    }
-
-    if (!accessKey) {
-      console.error("\nPlease set the SAUCE_ACCESS_KEY environment variable\n");
-      process.exit(1);
-    }
 
     console.info("Opening Sauce Tunnel ID: " + tunnelId + " for user " + username);
 

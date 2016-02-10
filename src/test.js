@@ -6,7 +6,13 @@ var TEST_STATUS_SUCCESSFUL = 3;
 var TEST_STATUS_PENDING = 4;
 
 function Test(locator, browser, sauceBrowserSettings, maxAttempts) {
+  //
+  // note: this locator object is an instance of an object which is defined by whichever test
+  // framework plugin is currently loaded. The implementation of locator could be almost any
+  // shape, and the only duck type strictly required by magellan is that toString() is defined
+  //
   this.locator = locator;
+
   this.maxAttempts = maxAttempts;
 
   this.attempts = 0;

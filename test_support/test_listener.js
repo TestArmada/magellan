@@ -1,7 +1,7 @@
 var Q = require("q");
 
 var TestListener = function () {
-  this.testMessages = [];  
+  this.testMessages = [];
 };
 
 TestListener.prototype = {
@@ -16,7 +16,7 @@ TestListener.prototype = {
     return deferred.promise;
   },
 
-  listenTo: function (testRun, source) {
+  listenTo: function (testRun, test, source) {
     var self = this;
     source.addListener("message", function (message) {
       self.testMessages.push(message);

@@ -154,8 +154,10 @@ var createJob = function () {
   // individual tests & browser results under one single report.
   var buildId = config.buildId;
   if (!buildId) {
-    return deferred.reject(new Error("Admiral config.buildId must be set to the current"
+    console.log("Missing configuration. Admiral settings object: ", settings);
+    deferred.reject(new Error("Admiral config.buildId must be set to the current"
       + " Jenkins build number"));
+    return deferred.promise;
   }
 
   // config.buildName is a text value that gives some descriptive meaning to this build.
@@ -164,8 +166,10 @@ var createJob = function () {
   // the developer's name.
   var buildName = config.buildName;
   if (!buildName) {
-    return deferred.reject(new Error("Admiral config.buildName must be set to the current"
+    console.log("Missing configuration. Admiral settings object: ", settings);
+    deferred.reject(new Error("Admiral config.buildName must be set to the current"
       + " build name"));
+    return deferred.promise;
   }
 
   var payload = {
@@ -175,6 +179,7 @@ var createJob = function () {
   doAction("addjob", payload,
     function (response) {
       if (!response || !response.addjob || !response.addjob.id) {
+        console.log("Debug information. Admiral settings object: ", settings);
         deferred.reject(new Error("Admiral error: Response did not include job ID. Error payload: "
           + JSON.stringify(response)));
         return;
@@ -292,12 +297,10 @@ function Reporter() {
   // Defined here for the moment so that we have all the above functions in scope
   // and don't need to touch any of the previously-working admiral code.
 
-  this._handleMessage = function (testRun, message) {
+  this._handleMessage = function (test, message) {
     if (this.ignoreMessages) {
       return;
     }
-
-    var test = testRun.test;
 
     //
     // admiral's test lifecycle model:
@@ -375,10 +378,10 @@ Reporter.prototype = {
     return deferred.promise;
   },
 
-  listenTo: function (testRun, source) {
+  listenTo: function (testRun, test, source) {
     // Every time a message is received regarding this test, we also get the test object
     // itself so that we're able to reason about retries, worker index, etc.
-    source.addListener("message", this._handleMessage.bind(this, testRun));
+    source.addListener("message", this._handleMessage.bind(this, test));
   },
 
   flush: function () {

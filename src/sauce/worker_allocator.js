@@ -241,8 +241,6 @@ SauceWorkerAllocator.prototype.openTunnels = function (callback) {
 
     var options = {
       tunnelId: tunnelId,
-      username: sauceSettings.username,
-      accessKey: sauceSettings.accessKey,
       seleniumPort: BASE_SELENIUM_PORT_OFFSET + (tunnelIndex + 1),
       callback: tunnelOpened
     };
