@@ -309,6 +309,9 @@ TestRunner.prototype = {
       childProcess.stderr.unpipe();
       childProcess.removeAllListeners();
 
+      statusEmitter.stdout = null;
+      statusEmitter.stderr = null;
+
       // Resolve the promise
       deferred.resolve({
         error: (code === 0) ? null : "Child test run process exited with code " + code,
