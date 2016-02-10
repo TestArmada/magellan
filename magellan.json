@@ -1,8 +1,5 @@
 {
   "mocha_tests": ["./test"],
-  "reporters": [
-    "./node_modules/testarmada-magellan-admiral-plugin"
-  ],
   "framework": "vanilla-mocha",
   "max_workers": 7
 }
