@@ -249,6 +249,7 @@ TestRunner.prototype = {
 
     var sentry;
 
+    var seleniumSessionId;
     var stdout = "";
     var stderr = "";
 
@@ -291,16 +292,13 @@ TestRunner.prototype = {
         passed: code === 0,
         metadata: {
           //
+          // TODO: move the generation of this resultURL to sauce support modules
+          // TODO: leave it open to have result URLs for anything including non-sauce tests
+          //       right now this is directly tied to sauce since sauce is the only thing that
+          //       generates a resultURL, but in the future, we may have resultURLs that
+          //       originate from somewhere else.
           //
-          //
-          //
-          // TODO: we need to determine this result URL
-          // TODO: we need to make this not necessarily sauce-centric
-          //
-          //
-          //
-          //
-          resultURL: "https://saucelabs.com/{selenium_session_id}"
+          resultURL: "https://saucelabs.com/" + seleniumSessionId
         }
       });
 
@@ -326,36 +324,19 @@ TestRunner.prototype = {
       });
     }
 
-    // Exploit the reporting API to detect if a worker has crashed and manually
-    // notify listeners of "finished" if the test started.
     //
-    // 1) When a worker crashes, no "finished" status is sent from the worker and
-    //    we can conclude that the worker (test framework, or test) crashed before
-    //    it was able to send out this message.
+    // Via IPC, capture the current selenium session id.
+    // Reporters and listeners can exploit this to tie certain runtime artifacts to the unique
+    // identity of the test run.
     //
-    // 2) To avoid unexpected state transitions, we only send a "finished" event
-    //    to a listener if we got a "started" event from a test, i.e. we don't
-    //    finish tests that we never properly started in the first place.
+    // FIXME: make it possible to receive this information from test frameworks not based on nodejs
     //
-
     childProcess.on("message", function (message) {
       if (message.type === "selenium-session-info") {
-        //
-        //
-        // TODO: 1) read selenium session info here
-        //       2) put it into the current test object so it can be mixed in with emitted messages
-        //
-        //
+        seleniumSessionId = message.sessionId;
       }
     });
 
-    //
-    //
-    //
-    // TODO: wire these directly to the stdout reporter and sunset IPC comm link
-    //
-    //
-    //
     childProcess.stdout.on("data", function (data) {
       stdout += ("" + data);
     });
