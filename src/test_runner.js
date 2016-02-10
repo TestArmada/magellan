@@ -241,11 +241,15 @@ TestRunner.prototype = {
       return deferred.promise;
     }
 
-    var startMessage;
-    var workerCrashed = true;
-    var crashEmitter = new EventEmitter();
+    // Simulate some of the aspects of a node process by adding stdout and stderr streams
+    // that can be used by listeners and reporters.
+    var statusEmitter = new EventEmitter();
+    statusEmitter.stdout = childProcess.stdout;
+    statusEmitter.stderr = childProcess.stderr;
+
     var sentry;
 
+    var seleniumSessionId;
     var stdout = "";
     var stderr = "";
 
@@ -254,10 +258,16 @@ TestRunner.prototype = {
       // These messages are sent with process.send()
       this.listeners.forEach(function (listener) {
         if (listener.listenTo) {
-          listener.listenTo(testRun, test, childProcess);
-          listener.listenTo(testRun, test, crashEmitter);
+          listener.listenTo(testRun, test, statusEmitter);
         }
       });
+
+      statusEmitter.emit("message", {
+        type: "worker-status",
+        status: "started",
+        name: test.locator.toString()
+      });
+
     } catch (e) {
       deferred.reject(e);
       return deferred.promise;
@@ -275,6 +285,23 @@ TestRunner.prototype = {
       test.stopClock();
       clearInterval(sentry);
 
+      statusEmitter.emit("message", {
+        type: "worker-status",
+        status: "finished",
+        name: test.locator.toString(),
+        passed: code === 0,
+        metadata: {
+          //
+          // TODO: move the generation of this resultURL to sauce support modules
+          // TODO: leave it open to have result URLs for anything including non-sauce tests
+          //       right now this is directly tied to sauce since sauce is the only thing that
+          //       generates a resultURL, but in the future, we may have resultURLs that
+          //       originate from somewhere else.
+          //
+          resultURL: "https://saucelabs.com/" + seleniumSessionId
+        }
+      });
+
       // Detach ALL listeners that may have been attached
       childProcess.stdout.removeAllListeners();
       childProcess.stderr.removeAllListeners();
@@ -282,21 +309,8 @@ TestRunner.prototype = {
       childProcess.stderr.unpipe();
       childProcess.removeAllListeners();
 
-      if (workerCrashed) {
-        // If we managed to get a start message from the test, then we can at least
-        // deliver a correct-looking finish message to listeners.
-        if (startMessage) {
-          // FIXME: refactor so we don't have to disable this lint rule
-          /*eslint-disable no-invalid-this*/
-          this.listeners.forEach(function () {
-            crashEmitter.emit("message", {
-              type: "worker-status",
-              name: startMessage.name,
-              status: "finished"
-            });
-          });
-        }
-      }
+      statusEmitter.stdout = null;
+      statusEmitter.stderr = null;
 
       // Resolve the promise
       deferred.resolve({
@@ -313,26 +327,16 @@ TestRunner.prototype = {
       });
     }
 
-    // Exploit the reporting API to detect if a worker has crashed and manually
-    // notify listeners of "finished" if the test started.
     //
-    // 1) When a worker crashes, no "finished" status is sent from the worker and
-    //    we can conclude that the worker (test framework, or test) crashed before
-    //    it was able to send out this message.
+    // Via IPC, capture the current selenium session id.
+    // Reporters and listeners can exploit this to tie certain runtime artifacts to the unique
+    // identity of the test run.
     //
-    // 2) To avoid unexpected state transitions, we only send a "finished" event
-    //    to a listener if we got a "started" event from a test, i.e. we don't
-    //    finish tests that we never properly started in the first place.
+    // FIXME: make it possible to receive this information from test frameworks not based on nodejs
     //
     childProcess.on("message", function (message) {
-      if (message.type === "worker-status") {
-        if (message.status === "finished") {
-          workerCrashed = false;
-        } else if (message.status === "started") {
-          // Store the startmessage for this test, we'll need some of the details
-          // to later send a "finished" if the test ends up crashing.
-          startMessage = message;
-        }
+      if (message.type === "selenium-session-info") {
+        seleniumSessionId = message.sessionId;
       }
     });
 
