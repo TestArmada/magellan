@@ -298,7 +298,7 @@ TestRunner.prototype = {
           //       generates a resultURL, but in the future, we may have resultURLs that
           //       originate from somewhere else.
           //
-          resultURL: "https://saucelabs.com/" + seleniumSessionId
+          resultURL: "https://saucelabs.com/tests/" + seleniumSessionId
         }
       });
 
