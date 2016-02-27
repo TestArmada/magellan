@@ -17,6 +17,12 @@ var defaultConfigFilePath = "./magellan.json";
 var configFilePath = yargs.argv.config;
 var margs = require("marge");
 
+if (configFilePath) {
+  console.log("Will try to load configuration from " + configFilePath);
+} else {
+  console.log("Will try to load configuration from default of " + defaultConfigFilePath);
+}
+
 // NOTE: marge can throw an error here if --config points at a file that doesn't exist
 // FIXME: handle this error nicely instead of printing an ugly stack trace
 margs.init(defaultConfigFilePath, configFilePath);
