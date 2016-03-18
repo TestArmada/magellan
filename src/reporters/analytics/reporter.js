@@ -3,7 +3,6 @@
 var Q = require("q");
 var BaseReporter = require("../reporter");
 var util = require("util");
-var analytics = require("../../global_analytics");
 var prettyMs = require("pretty-ms");
 var _ = require("lodash");
 
