@@ -9,6 +9,7 @@ var exec = require("child_process").exec;
 
 var sauceSettings = require("./settings");
 var settings = require("../settings");
+var analytics = require("../global_analytics");
 
 var tunnel = require("./tunnel");
 var BASE_SELENIUM_PORT_OFFSET = 56000;
@@ -52,12 +53,15 @@ SauceWorkerAllocator.prototype.initialize = function (callback) {
       if (initErr) {
         return callback(initErr);
       } else {
+        analytics.push("sauce-open-tunnels");
         this.openTunnels(function (openErr) {
           if (openErr) {
+            analytics.mark("sauce-open-tunnels", "failed");
             return callback(new Error("Cannot initialize worker allocator: " + openErr.toString()));
           } else {
             // NOTE: We wait until we know how many tunnels we actually got before
             // we assign tunnel ids to workers.
+            analytics.mark("sauce-open-tunnels");
             this.assignTunnelsToWorkers(this.tunnels.length);
             return callback();
           }

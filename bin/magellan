@@ -27,6 +27,7 @@ if (configFilePath) {
 // FIXME: handle this error nicely instead of printing an ugly stack trace
 margs.init(defaultConfigFilePath, configFilePath);
 
+var analytics = require("../src/global_analytics");
 var path = require("path");
 var _ = require("lodash");
 var TestRunner = require("../src/test_runner");
@@ -52,6 +53,8 @@ var MAX_TEST_ATTEMPTS = parseInt(margs.argv.max_test_attempts) || 3;
 var selectedBrowsers;
 var workerAllocator;
 var MAX_WORKERS;
+
+analytics.push("magellan-run");
 
 //
 // Initialize Framework Plugins
@@ -177,6 +180,12 @@ if (margs.argv.reporters && _.isArray(margs.argv.reporters)) {
   // FIXME: handle this error nicely instead of printing an ugly stack trace
   listeners = listeners.concat(margs.argv.reporters.map(loadRelativeModule));
 }
+
+//
+// Analytics
+//
+var AnalyticsReporter = require("../src/reporters/analytics/reporter");
+listeners.push(new AnalyticsReporter());
 
 //
 // Slack integration (enabled if settings exist)

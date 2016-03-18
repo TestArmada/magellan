@@ -13,6 +13,7 @@ var fs = require("fs");
 var mkdirSync = require("./mkdir_sync");
 
 var sauceBrowsers = require("./sauce/browsers");
+var analytics = require("./global_analytics");
 
 var settings = require("./settings");
 var Test = require("./test");
@@ -273,6 +274,25 @@ TestRunner.prototype = {
       return deferred.promise;
     }
 
+    statusEmitter.emit("message", {
+      type: "analytics-event",
+      data: {
+        name: "test-run-" + testRun.guid,
+
+        markers: [{
+          name: "start",
+          t: Date.now()
+        }],
+
+        metadata: {
+          test: test.locator.toString(),
+          browser: test.browser.browserId,
+          // NOTE: attempt numbers are 1-indexed
+          attemptNumber: (test.attempts + 1)
+        }
+      }
+    });
+
     // Note: There are three ways a process can die:
     //
     //   1. "close" emitted.
@@ -282,6 +302,15 @@ TestRunner.prototype = {
     // Because "close" emits unpredictably some time after we fulfill case
     // #3, we wrap this callback in once() so that we only clean up once.
     var workerClosed = once(function (code) {
+      statusEmitter.emit("message", {
+        type: "analytics-event-mark",
+        eventName: "test-run-" + testRun.guid,
+        data: {
+          name: code === 0 ? "passed" : "failed",
+          t: Date.now()
+        }
+      });
+
       test.stopClock();
       clearInterval(sentry);
 
@@ -425,6 +454,8 @@ TestRunner.prototype = {
       mkdirSync(tempAssetPath);
 
       testRun = new TestRunClass({
+        guid: childBuildId,
+
         // The id of this build, used by some reporters to identify the overall suite run. This
         // can also be used by test run implementations to identify an individual suite run as
         // part of some larger suite run.
@@ -522,6 +553,12 @@ TestRunner.prototype = {
       status = clc.redBright("BAILED EARLY (due to failures)");
     } else {
       status = (this.failedTests.length > 0 ? clc.redBright("FAILED") : clc.greenBright("PASSED"));
+    }
+
+    if (this.failedTests.length > 0) {
+      analytics.mark("magellan-run", "failed");
+    } else {
+      analytics.mark("magellan-run", "passed");
     }
 
     console.log(clc.greenBright("\n============= Suite Complete =============\n"));

@@ -4,6 +4,7 @@ var clc = require("cli-color");
 
 var settings = require("../settings");
 var sauceSettings = require("./settings");
+var analytics = require("../global_analytics");
 
 var path = require("path");
 var sauceConnectLauncher = require("sauce-connect-launcher");
@@ -30,14 +31,18 @@ module.exports = {
       return callback("Sauce tunnel support is missing configuration: Sauce access key.");
     }
 
+    analytics.push("sauce-connect-launcher-download");
     sauceConnectLauncher.download({
       logger: console.log.bind(console)
     }, function (err) {
       if (err) {
+        analytics.mark("sauce-connect-launcher-download", "failed");
         console.log(clc.redBright("Failed to download sauce connect binary:"));
         console.log(clc.redBright(err));
         console.log(clc.redBright("sauce-connect-launcher will attempt to re-download " +
           "next time it is run."));
+      } else {
+        analytics.mark("sauce-connect-launcher-download");
       }
       callback(err);
     });
