@@ -18,7 +18,6 @@ module.exports = {
     console.log("  --bail_early                 Kill builds that have failed at least 10% of tests, after 10 or more test runs.");
     console.log("  --bail_fast                  Kill builds that fail any test.");
     console.log("  --bail_time                  Set test kill time in milliseconds. *CAN* be used without bail_early/bail_fast.");
-    console.log("  --no_bail                    Don't use the default magellan bail time of 480,000ms");
     console.log("  --debug                      Enable debugging magellan messages (dev mode).");
     console.log("");
     console.log(" Configuration:");
