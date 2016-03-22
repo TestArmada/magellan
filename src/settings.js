@@ -14,6 +14,7 @@ var buildId = argv.external_build_id || "magellan-"
 var mkdirSync = require("./mkdir_sync");
 var TEMP_DIR = argv.temp_dir || "./temp";
 var path = require("path");
+console.log("Magellan is creating temporary files at: " + path.resolve(TEMP_DIR));
 mkdirSync(path.resolve(TEMP_DIR));
 
 module.exports = {
