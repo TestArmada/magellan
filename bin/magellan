@@ -54,6 +54,10 @@ var selectedBrowsers;
 var workerAllocator;
 var MAX_WORKERS;
 
+var magellanGlobals = {
+  analytics: analytics
+};
+
 analytics.push("magellan-run");
 
 //
@@ -227,7 +231,7 @@ if (_.isEmpty(tests)) {
 var initializeListeners = function () {
   var deferred = Q.defer();
   async.each(listeners, function (listener, done) {
-    listener.initialize()
+    listener.initialize(magellanGlobals)
       .then(function () {
         done();
       }).catch(function (err) {
