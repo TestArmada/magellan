@@ -5,8 +5,32 @@ var BaseReporter = require("../reporter");
 var util = require("util");
 var prettyMs = require("pretty-ms");
 var _ = require("lodash");
+var analytics = require("../../global_analytics");
+var clc = require("cli-color");
 
 var timeline = [];
+
+var hasMarker = function (ev, markerName) {
+  return ev.markers.find(function (marker) {
+    return marker.name === markerName;
+  });
+};
+
+var firstMarker = function (ev) {
+  return ev.markers[0];
+};
+
+var lastMarker = function (ev) {
+  return ev.markers[ev.markers.length - 1];
+};
+
+var diffMarkerTimes = function (startMarker, endMarker) {
+  if (startMarker && endMarker) {
+    return endMarker.t - startMarker.t;
+  } else {
+    return 0;
+  }
+};
 
 var diffMarkers = function (ev, startName, endName, alternateEndName) {
   startName = startName ? startName : "start";
@@ -18,12 +42,7 @@ var diffMarkers = function (ev, startName, endName, alternateEndName) {
   var endMarker = ev.markers.find(function (marker) {
     return (alternateEndName && marker.name === alternateEndName) || marker.name === endName;
   });
-
-  if (startMarker && endMarker) {
-    return endMarker.t - startMarker.t;
-  } else {
-    return 0;
-  }
+  return diffMarkerTimes(startMarker, endMarker);
 };
 
 function Reporter() {
@@ -32,20 +51,21 @@ function Reporter() {
 util.inherits(Reporter, BaseReporter);
 
 Reporter.prototype.initialize = function () {
+  var self = this;
   var deferred = Q.defer();
-
-  //
-  //
-  //
-  // TODO: sync up with buffer from global analytics and amend to local timeline
-  //
-  //
-  //
-
   deferred.resolve();
+
+  analytics.sync().forEach(function (message) {
+    self._handleGlobalMessage(message);
+  });
+
+  // listen to global emitter
+  analytics.getEmitter().addListener("message", this._handleGlobalMessage.bind(this));
+
   return deferred.promise;
 };
 
+// listen to a testRun's events on event emitter source.
 Reporter.prototype.listenTo = function (testRun, test, source) {
   if (test && testRun) {
     // Every time a message is received regarding this test, we also get the test object
@@ -56,27 +76,24 @@ Reporter.prototype.listenTo = function (testRun, test, source) {
   }
 };
 
-Reporter.prototype._handleTestRunMessage = function (testRun, test, message) {
-  console.log("_handleTestRunMessage analytics reporter received: ", message);
+//
+// Timeline marker: A timeline marker pertaining to a previously-received analytics event.
+// Data structure for a timeline marker
+// {
+//   name: string marker name (eg: "failed", "passed", "end")
+//   t: number timestamp
+// }
+//
 
-  // handle a message from a test
+// handle a message from a test
+Reporter.prototype._handleTestRunMessage = function (testRun, test, message) {
   if (message && message.type && message.data) {
     if (message.type === "analytics-event") {
       timeline.push(message.data);
     } else if (message.type === "analytics-event-mark" && message.data) {
-      //
-      // This is a timeline marker pertaining to a previously-received analytics event.
-      // Find that previously-received event in our timeline and amend it with this marker.
-      //
+      // Find a previously-received event in our timeline and amend it with this marker.
       for (var i = timeline.length - 1; i >= 0; i--) {
         if (timeline[i].name === message.eventName) {
-          //
-          // Data structure for a timeline "mark":
-          // {
-          //   name: string marker name (eg: "failed", "passed", "end")
-          //   t: number timestamp
-          // }
-          //
           timeline[i].markers.push(message.data);
           break;
         }
@@ -85,19 +102,32 @@ Reporter.prototype._handleTestRunMessage = function (testRun, test, message) {
   }
 };
 
+// handle a message from a global source
 Reporter.prototype._handleGlobalMessage = function (message) {
-  // handle a message from a global source
+  if (message && message.type && message.data) {
+    if (message.type === "analytics-event") {
+      timeline.push(message.data);
+    } else if (message.type === "analytics-event-mark" && message.data) {
+      // Find a previously-received event in our timeline and amend it with this marker.
+      for (var i = timeline.length - 1; i >= 0; i--) {
+        if (timeline[i].name === message.eventName) {
+          timeline[i].markers.push(message.data);
+          break;
+        }
+      }
+    }
+  }
 };
 
 Reporter.prototype.flush = function () {
   var numFailedTests = 0;
   var numPassedTests = 0;
+  var numRetries = 0;
 
-  // var magellanRun = _.find(timeline, function (item) {
-  //   return item.name === "magellan-run";
-  // });
-
-  // var magellanTime = diffMarkers(magellanRun, "start", "passed", "failed");
+  var magellanRun = _.find(timeline, function (item) {
+    return item.name === "magellan-run";
+  });
+  var magellanTime = diffMarkers(magellanRun, "start", "passed", "failed");
 
   var testRuns = _.filter(timeline, function (item) {
     return _.startsWith(item.name, "test-run-");
@@ -106,8 +136,6 @@ Reporter.prototype.flush = function () {
   var notTestRuns = _.filter(timeline, function (item) {
     return !_.startsWith(item.name, "test-run-");
   });
-
-  console.log(JSON.stringify(notTestRuns, null, 2));
 
   var timeSpentPassing = _.reduce(testRuns, function (result, testRun) {
     var startMarker = testRun.markers.find(function (marker) {
@@ -121,7 +149,23 @@ Reporter.prototype.flush = function () {
       numPassedTests++;
       return result + endMarker.t - startMarker.t;
     } else {
-      return result + 0;
+      return result;
+    }
+  }, 0);
+
+  var timeSpentRetrying = _.reduce(testRuns, function (result, testRun) {
+    var startMarker = testRun.markers.find(function (marker) {
+      return marker.name === "start";
+    });
+    var endMarker = testRun.markers.find(function (marker) {
+      return marker.name === "passed" || marker.name === "failed";
+    });
+
+    if (startMarker && endMarker && testRun.metadata.attemptNumber > 1) {
+      numRetries++;
+      return result + endMarker.t - startMarker.t;
+    } else {
+      return result;
     }
   }, 0);
 
@@ -137,30 +181,53 @@ Reporter.prototype.flush = function () {
       numFailedTests++;
       return result + endMarker.t - startMarker.t;
     } else {
-      return result + 0;
+      return result;
     }
   }, 0);
 
-  var slowestFailingTest = _.maxBy(testRuns, function (testRun) {
-    return diffMarkers(testRun, "start", "failed");
-  });
+  var slowestFailingTest = _.chain(testRuns)
+    .filter(function (testRun) {
+      return hasMarker(testRun, "failed");
+    })
+    .maxBy(function (testRun) {
+      return diffMarkers(testRun, "start", "failed");
+    })
+    .value();
 
-  var slowestPassingTest = _.maxBy(testRuns, function (testRun) {
-    return diffMarkers(testRun, "start", "passed");
-  });
+  var slowestPassingTest = _.chain(testRuns)
+    .filter(function (testRun) {
+      return hasMarker(testRun, "passed");
+    })
+    .maxBy(testRuns, function (testRun) {
+      return diffMarkers(testRun, "start", "passed");
+    })
+    .value();
 
-  console.log(JSON.stringify(timeline,null,2));
-
-  console.log("Runtime Stats");
+  console.log(clc.greenBright("\n============= Runtime Stats ==============\n"));
   console.log("");
   console.log("                 # Test runs: " + testRuns.length);
   console.log("          # Passed test runs: " + numPassedTests);
   console.log("          # Failed test runs: " + numFailedTests);
+  console.log("           # Re-attempt runs: " + numRetries);
+  console.log("");
   console.log("                  Human time: " + prettyMs(timeSpentFailing + timeSpentPassing));
-  // console.log("               Magellan time: " + prettyMs(magellanTime));
-  // console.log("Human-to-Magellan multiplier: " + ((timeSpentFailing + timeSpentPassing) / magellanTime).toFixed(2) + "X");
+  console.log("               Magellan time: " + prettyMs(magellanTime));
+  if (magellanTime > 0) {
+    console.log("Human-to-Magellan multiplier: " + ((timeSpentFailing + timeSpentPassing) / magellanTime).toFixed(2) + "X");
+  } else {
+    console.log("Human-to-Magellan multiplier: N/A");
+  }
+
   console.log("    Human time spent passing: " + prettyMs(timeSpentPassing));
   console.log("    Human time spent failing: " + prettyMs(timeSpentFailing));
+  console.log("");
+
+  if (numRetries > 0 && magellanTime > 0) {
+    console.log("         Human time retrying: " + prettyMs(timeSpentRetrying));
+    console.log("Retrying as % of total human: " + (timeSpentRetrying / (timeSpentFailing + timeSpentPassing)).toFixed(1) + "%");
+  }
+
+
   if (testRuns.length > 0) {
     console.log("       Average test run time: " + prettyMs((timeSpentFailing + timeSpentPassing) / testRuns.length));
   } else {
@@ -178,11 +245,39 @@ Reporter.prototype.flush = function () {
   } else {
     console.log("Average passed test run time: N/A");
   }
-  console.log("Slowest passing test", slowestPassingTest);
-  console.log("Slowest failing test", slowestFailingTest);
-};
 
-Reporter.prototype._handleMessage = function (testRun, test, message) {
+  if (slowestPassingTest) {
+    console.log("");
+    console.log("Slowest passing test:");
+    console.log("      test: \"" + slowestPassingTest.metadata.test + "\" @: " + slowestPassingTest.metadata.browser + " ");
+    console.log(" attempt #: " + slowestPassingTest.metadata.attemptNumber);
+  }
+
+  if (slowestFailingTest) {
+    console.log("");
+    console.log("      test: \"" + slowestFailingTest.metadata.test + "\" @: " + slowestFailingTest.metadata.browser + " ");
+    console.log(" attempt #: " + slowestFailingTest.metadata.attemptNumber);
+  }
+
+  if (notTestRuns.length > 0 ) {
+    var metrics = _.filter(notTestRuns, function (metric) {
+      return metric.markers && metric.markers.length === 2;
+    });
+
+    if(metrics.length) {
+      console.log("");
+      console.log("Other timing metrics: ");
+      metrics.forEach(function (metric) {
+        var start = firstMarker(metric);
+        var end = lastMarker(metric);
+        var time = diffMarkerTimes(start, end);
+        console.log("    " + metric.name + " (" + start.name + " -> " + end.name + ") " + prettyMs(time));
+      });
+      console.log("");
+    }
+  }
+
+  console.log("");
 };
 
 module.exports = Reporter;
