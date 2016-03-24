@@ -1,6 +1,7 @@
 "use strict";
 
 var fork = require("child_process").fork;
+var processCleanup = require("./util/process_cleanup");
 var async = require("async");
 var _ = require("lodash");
 var clc = require("cli-color");
@@ -23,7 +24,7 @@ var STRNUM_BASE = 16;
 var WORKER_START_DELAY = 1000;
 var WORKER_STOP_DELAY = 1500;
 var WORKER_POLL_INTERVAL = 250;
-var FINAL_REPORT_DELAY = 2500;
+var FINAL_CLEANUP_DELAY = 2500;
 
 var strictness = {
   BAIL_NEVER: 1,     // never bail
@@ -577,17 +578,22 @@ TestRunner.prototype = {
   // Handle an empty work queue:
   // Display a build summary and then either signal success or failure.
   buildFinished: function () {
+    var self = this;
+
     setTimeout(function () {
-      // We delay our report by a small yield time to allow bailed builds
-      // to clean up before we start writing to the screen.
-      this.summarizeCompletedBuild().then(function () {
-        if (this.failedTests.length === 0) {
-          this.onSuccess();
-        } else {
-          this.onFailure(this.failedTests);
-        }
-      }.bind(this));
-    }.bind(this), FINAL_REPORT_DELAY);
+      // We delay our report to allow bailed builds to clean up before we
+      // outputting our final report to the screen. If processes hang around
+      // for too long, processCleanup() will get rid of them for us.
+      processCleanup(function () {
+        self.summarizeCompletedBuild().then(function () {
+          if (self.failedTests.length === 0) {
+            self.onSuccess();
+          } else {
+            self.onFailure(self.failedTests);
+          }
+        });
+      });
+    }, FINAL_CLEANUP_DELAY);
   },
 
   // Completion callback called by async.queue when a test is completed
