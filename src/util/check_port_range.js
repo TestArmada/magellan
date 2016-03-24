@@ -7,29 +7,6 @@ var portscanner = require("portscanner");
 var PORT_STATUS_IN_USE = 0;
 var PORT_STATUS_AVAILABLE = 1;
 
-var checkPortRange = function (portNumbers, callback) {
-  portNumbers = _.cloneDeep(portNumbers);
-  var statuses = [];
-
-  var checkNextPort = function () {
-    if (portNumbers.length > 0) {
-      var portToCheck = portNumbers.shift();
-
-      checkPortStatus(portToCheck, function (portStatus) {
-        statuses.push({
-          port: portToCheck,
-          available: portStatus === PORT_STATUS_AVAILABLE
-        })
-        checkNextPort();
-      });
-    } else {
-      callback(statuses);
-    }
-  };
-
-  checkNextPort();
-};
-
 var checkPortStatus = function (desiredPort, callback) {
   request("http://127.0.0.1:" + desiredPort + "/wd/hub/static/resource/hub.html", function (seleniumErr) {
     if (seleniumErr && seleniumErr.code === "ECONNREFUSED") {
@@ -45,6 +22,29 @@ var checkPortStatus = function (desiredPort, callback) {
       return callback(PORT_STATUS_IN_USE);
     }
   });
+};
+
+var checkPortRange = function (portNumbers, callback) {
+  portNumbers = _.cloneDeep(portNumbers);
+  var statuses = [];
+
+  var checkNextPort = function () {
+    if (portNumbers.length > 0) {
+      var portToCheck = portNumbers.shift();
+
+      checkPortStatus(portToCheck, function (portStatus) {
+        statuses.push({
+          port: portToCheck,
+          available: portStatus === PORT_STATUS_AVAILABLE
+        });
+        checkNextPort();
+      });
+    } else {
+      return callback(statuses);
+    }
+  };
+
+  checkNextPort();
 };
 
 module.exports = checkPortRange;

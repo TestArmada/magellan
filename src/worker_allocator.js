@@ -124,10 +124,10 @@ Allocator.prototype = {
           availableWorker.occupied = false;
 
           console.log(clc.yellowBright("Detected port contention while spinning up worker: "));
-          statuses.forEach(function (status, i) {
+          statuses.forEach(function (status, portIndex) {
             if (!status.available) {
-              console.log(clc.yellowBright("  in use: #: " + portNum + " purpose: "
-                + (desiredPortLabels[i] ? desiredPortLabels[i] : "generic")));
+              console.log(clc.yellowBright("  in use: #: " + status.port + " purpose: "
+                + (desiredPortLabels[portIndex] ? desiredPortLabels[portIndex] : "generic")));
             }
           });
 
