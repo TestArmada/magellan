@@ -1,13 +1,9 @@
 "use strict";
 
 var _ = require("lodash");
-var portscanner = require("portscanner");
 var clc = require("cli-color");
-var request = require("request");
 var settings = require("./settings");
-
-var PORT_STATUS_IN_USE = 0;
-var PORT_STATUS_AVAILABLE = 1;
+var checkPortRange = require("./util/check_port_range");
 
 var BASE_PORT_START = settings.BASE_PORT_START;
 var BASE_PORT_RANGE = settings.BASE_PORT_RANGE;
@@ -35,24 +31,6 @@ var getNextPort = function () {
   portCursor = portCursor + BASE_PORT_SPACING;
   return nextPort;
 };
-
-var checkPortStatus = function (desiredPort, callback) {
-  request("http://127.0.0.1:" + desiredPort + "/wd/hub/static/resource/hub.html", function (seleniumErr) {
-    if (seleniumErr && seleniumErr.code === "ECONNREFUSED") {
-      portscanner.checkPortStatus(desiredPort, "127.0.0.1", function (error, portStatus) {
-        if (portStatus === "open") {
-          return callback(PORT_STATUS_IN_USE);
-        } else {
-          return callback(PORT_STATUS_AVAILABLE);
-        }
-      });
-    } else {
-      console.log("Found selenium HTTP server at port " + desiredPort + ", port is in use.");
-      return callback(PORT_STATUS_IN_USE);
-    }
-  });
-};
-
 
 // Create a worker allocator for MAX_WORKERS workers. Note that the allocator
 // is not obliged to honor the creation of MAX_WORKERS, just some number of workers
@@ -123,28 +101,38 @@ Allocator.prototype = {
 
       var portOffset = getNextPort();
 
-      checkPortStatus(portOffset, function (mockingPortStatus) {
-        checkPortStatus(portOffset + 1, function (seleniumPortStatus) {
-          if (mockingPortStatus === PORT_STATUS_AVAILABLE
-              && seleniumPortStatus === PORT_STATUS_AVAILABLE) {
-            availableWorker.portOffset = portOffset;
-            availableWorker.occupied = true;
+      // Standard Magellan convention: port = mock, port + 1 = selenium
+      // Other ports after this within the BASE_PORT_SPACING range can
+      // be used for whatever the user desires, so those are labelled
+      // as "generic" (if found to be occupied, that is).
+      var desiredPortLabels = ["mocking port", "selenium port"];
+      var desiredPorts = [];
 
-            return callback(availableWorker);
-          } else {
-            console.log(
-              clc.yellowBright("Worker detected port contention, waiting... "
-              + "(mocking port " + portOffset + " "
-              + (mockingPortStatus === PORT_STATUS_AVAILABLE ? "available" : "in use")
-              + ", selenium port " + (portOffset + 1)
-              + (seleniumPortStatus === PORT_STATUS_AVAILABLE ? "available" : "in use")
-              + ")"));
+      // if BASE_PORT_SPACING is the default of 3, we'll check 3 ports
+      for (var i = 0; i < BASE_PORT_SPACING; i++) {
+        desiredPorts.push(portOffset + i);
+      }
 
-            // release the worker we can't use, allow a later attempt
-            availableWorker.occupied = false;
-            return callback(undefined);
-          }
-        });
+      checkPortRange(desiredPorts, function (statuses) {
+        if (_.every(statuses, function (status) { return status.available; })) {
+          availableWorker.portOffset = portOffset;
+          availableWorker.occupied = true;
+
+          return callback(availableWorker);
+        } else {
+          // Print a message that ports are not available, show which ones in the range
+          availableWorker.occupied = false;
+
+          console.log(clc.yellowBright("Detected port contention while spinning up worker: "));
+          statuses.forEach(function (status, portIndex) {
+            if (!status.available) {
+              console.log(clc.yellowBright("  in use: #: " + status.port + " purpose: "
+                + (desiredPortLabels[portIndex] ? desiredPortLabels[portIndex] : "generic")));
+            }
+          });
+
+          return callback(undefined);
+        }
       });
     } else {
       return callback(undefined);
