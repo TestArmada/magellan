@@ -24,7 +24,8 @@ module.exports = function (callback) {
           console.log("Giving up waiting for child processes to shut down. Killing forefully.");
           treeUtil.killChildProcesses(pid, callback);
         } else {
-          console.log("Found " + children.length + " child processes. Waiting for graceful close...");
+          console.log("Found " + children.length + " child processes. "
+            + "Waiting for graceful close...");
           setTimeout(checkTree, TREE_CHECK_INTERVAL);
         }
 
