@@ -8,6 +8,7 @@ settings.framework = "magellan-fake";
 settings.testFramework = require("../test_support/magellan-selftest-plugin/index");
 settings.testFramework.initialize({});
 
+var DEFAULT_BAIL_TIME = settings.bailTime;
 var MAX_WORKERS = 1;
 
 var baseOptions = {
@@ -25,6 +26,10 @@ var baseOptions = {
 };
 
 describe("test runner", function () {
+
+  beforeEach(function () {
+    settings.bailTime = DEFAULT_BAIL_TIME;
+  });
 
   describe("single worker", function () {
     this.timeout(6000);
@@ -122,6 +127,31 @@ describe("test runner", function () {
       for (var i = 0; i < 14; i++) {
         tests.push("fake_test" + i);
       }
+
+      workerAllocator.initialize(function (err) {
+        var runner = new TestRunner(tests, options);
+        runner.start();
+      });
+    });
+
+    it.only("detects a zombie process @zombie", function (done) {
+      this.timeout(25000);
+      settings.bailTime = 2500;
+
+      var workerAllocator = new WorkerAllocator(MAX_WORKERS);
+
+      var options = _.extend({}, multiWorkerBaseOptions, {
+        bailFast: true,
+        allocator: workerAllocator,
+        onSuccess: function () {
+          done();
+        },
+        onFailure: function () {
+          done();
+        }
+      });
+
+      var tests = ["zombie"];
 
       workerAllocator.initialize(function (err) {
         var runner = new TestRunner(tests, options);

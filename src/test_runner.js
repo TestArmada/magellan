@@ -57,6 +57,9 @@ var strictness = {
 function TestRunner(tests, options) {
   var self = this;
 
+  // Allow for bail time to be set "late" (eg: unit tests)
+  strictness.LONG_RUNNING_TEST = settings.bailTime;
+
   this.buildId = settings.buildId;
 
   // FIXME: remove these eslint disables when this is simplified and has a test

@@ -7,11 +7,14 @@ var pid = process.pid;
 var ZOMBIE_POLLING_MAX_TIME = 15000;
 
 module.exports = function (callback) {
+  console.log("checking for zombie processes...");
   treeUtil.getZombieChildren(pid, ZOMBIE_POLLING_MAX_TIME, function (zombieChildren) {
     if (zombieChildren.length > 0) {
       console.log("Magellan giving up waiting for zombie child processes to die. Killing pids:");
       console.log(zombieChildren.join(", "));
       treeUtil.killPids(zombieChildren);
+    } else {
+      console.log("No zombies found.");
     }
     callback();
   });
