@@ -26,6 +26,7 @@ module.exports = function (callback) {
         } else {
           console.log("Found " + children.length + " child processes. "
             + "Waiting for graceful close...");
+          console.log("tree: ", tree);
           setTimeout(checkTree, TREE_CHECK_INTERVAL);
         }
 
