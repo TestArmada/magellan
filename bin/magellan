@@ -186,12 +186,6 @@ if (margs.argv.reporters && _.isArray(margs.argv.reporters)) {
 }
 
 //
-// Analytics
-//
-var AnalyticsReporter = require("../src/reporters/analytics/reporter");
-listeners.push(new AnalyticsReporter());
-
-//
 // Slack integration (enabled if settings exist)
 //
 var slackSettings = require("../src/reporters/slack/settings");
