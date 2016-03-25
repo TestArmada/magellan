@@ -1,6 +1,8 @@
 "use strict";
 
 var treeUtil = require("testarmada-tree-kill");
+treeUtil.debug = true;
+
 var pid = process.pid;
 
 // Max time before we forcefully kill child processes left over after a suite run

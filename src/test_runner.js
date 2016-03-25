@@ -593,7 +593,7 @@ TestRunner.prototype = {
           }
         });
       });
-    }, FINAL_CLEANUP_DELAY);
+    }, FINAL_CLEANUP_DELAY, true);
   },
 
   // Completion callback called by async.queue when a test is completed
