@@ -1,7 +1,7 @@
 "use strict";
 
 var _ = require("lodash");
-var EventEmitter = require("events");
+var EventEmitter = require("events").EventEmitter;
 var timeline = [];
 
 module.exports = {
