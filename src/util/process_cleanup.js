@@ -11,12 +11,12 @@ module.exports = function (callback) {
 
   treeUtil.getZombieChildren(pid, ZOMBIE_POLLING_MAX_TIME, function (zombieChildren) {
     if (zombieChildren.length > 0) {
-      console.log("Magellan giving up waiting for zombie child processes to die. Killing pids:");
-      console.log(zombieChildren.join(", "));
+      console.log("Magellan giving up waiting for zombie child processes to die. Cleaning up..");
 
       var killNextZombie = function () {
         if (zombieChildren.length > 0) {
           var nextZombieTreePid = zombieChildren.shift();
+          console.log("Killing pid and its child pids: " + nextZombieTreePid);
           treeUtil.kill(nextZombieTreePid, "SIGKILL", killNextZombie);
         } else {
           console.log("Done killing zombies.");
