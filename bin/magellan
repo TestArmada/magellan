@@ -27,6 +27,7 @@ if (configFilePath) {
 // FIXME: handle this error nicely instead of printing an ugly stack trace
 margs.init(defaultConfigFilePath, configFilePath);
 
+var analytics = require("../src/global_analytics");
 var path = require("path");
 var _ = require("lodash");
 var TestRunner = require("../src/test_runner");
@@ -52,6 +53,12 @@ var MAX_TEST_ATTEMPTS = parseInt(margs.argv.max_test_attempts) || 3;
 var selectedBrowsers;
 var workerAllocator;
 var MAX_WORKERS;
+
+var magellanGlobals = {
+  analytics: analytics
+};
+
+analytics.push("magellan-run");
 
 //
 // Initialize Framework Plugins
@@ -218,7 +225,7 @@ if (_.isEmpty(tests)) {
 var initializeListeners = function () {
   var deferred = Q.defer();
   async.each(listeners, function (listener, done) {
-    listener.initialize()
+    listener.initialize(magellanGlobals)
       .then(function () {
         done();
       }).catch(function (err) {
