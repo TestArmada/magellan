@@ -10,11 +10,10 @@ var exec = require("child_process").exec;
 var sauceSettings = require("./settings");
 var settings = require("../settings");
 var analytics = require("../global_analytics");
+var guid = require("../util/guid");
 
 var tunnel = require("./tunnel");
 var BASE_SELENIUM_PORT_OFFSET = 56000;
-var TUNNEL_PREFIX_RAND_MAX = 99999;
-var STRNUM_BASE = 16;
 var SECOND_MS = 1000;
 var SECONDS_MINUTE = 60;
 
@@ -33,7 +32,7 @@ function SauceWorkerAllocator(_MAX_WORKERS) {
   this.tunnelErrors = [];
   this.MAX_WORKERS = _MAX_WORKERS;
   this.maxTunnels = sauceSettings.maxTunnels;
-  this.tunnelPrefix = Math.round(Math.random() * TUNNEL_PREFIX_RAND_MAX).toString(STRNUM_BASE);
+  this.tunnelPrefix = guid();
 
   if (sauceSettings.locksServerLocation) {
     console.log("Using locks server at " + sauceSettings.locksServerLocation
