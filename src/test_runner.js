@@ -202,7 +202,7 @@ TestRunner.prototype = {
             onTestComplete(runTestError, test);
           });
       } else {
-        analytics.mark("acquire-worker", "failed");
+        analytics.mark("acquire-worker-" + analyticsGuid, "failed");
         // If the allocator could not give us a worker, pass
         // back a failed test result with the allocator's error.
         console.error("Worker allocator error: " + error);
