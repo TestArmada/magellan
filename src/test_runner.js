@@ -12,15 +12,13 @@ var once = require("once");
 var EventEmitter = require("events").EventEmitter;
 var fs = require("fs");
 var mkdirSync = require("./mkdir_sync");
+var guid = require("./util/guid");
 
 var sauceBrowsers = require("./sauce/browsers");
 var analytics = require("./global_analytics");
 
 var settings = require("./settings");
 var Test = require("./test");
-
-var RAND_SIZE = 9999999999;
-var STRNUM_BASE = 16;
 
 var WORKER_START_DELAY = 1000;
 var WORKER_STOP_DELAY = 1500;
@@ -157,8 +155,14 @@ TestRunner.prototype = {
   // Prepare a test to be run. Find a worker for the test and send it off to be run.
   stageTest: function (test, onTestComplete) {
     var self = this;
+    var analyticsGuid = guid();
+
+    analytics.push("acquire-worker-" + analyticsGuid);
+
     this.allocator.get(function (error, worker) {
       if (!error) {
+        analytics.mark("acquire-worker-" + analyticsGuid);
+
         this.runTest(test, worker)
           .then(function (runResults) {
             // Give this worker back to the allocator
@@ -198,6 +202,7 @@ TestRunner.prototype = {
             onTestComplete(runTestError, test);
           });
       } else {
+        analytics.mark("acquire-worker-" + analyticsGuid, "failed");
         // If the allocator could not give us a worker, pass
         // back a failed test result with the allocator's error.
         console.error("Worker allocator error: " + error);
@@ -452,7 +457,7 @@ TestRunner.prototype = {
 
     try {
       var TestRunClass = settings.testFramework.TestRun;
-      var childBuildId = Math.round(Math.random() * RAND_SIZE).toString(STRNUM_BASE);
+      var childBuildId = guid();
       var tempAssetPath = path.resolve(settings.tempDir + "/build-" + this.buildId + "_"
         + childBuildId + "__temp_assets");
       mkdirSync(tempAssetPath);
