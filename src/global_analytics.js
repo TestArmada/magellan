@@ -14,7 +14,7 @@ module.exports = {
   //
   // NOTE: name must be unique if non-colliding markers are desired.
   push: function (eventName, metadata, startMarkerName) {
-    startMarkerName = startMarkerName ? "start";
+    startMarkerName = startMarkerName ? startMarkerName : "start";
 
     var ev = {
       type: "analytics-event",
