@@ -61,6 +61,8 @@ function TestRunner(tests, options) {
 
   this.buildId = settings.buildId;
 
+  this.busyCount = 0;
+
   // FIXME: remove these eslint disables when this is simplified and has a test
   /*eslint-disable no-nested-ternary*/
   /*eslint-disable no-extra-parens*/
@@ -152,6 +154,24 @@ TestRunner.prototype = {
     }
   },
 
+  notIdle: function () {
+    this.busyCount++;
+
+    if (this.busyCount === 1) {
+      // we transitioned from being idle to being busy
+      analytics.mark("magellan-busy", "busy");
+    }
+  },
+
+  maybeIdle: function () {
+    this.busyCount--;
+
+    if (this.busyCount === 0) {
+      // we transitioned from being busy into being idle
+      analytics.mark("magellan-busy", "idle");
+    }
+  },
+
   // Prepare a test to be run. Find a worker for the test and send it off to be run.
   stageTest: function (test, onTestComplete) {
     var self = this;
@@ -227,6 +247,7 @@ TestRunner.prototype = {
   // the test. The test will resolve with a test result whether it fails or passes.
   spawnTestProcess: function (testRun, test) {
     var deferred = Q.defer();
+    var self = this;
 
     var env;
     try {
@@ -246,6 +267,7 @@ TestRunner.prototype = {
     var childProcess;
     try {
       childProcess = fork(testRun.getCommand(), testRun.getArguments(), options);
+      this.notIdle();
     } catch (e) {
       deferred.reject(e);
       return deferred.promise;
@@ -311,6 +333,8 @@ TestRunner.prototype = {
     // Because "close" emits unpredictably some time after we fulfill case
     // #3, we wrap this callback in once() so that we only clean up once.
     var workerClosed = once(function (code) {
+      self.maybeIdle();
+
       statusEmitter.emit("message", {
         type: "analytics-event-mark",
         eventName: "test-run-" + testRun.guid,

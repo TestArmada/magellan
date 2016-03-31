@@ -59,6 +59,7 @@ var magellanGlobals = {
 };
 
 analytics.push("magellan-run");
+analytics.push("magellan-busy", undefined, "idle");
 
 //
 // Initialize Framework Plugins
