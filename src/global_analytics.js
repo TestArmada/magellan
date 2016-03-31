@@ -13,14 +13,16 @@ module.exports = {
   // receive the event. A markers list will be started with the current time.
   //
   // NOTE: name must be unique if non-colliding markers are desired.
-  push: function (eventName, metadata) {
+  push: function (eventName, metadata, startMarkerName) {
+    startMarkerName = startMarkerName ? startMarkerName : "start";
+
     var ev = {
       type: "analytics-event",
       data: {
         name: eventName,
 
         markers: [{
-          name: "start",
+          name: startMarkerName,
           t: Date.now()
         }],
 
