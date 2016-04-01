@@ -24,7 +24,7 @@ module.exports = {
       return f.length;
     }).length + PADDING;
 
-    var maxCLIWidth = _.max(_.pluck(browsers, "id"), function (b) {
+    var maxCLIWidth = _.max(_.map(browsers, "id"), function (b) {
       return b.length;
     }).length + cliSuffix.length + PADDING;
 
@@ -40,7 +40,7 @@ module.exports = {
       return b.toString().length;
     }).length + PADDING;
 
-    var maxOSWidth = _.max(_.pluck(browsers, "desiredCapabilities.platform"), function (b) {
+    var maxOSWidth = _.max(_.map(browsers, "desiredCapabilities.platform"), function (b) {
       return b.length;
     }).length + PADDING;
 
