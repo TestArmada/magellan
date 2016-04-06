@@ -47,6 +47,12 @@ module.exports = {
   bailTime: argv.bail_time || 8 * 60 * 1000,
   bailTimeExplicitlySet: typeof argv.bail_time !== "undefined",
 
+  // For --bail_early, we have two settings:
+  // threshold: the ratio (out of 1) of how many tests we need to see fail before we bail early.
+  // min attempts: how many tests we need to see first before we apply the threshold
+  bailThreshold: argv.early_bail_threshold || env.MAGELLAN_EARLY_BAIL_THRESHOLD || 0.1,
+  bailMinAttempts: argv.early_bail_min_attempts || env.MAGELLAN_EARLY_BAIL_MIN_ATTEMPTS || 10,
+
   buildId: buildId,
 
   framework: argv.framework || "nightwatch",
