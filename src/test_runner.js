@@ -32,9 +32,9 @@ var strictness = {
   BAIL_FAST: 4,      // bail as soon as a test fails, apply time rules
 
   // Ratio of tests that need to fail before we abandon the build in BAIL_EARLY mode
-  THRESHOLD: 0.1,
+  THRESHOLD: settings.bailThreshold,
   // Minimum number of tests that need to run before we test threshold rules
-  THRESHOLD_MIN_ATTEMPTS: 10,
+  THRESHOLD_MIN_ATTEMPTS: settings.bailMinAttempts,
 
   // Running length after which we abandon and fail a test in any mode except BAIL_NEVER
   // Specified in milliseconds.
@@ -773,6 +773,9 @@ TestRunner.prototype = {
 
       if (totalAttempts > strictness.THRESHOLD_MIN_ATTEMPTS) {
         if (ratio > strictness.THRESHOLD) {
+          console.log("Magellan has seen at least " + (strictness.THRESHOLD * 100) + "% of "
+            + " tests fail after seeing at least " + strictness.THRESHOLD_MIN_ATTEMPTS
+            + " tests run. Bailing early.");
           return true;
         }
       }
