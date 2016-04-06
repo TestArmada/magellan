@@ -50,8 +50,8 @@ module.exports = {
   // For --bail_early, we have two settings:
   // threshold: the ratio (out of 1) of how many tests we need to see fail before we bail early.
   // min attempts: how many tests we need to see first before we apply the threshold
-  bailThreshold: argv.early_bail_threshold || 0.1,
-  bailMinAttempts: argv.early_bail_min_attempts || 10,
+  bailThreshold: parseFloat(argv.early_bail_threshold) || 0.1,
+  bailMinAttempts: parseInt(argv.early_bail_min_attempts) || 10,
 
   buildId: buildId,
 
