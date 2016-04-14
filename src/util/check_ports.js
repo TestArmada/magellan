@@ -24,6 +24,15 @@ var checkPortStatus = function (desiredPort, callback) {
   });
 };
 
+//
+// Given an array portNumbers of the form:
+//
+// [1234, 5678, ...]
+//
+// checkPortRange will call callback() with a list of port statuses in the form:
+//
+// [{ port: number, available: boolean }]
+//
 var checkPortRange = function (portNumbers, callback) {
   portNumbers = _.cloneDeep(portNumbers);
   var statuses = [];
