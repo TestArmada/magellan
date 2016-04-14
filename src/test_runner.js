@@ -13,6 +13,7 @@ var EventEmitter = require("events").EventEmitter;
 var fs = require("fs");
 var mkdirSync = require("./mkdir_sync");
 var guid = require("./util/guid");
+var sanitizeFilename = require("sanitize-filename");
 
 var sauceBrowsers = require("./sauce/browsers");
 var analytics = require("./global_analytics");
@@ -482,8 +483,11 @@ TestRunner.prototype = {
     try {
       var TestRunClass = settings.testFramework.TestRun;
       var childBuildId = guid();
-      var tempAssetPath = path.resolve(settings.tempDir + "/build-" + this.buildId + "_"
+
+      // Note: we must sanitize the buildid because it might contain slashes or ".."" and other bad stuff
+      var tempAssetPath = path.resolve(settings.tempDir + "/build-" + sanitizeFilename(this.buildId) + "_"
         + childBuildId + "__temp_assets");
+
       mkdirSync(tempAssetPath);
 
       testRun = new TestRunClass({

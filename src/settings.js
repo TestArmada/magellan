@@ -5,6 +5,7 @@
 var guid = require("./util/guid");
 var argv = require("marge").argv;
 var env = process.env;
+var fs = require("fs");
 
 // Allow an external build id (eg: from CI system, for example) to be used. If we're not given one,
 // we generate a random build id instead. NOTE: This build id must work as a part of a filename.
@@ -12,10 +13,16 @@ var buildId = argv.external_build_id || "magellan-" + guid();
 
 // Create a temporary directory for child build assets like configuration, screenshots, etc.
 var mkdirSync = require("./mkdir_sync");
-var TEMP_DIR = argv.temp_dir || "./temp";
+var TEMP_DIR = path.resolve(argv.temp_dir || "./temp");
 var path = require("path");
-console.log("Magellan is creating temporary files at: " + path.resolve(TEMP_DIR));
-mkdirSync(path.resolve(TEMP_DIR));
+
+if (fs.accessSync(TEMP_DIR, fs.R_OK | fs.W_OK)) {
+  console.log("Magellan is creating temporary files at: " + TEMP_DIR);
+} else {
+  throw new Error("Magellan cannot write to the temporary directory: " + TEMP_DIR);
+}
+
+mkdirSync(TEMP_DIR);
 
 module.exports = {
 
