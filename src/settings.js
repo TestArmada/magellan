@@ -16,9 +16,10 @@ var buildId = argv.external_build_id || "magellan-" + guid();
 var mkdirSync = require("./mkdir_sync");
 var TEMP_DIR = path.resolve(argv.temp_dir || "./temp");
 
-if (fs.accessSync(TEMP_DIR, fs.R_OK | fs.W_OK)) {
+try {
+  fs.accessSync(TEMP_DIR, fs.R_OK | fs.W_OK);
   console.log("Magellan is creating temporary files at: " + TEMP_DIR);
-} else {
+} catch (e) {
   throw new Error("Magellan cannot write to the temporary directory: " + TEMP_DIR);
 }
 
