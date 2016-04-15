@@ -10,7 +10,8 @@ var path = require("path");
 
 // Allow an external build id (eg: from CI system, for example) to be used. If we're not given one,
 // we generate a random build id instead. NOTE: This build id must work as a part of a filename.
-var buildId = argv.external_build_id || "magellan-" + guid();
+// NOTE: The result of this line is that buildId is truthy so toString() should work
+var buildId = (argv.external_build_id || "magellan-" + guid()).toString();
 
 // Create a temporary directory for child build assets like configuration, screenshots, etc.
 var mkdirSync = require("./mkdir_sync");
