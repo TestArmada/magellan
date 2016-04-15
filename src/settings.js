@@ -17,8 +17,11 @@ var mkdirSync = require("./mkdir_sync");
 var TEMP_DIR = path.resolve(argv.temp_dir || "./temp");
 
 try {
-  // Check if TEMP_DIR already exists
-  fs.accessSync(TEMP_DIR, fs.R_OK | fs.W_OK);
+  // Check if TEMP_DIR already exists.
+  // NOTE: This doesn't work in node 0.10. Those envs will suffer as a result
+  if (fs.accessSync) {
+    fs.accessSync(TEMP_DIR, fs.R_OK | fs.W_OK);
+  }
 } catch (e) {
   // Create it if it doesn't..
   mkdirSync(TEMP_DIR);
@@ -26,7 +29,10 @@ try {
 
 try {
   // Check if creation worked or if we have access to the directory we were told to use.
-  fs.accessSync(TEMP_DIR, fs.R_OK | fs.W_OK);
+  // NOTE: This doesn't work in node 0.10. Those envs will suffer as a result
+  if (fs.accessSync) {
+    fs.accessSync(TEMP_DIR, fs.R_OK | fs.W_OK);
+  }
   console.log("Magellan is creating temporary files at: " + TEMP_DIR);
 } catch (e) {
   throw new Error("Magellan cannot write to or create the temporary directory: " + TEMP_DIR);
