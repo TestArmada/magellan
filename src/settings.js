@@ -21,6 +21,8 @@ try {
   // NOTE: This doesn't work in node 0.10. Those envs will suffer as a result
   if (fs.accessSync) {
     fs.accessSync(TEMP_DIR, fs.R_OK | fs.W_OK);
+  } else {
+    throw new Error("old node version");
   }
 } catch (e) {
   // Create it if it doesn't..
@@ -30,6 +32,8 @@ try {
 try {
   // Check if creation worked or if we have access to the directory we were told to use.
   // NOTE: This doesn't work in node 0.10. Those envs will suffer as a result
+  // if we don't have accessSync, then we proceed without being sure about TEMP_DIR.
+  // A crash will occur LATER in old node versions
   if (fs.accessSync) {
     fs.accessSync(TEMP_DIR, fs.R_OK | fs.W_OK);
   }
