@@ -577,7 +577,6 @@ Where `browser_profiles.json` should have a structure similar to placing `profil
   }
 ```
 
-
 Setting Up Setup and Teardown Tasks for CI
 ==========================================
 
@@ -601,6 +600,26 @@ Here's an example `scripts` block that implements these tasks in your package.js
     "magellan:setup": "./path/to/my/setup.sh",
     "magellan:teardown": "./path/to/my/teardown.sh"
   },
+```
+
+Using Magellan's Port Acquisition and Scanning Facilities
+=========================================================
+
+If you need to be able to consume ports during a magellan run and want to be absolutely certain they won't conflict with those that magellan gives to its worker pool, you can use the `portUtils` submodule like this in your setup and teardown tasks:
+
+```javascript
+
+var magellan = require("testarmada-magellan");
+
+// calls callback with arguments [null, 12000] if successful
+magellan.portUtil.acquirePort(function(err, port) {
+  if (err) {
+    console.log("error!", err);
+  } else {
+    console.log("Got port " + port + " for safe usage.");
+  }
+});
+
 ```
 
 ## Licenses
