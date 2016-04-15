@@ -484,9 +484,9 @@ TestRunner.prototype = {
       var TestRunClass = settings.testFramework.TestRun;
       var childBuildId = guid();
 
-      // Note: we must sanitize the buildid because it might contain slashes or ".."" and other bad stuff
-      var tempAssetPath = path.resolve(settings.tempDir + "/build-" + sanitizeFilename(this.buildId) + "_"
-        + childBuildId + "__temp_assets");
+      // Note: we must sanitize the buildid because it might contain slashes or "..", etc
+      var tempAssetPath = path.resolve(settings.tempDir + "/build-"
+        + sanitizeFilename(this.buildId) + "_" + childBuildId + "__temp_assets");
 
       mkdirSync(tempAssetPath);
 
