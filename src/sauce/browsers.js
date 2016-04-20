@@ -2,11 +2,8 @@
 
 var Q = require("q");
 var _ = require("lodash");
-var Table = require("cli-table");
-var clc = require("cli-color");
 var SauceBrowsers = require("guacamole");
 var listSauceCliBrowsers = require("guacamole/src/cli_list");
-var PADDING = 5;
 
 module.exports = {
 
@@ -14,7 +11,7 @@ module.exports = {
   // TODO: the actual listing of browsers should be provided by guacamole
   //
   listBrowsers: function () {
-    listSauceCliBrowsers(function(browserTable){
+    listSauceCliBrowsers(function (browserTable) {
       // convert table heading
       browserTable.options.head[1] = "Copy-Paste Command-Line Option";
       console.log(browserTable.toString());
