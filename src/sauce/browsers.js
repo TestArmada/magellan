@@ -5,6 +5,7 @@ var _ = require("lodash");
 var Table = require("cli-table");
 var clc = require("cli-color");
 var SauceBrowsers = require("guacamole");
+var listSauceCliBrowsers = require("guacamole/src/cli_list");
 var PADDING = 5;
 
 module.exports = {
@@ -13,72 +14,12 @@ module.exports = {
   // TODO: the actual listing of browsers should be provided by guacamole
   //
   listBrowsers: function () {
-    var browsers = SauceBrowsers.get({}, true);
-    var cliSuffix = "--browser=";
-
-    var families = _.groupBy(browsers, function (browser) {
-      return browser.family;
+    listSauceCliBrowsers(function(browserTable){
+      // convert table heading
+      browserTable.options.head[1] = "Copy-Paste Command-Line Option";
+      console.log(browserTable.toString());
     });
-
-    var maxFamWidth = _.max(Object.keys(families), function (f) {
-      return f.length;
-    }).length + PADDING;
-
-    var maxCLIWidth = _.max(_.map(browsers, "id"), function (b) {
-      return b.length;
-    }).length + cliSuffix.length + PADDING;
-
-    var maxBrowserWidth = _.max(browsers.map(function (b) {
-      return b.desiredCapabilities.browserName || "Native app";
-    }), function (b) {
-      return b.length;
-    }).length + PADDING;
-
-    var maxVersionWidth = _.max(browsers.map(function (b) {
-      return b.desiredCapabilities.version || b.desiredCapabilities.platformVersion;
-    }), function (b) {
-      return b.toString().length;
-    }).length + PADDING;
-
-    var maxOSWidth = _.max(_.map(browsers, "desiredCapabilities.platform"), function (b) {
-      return b.length;
-    }).length + PADDING;
-
-    var maxDeviceWidth = _.max(_.map(browsers, function (b) {
-      return b.desiredCapabilities.deviceName || "Desktop";
-    }), function (b) { return b.length; }).length + PADDING;
-
-    var table = new Table({
-      head: ["Family", "Copy-Paste Command-Line Option", "Browser/Env", "Version", "OS", "Device"],
-      colWidths: [
-        maxFamWidth,
-        maxCLIWidth,
-        maxBrowserWidth,
-        maxVersionWidth,
-        maxOSWidth,
-        maxDeviceWidth
-      ]
-    });
-
-    var count = 1;
-
-    Object.keys(families).sort().forEach(function (family) {
-      table.push([clc.red(family)]);
-      families[family].forEach(function (b) {
-        table.push([
-          clc.blackBright(count + "."),
-          cliSuffix + b.id,
-          b.desiredCapabilities.browserName || "Native app",
-          b.desiredCapabilities.version || b.desiredCapabilities.platformVersion,
-          b.desiredCapabilities.platform,
-          b.desiredCapabilities.deviceName
-            ? clc.cyanBright(b.desiredCapabilities.deviceName) : "Desktop"
-        ]);
-        count++;
-      });
-    });
-
-    console.log(table.toString());
+    
     console.log("");
     console.log("Non-Sauce Browser List:");
     console.log("  --browser=chrome\t\tLocal Chrome browser");
