@@ -18,14 +18,13 @@ module.exports = {
       // convert table heading
       browserTable.options.head[1] = "Copy-Paste Command-Line Option";
       console.log(browserTable.toString());
+      console.log("");
+      console.log("Non-Sauce Browser List:");
+      console.log("  --browser=chrome\t\tLocal Chrome browser");
+      console.log("  --browser=firefox\t\tLocal Firefox browser");
+      console.log("  --browser=safari\t\tLocal Safari browser");
+      console.log("  --browser=phantomjs\t\tLocal Phantomjs browser [default in non-sauce mode]");
     });
-    
-    console.log("");
-    console.log("Non-Sauce Browser List:");
-    console.log("  --browser=chrome\t\tLocal Chrome browser");
-    console.log("  --browser=firefox\t\tLocal Firefox browser");
-    console.log("  --browser=safari\t\tLocal Safari browser");
-    console.log("  --browser=phantomjs\t\tLocal Phantomjs browser [default in non-sauce mode]");
   },
 
   // Return a browser by id if it exists in our browser list. Optionally return that browser
