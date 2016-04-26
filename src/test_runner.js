@@ -721,7 +721,7 @@ TestRunner.prototype = {
     var suffix;
 
     if (this.serial) {
-      prefix = "\n(" + (this.passedTests.length + this.failedTests.length) + " / "
+      prefix = "\n(" + (this.passedTests.length + this.numTestsMaxRetries) + " / "
         + this.numTests + ")";
       suffix = "\n";
     } else if (testRequeued) {
