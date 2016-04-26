@@ -721,15 +721,15 @@ TestRunner.prototype = {
     var suffix;
 
     if (this.serial) {
-      prefix = "\n(" + (this.passedTests.length + this.numTestsMaxRetries.length) + " / "
+      prefix = "\n(" + (this.passedTests.length + this.failedTests.length) + " / "
         + this.numTests + ")";
       suffix = "\n";
     } else if (testRequeued) {
       prefix = "(retry " + test.attempts + " / "
-        + this.maxAttempts + ") <-- Worker " + test.workerIndex;
+        + test.maxAttempts + ") <-- Worker " + test.workerIndex;
       suffix = "";
     } else {
-      prefix = "(" + (this.passedTests.length + this.numTestsMaxRetries.length) + " / "
+      prefix = "(" + (this.passedTests.length + this.numTestsMaxRetries) + " / "
         + this.numTests + ") <-- Worker " + test.workerIndex;
       suffix = "";
     }
