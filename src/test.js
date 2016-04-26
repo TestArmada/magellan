@@ -36,6 +36,10 @@ Test.prototype.canRun = function () {
   return !isNew && !canRetry;
 };
 
+Test.prototype.reachedMaxAttempts = function () {
+  return this.attempts === this.maxAttempts;
+};
+
 Test.prototype.pass = function () {
   this.attempts++;
   this.status = TEST_STATUS_SUCCESSFUL;
