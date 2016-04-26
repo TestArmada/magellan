@@ -121,6 +121,9 @@ function TestRunner(tests, options) {
   this.passedTests = [];
   this.failedTests = [];
 
+  // Holds the number of tests that reached max retries
+  this.numTestsMaxRetries = 0;
+
   // Set up a worker queue to process tests in parallel
   this.q = async.queue(this.stageTest.bind(this), this.MAX_WORKERS);
 
@@ -707,6 +710,10 @@ TestRunner.prototype = {
       if (!test.canRun(true)) {
         this.q.push(test, this.onTestComplete.bind(this));
         testRequeued = true;
+      } else {
+        if (test.reachedMaxAttempts()) {
+          this.numTestsMaxRetries++;
+        }
       }
     }
 
@@ -714,11 +721,15 @@ TestRunner.prototype = {
     var suffix;
 
     if (this.serial) {
-      prefix = "\n(" + (this.passedTests.length + this.failedTests.length) + " / "
+      prefix = "\n(" + (this.passedTests.length + this.numTestsMaxRetries.length) + " / "
         + this.numTests + ")";
       suffix = "\n";
+    } else if (testRequeued) {
+      prefix = "(retry " + test.attempts + " / "
+        + this.maxAttempts + ") <-- Worker " + test.workerIndex;
+      suffix = "";
     } else {
-      prefix = "(" + (this.passedTests.length + this.failedTests.length) + " / "
+      prefix = "(" + (this.passedTests.length + this.numTestsMaxRetries.length) + " / "
         + this.numTests + ") <-- Worker " + test.workerIndex;
       suffix = "";
     }
