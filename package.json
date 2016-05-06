@@ -1,6 +1,6 @@
 {
   "name": "testarmada-magellan",
-  "version": "8.5.2",
+  "version": "8.5.3",
   "description": "Massively parallel automated testing",
   "main": "src/main",
   "directories": {
@@ -57,7 +57,8 @@
     "npm": ">=2.1.10"
   },
   "bin": {
-    "magellan": "./bin/magellan"
+    "magellan": "./bin/magellan",
+    "magellan_": "./bin/magellan",
   },
   "devDependencies": {
     "chai": "^3.4.1",
