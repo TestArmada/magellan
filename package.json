@@ -58,7 +58,7 @@
   },
   "bin": {
     "magellan": "./bin/magellan",
-    "magellan_": "./bin/magellan",
+    "magellan_": "./bin/magellan"
   },
   "devDependencies": {
     "chai": "^3.4.1",
