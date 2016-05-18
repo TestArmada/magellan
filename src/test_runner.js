@@ -13,6 +13,7 @@ var EventEmitter = require("events").EventEmitter;
 var fs = require("fs");
 var mkdirSync = require("./mkdir_sync");
 var guid = require("./util/guid");
+var logStamp = require("./util/logstamp");
 var sanitizeFilename = require("sanitize-filename");
 
 var sauceBrowsers = require("./sauce/browsers");
@@ -404,11 +405,45 @@ TestRunner.prototype = {
     });
 
     childProcess.stdout.on("data", function (data) {
-      stdout += ("" + data);
+      var text = ("" + data);
+      if (text.trim() !== "") {
+        text = text
+          .split("\n")
+          .filter(function (line) {
+            return line.trim() !== "" || line.indexOf("\n") > -1;
+          })
+          .map(function (line) {
+            return clc.greenBright(logStamp()) + " " + line;
+          })
+          .join("\n");
+
+        if (text.length > 0) {
+          stdout += text + "\n";
+        } else {
+          stdout += "\n";
+        }
+      }
     });
 
     childProcess.stderr.on("data", function (data) {
-      stderr += ("" + data);
+      var text = ("" + data);
+      if (text.trim() !== "") {
+        text = text
+          .split("\n")
+          .filter(function (line) {
+            return line.trim() !== "" || line.indexOf("\n") > -1;
+          })
+          .map(function (line) {
+            return clc.greenBright(logStamp()) + " " + line;
+          })
+          .join("\n");
+
+        if (text.length > 0) {
+          stderr += text + "\n";
+        } else {
+          stderr += "\n";
+        }
+      }
     });
 
     childProcess.on("close", workerClosed);
