@@ -13,6 +13,7 @@ var EventEmitter = require("events").EventEmitter;
 var fs = require("fs");
 var mkdirSync = require("./mkdir_sync");
 var guid = require("./util/guid");
+var logStamp = require("./util/logstamp");
 var sanitizeFilename = require("sanitize-filename");
 
 var sauceBrowsers = require("./sauce/browsers");
@@ -404,11 +405,21 @@ TestRunner.prototype = {
     });
 
     childProcess.stdout.on("data", function (data) {
-      stdout += ("" + data);
+      stdout += ("" + data)
+        .split("\n")
+        .map(function (line) {
+          return clc.greenBright(logStamp()) + " " + line;
+        })
+        .join("\n");
     });
 
     childProcess.stderr.on("data", function (data) {
-      stderr += ("" + data);
+      stderr += ("" + data)
+        .split("\n")
+        .map(function (line) {
+          return clc.greenBright(logStamp()) + " " + line;
+        })
+        .join("\n");
     });
 
     childProcess.on("close", workerClosed);
