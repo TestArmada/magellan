@@ -413,6 +413,7 @@ TestRunner.prototype = {
             return line.trim() !== "" || line.indexOf("\n") > -1;
           })
           .map(function (line) {
+            // NOTE: since this comes from stdout, color the stamps green
             return clc.greenBright(logStamp()) + " " + line;
           })
           .join("\n");
@@ -434,14 +435,15 @@ TestRunner.prototype = {
             return line.trim() !== "" || line.indexOf("\n") > -1;
           })
           .map(function (line) {
-            return clc.greenBright(logStamp()) + " " + line;
+            // NOTE: since this comes from stderr, color the stamps red
+            return clc.redBright(logStamp()) + " " + line;
           })
           .join("\n");
 
         if (text.length > 0) {
-          stderr += text + "\n";
+          stdout += text + "\n";
         } else {
-          stderr += "\n";
+          stdout += "\n";
         }
       }
     });
