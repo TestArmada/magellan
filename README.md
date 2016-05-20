@@ -371,6 +371,22 @@ Some custom reporters need to initialize themselves asynchronously before `liste
 
 In the above example, a reporter needs to create a job entry and obtain the id of the job before it can send information about running tests. Magellan will wait until `initialize()` resolves this promise before starting any tests.
 
+Optional Reporter Loading
+=========================
+
+Your project may have reporter modules that you only want to run in certain circumstances, like a CI environment, and you may not want to require them to be installed on a given system (eg: a developer machine). If you want to reference a reporter but still run tests if that reporter is not installed or not found, use `optional_reporters` in `magellan.json`:
+
+```json
+{
+  "reporters": [
+    "./path/to/my/reporter",
+  ],
+  "optional_reporters": [
+    "my_optional_reporter_module"
+  ]
+}
+```
+
 Setup and Teardown
 ==================
 

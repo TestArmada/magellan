@@ -186,6 +186,14 @@ if (margs.argv.reporters && _.isArray(margs.argv.reporters)) {
   listeners = listeners.concat(margs.argv.reporters.map(loadRelativeModule));
 }
 
+// optional_reporters are modules we want to load only if found. If not found, we
+// still continue initializing Magellan and don't throw any errors or warnings
+if (margs.argv.optional_reporters && _.isArray(margs.argv.optional_reporters)) {
+  listeners = listeners.concat(margs.argv.optional_reporters.map(function (reporterModule) {
+    return loadRelativeModule(reporterModule, true);
+  }));
+}
+
 //
 // Slack integration (enabled if settings exist)
 //
