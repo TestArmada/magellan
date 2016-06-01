@@ -65,6 +65,8 @@ function TestRunner(tests, options) {
 
   this.busyCount = 0;
 
+  this.retryCount = 0;
+
   // FIXME: remove these eslint disables when this is simplified and has a test
   /*eslint-disable no-nested-ternary*/
   /*eslint-disable no-extra-parens*/
@@ -615,6 +617,8 @@ TestRunner.prototype = {
   summarizeCompletedBuild: function () {
     var deferred = Q.defer();
 
+    var retryMetrics = {};
+
     this.gatherTrends();
 
     if (this.failedTests.length > 0) {
@@ -635,11 +639,25 @@ TestRunner.prototype = {
       analytics.mark("magellan-run", "passed");
     }
 
+    this.tests.forEach(function (test) {
+      if (test.status === 3 && test.getRetries() > 0) {
+        if (retryMetrics[test.getRetries()]) {
+          retryMetrics[test.getRetries()]++;
+        } else {
+          retryMetrics[test.getRetries()] = 1;
+        }
+      }
+    });
+
     console.log(clc.greenBright("\n============= Suite Complete =============\n"));
     console.log("     Status: " + status);
     console.log("    Runtime: " + prettyMs((new Date()).getTime() - this.startTime));
     console.log("Total tests: " + this.numTests);
     console.log(" Successful: " + this.passedTests.length + " / " + this.numTests);
+
+    _.forOwn(retryMetrics, function (testCount, numRetries) {
+      console.log(testCount + " test(s) have retried: " + numRetries + " time(s)");
+    });
 
     if (this.failedTests.length > 0) {
       console.log("     Failed: " + this.failedTests.length + " / " + this.numTests);
@@ -760,7 +778,8 @@ TestRunner.prototype = {
       suffix = "";
     }
 
-    var requeueNote = testRequeued ? clc.cyanBright("(will retry)") : "";
+    var requeueNote = testRequeued ? clc.cyanBright("(will retry).  Spent "
+        + test.getRuntime() + " msec") : "";
     console.log(prefix + " "
       + (successful ? clc.greenBright("PASS ") : clc.redBright("FAIL ")) + requeueNote + " "
       + test.toString() + " " + suffix);
