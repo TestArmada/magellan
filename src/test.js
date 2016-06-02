@@ -70,6 +70,10 @@ Test.prototype.getRuntime = function () {
   }
 };
 
+Test.prototype.getRetries = function () {
+  return this.attempts - 1;
+};
+
 Test.TEST_STATUS_NEW = TEST_STATUS_NEW;
 Test.TEST_STATUS_FAILED = TEST_STATUS_FAILED;
 Test.TEST_STATUS_SUCCESSFUL = TEST_STATUS_SUCCESSFUL;
