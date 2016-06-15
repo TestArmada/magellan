@@ -43,6 +43,7 @@ var async = require("async");
 var clc = require("cli-color");
 var browsers = require("../src/sauce/browsers");
 var loadRelativeModule = require("../src/util/load_relative_module");
+var processCleanup = require("../src/util/process_cleanup");
 
 var isSauce = margs.argv.sauce ? true : false;
 var isNodeBased = margs.argv.framework && margs.argv.framework.indexOf("mocha") > -1;
@@ -283,16 +284,20 @@ var startSuite = function () {
 
       onSuccess: function () {
         workerAllocator.teardown(function () {
-          deferred.resolve();
+          processCleanup(function () {
+            deferred.resolve();
+          });
         });
       },
 
       onFailure: function (/*failedTests*/) {
         workerAllocator.teardown(function () {
-          // Failed tests are not a failure in Magellan itself, so we pass an empty error
-          // here so that we don't confuse the user. Magellan already outputs a failure
-          // report to the screen in the case of failed tests.
-          deferred.reject(null);
+          processCleanup(function () {
+            // Failed tests are not a failure in Magellan itself, so we pass an empty error
+            // here so that we don't confuse the user. Magellan already outputs a failure
+            // report to the screen in the case of failed tests.
+            deferred.reject(null);
+          });
         });
       }
     });
