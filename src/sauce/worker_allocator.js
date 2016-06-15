@@ -5,8 +5,6 @@ var BaseWorkerAllocator = require("../worker_allocator");
 var _ = require("lodash");
 var request = require("request");
 
-var exec = require("child_process").exec;
-
 var sauceSettings = require("./settings");
 var settings = require("../settings");
 var analytics = require("../global_analytics");
