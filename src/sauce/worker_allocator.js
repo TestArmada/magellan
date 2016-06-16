@@ -5,8 +5,6 @@ var BaseWorkerAllocator = require("../worker_allocator");
 var _ = require("lodash");
 var request = require("request");
 
-var exec = require("child_process").exec;
-
 var sauceSettings = require("./settings");
 var settings = require("../settings");
 var analytics = require("../global_analytics");
@@ -264,19 +262,15 @@ SauceWorkerAllocator.prototype.openTunnels = function (callback) {
 SauceWorkerAllocator.prototype.teardownTunnels = function (callback) {
   var self = this;
 
-  var cleanupAndCallback = function () {
-    self.cleanupTunnels(callback);
-  };
-
   var tunnelsOriginallyOpen = this.tunnels.length;
   var tunnelsOpen = this.tunnels.length;
   var tunnelCloseTimeout = (sauceSettings.tunnelTimeout || SECONDS_MINUTE) * SECOND_MS;
 
   var closeTimer = setTimeout(function () {
-    // sometimes, due to network flake, we never get acknowledgement that the tunnel
-    // has been closed.  in such case, we don't want to hang the build indefinitely.
+    // NOTE: We *used to* forcefully clean up stuck tunnels in here, but instead,
+    // we now leave the tunnel processes for process_cleanup to clean up.
     console.log("Timeout reached waiting for tunnels to close... Continuing...");
-    cleanupAndCallback();
+    return callback();
   }, tunnelCloseTimeout);
 
   var tunnelClosed = function () {
@@ -284,7 +278,7 @@ SauceWorkerAllocator.prototype.teardownTunnels = function (callback) {
     if (--tunnelsOpen === 0) {
       console.log("All tunnels closed!  Continuing...");
       clearTimeout(closeTimer);
-      cleanupAndCallback();
+      return callback();
     } else {
       console.log(tunnelsOpen + " of " + tunnelsOriginallyOpen
         + " tunnels still open... waiting...");
@@ -293,24 +287,6 @@ SauceWorkerAllocator.prototype.teardownTunnels = function (callback) {
 
   _.each(self.tunnels, function (tunnelInfo) {
     tunnel.close(tunnelInfo, tunnelClosed);
-  });
-};
-
-SauceWorkerAllocator.prototype.cleanupTunnels = function (callback) {
-  // at this point, all sauce tunnel processes have already been sent the SIGTERM signal,
-  // meaning they've already been "asked politely" to exit.  if any sauce tunnel processes
-  // are still active at this point, we need to forcefully kill them so that we're not
-  // leaving the build environment in a polluted state.
-
-  // NOTE: this may not be Windows compatible
-  var cmd = "pkill -9 -f " + sauceSettings.tunnelId;
-
-  console.log("Cleaning up any remaining sauce connect processes with: " + cmd);
-
-  exec(cmd, {}, function (error, stdout, stderr) {
-    console.log(stdout);
-    console.log(stderr);
-    callback();
   });
 };
 

@@ -1,7 +1,6 @@
 "use strict";
 
 var fork = require("child_process").fork;
-var processCleanup = require("./util/process_cleanup");
 var async = require("async");
 var _ = require("lodash");
 var clc = require("cli-color");
@@ -709,17 +708,12 @@ TestRunner.prototype = {
     var self = this;
 
     setTimeout(function () {
-      // We delay our report to allow bailed builds to clean up before we
-      // outputting our final report to the screen. If processes hang around
-      // for too long, processCleanup() will get rid of them for us.
-      processCleanup(function () {
-        self.summarizeCompletedBuild().then(function () {
-          if (self.failedTests.length === 0) {
-            self.onSuccess();
-          } else {
-            self.onFailure(self.failedTests);
-          }
-        });
+      self.summarizeCompletedBuild().then(function () {
+        if (self.failedTests.length === 0) {
+          self.onSuccess();
+        } else {
+          self.onFailure(self.failedTests);
+        }
       });
     }, FINAL_CLEANUP_DELAY, true);
   },
