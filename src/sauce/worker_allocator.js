@@ -47,7 +47,7 @@ SauceWorkerAllocator.prototype.initialize = function (callback) {
     return callback();
   } else if (sauceSettings.sauceTunnelId) {
     // Aoint test to a tunnel pool, no need to initialize tunnel
-    // TODO: verify if dmz pool is avaiable and if at least one
+    // TODO: verify if sauce connect pool is avaiable and if at least one
     // tunnel in the pool is ready
     this.tunnels.push({ name: "fake sc process" });
     console.log("Connected to sauce tunnel pool with Tunnel ID", sauceSettings.sauceTunnelId);
@@ -192,7 +192,7 @@ SauceWorkerAllocator.prototype.assignTunnelsToWorkers = function (numOpenedTunne
 
 SauceWorkerAllocator.prototype.getTunnelId = function (tunnelIndex) {
   if (sauceSettings.sauceTunnelId) {
-    // if dmz tunnel exists
+    // if sauce tunnel id exists
     return sauceSettings.sauceTunnelId;
   } else {
     return this.tunnelPrefix + "_" + tunnelIndex;

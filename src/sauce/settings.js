@@ -10,7 +10,6 @@ var clc = require("cli-color");
 /*eslint-disable no-magic-numbers*/
 var config = {
   // required:
-  // tunnelId: process.env.SAUCE_TUNNEL_ID,
   username: process.env.SAUCE_USERNAME,
   accessKey: process.env.SAUCE_ACCESS_KEY,
   sauceConnectVersion: process.env.SAUCE_CONNECT_VERSION,
@@ -37,10 +36,6 @@ if (typeof config.locksServerLocation === "string" && config.locksServerLocation
 }
 
 var parameterWarnings = {
-  // tunnelId: {
-  //   required: config.useTunnels ? true : false,
-  //   envKey: "SAUCE_TUNNEL_ID"
-  // },
   username: {
     required: true,
     envKey: "SAUCE_USERNAME"
