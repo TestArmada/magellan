@@ -78,7 +78,7 @@ if (argv.sauce) {
     throw new Error("Missing configuration for Saucelabs connection.");
   }
 
-  if(argv.sauce_tunnel_id && argv.create_tunnels){
+  if (argv.sauce_tunnel_id && argv.create_tunnels) {
     throw new Error("Only one Saucelabs tunnel arg is allowed, --sauce_tunnel_id " +
       "or --create_tunnels.");
   }
