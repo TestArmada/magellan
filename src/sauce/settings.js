@@ -16,6 +16,7 @@ var config = {
 
   // optional:
   sauceTunnelId: argv.sauce_tunnel_id,
+  sharedSauceParentAccount: argv.shared_sauce_parent_account,
   tunnelTimeout: process.env.SAUCE_TUNNEL_CLOSE_TIMEOUT,
   useTunnels: !!argv.create_tunnels,
   maxTunnels: argv.num_tunnels || 1,
@@ -76,6 +77,10 @@ if (argv.sauce) {
   if (argv.sauce_tunnel_id && argv.create_tunnels) {
     throw new Error("Only one Saucelabs tunnel arg is allowed, --sauce_tunnel_id " +
       "or --create_tunnels.");
+  }
+
+  if (argv.shared_sauce_parent_account && argv.create_tunnels) {
+    throw new Error("--shared_sauce_parent_account only works with --sauce_tunnel_id.");
   }
 }
 
