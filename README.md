@@ -128,7 +128,7 @@ Quick Reference Guide for Command-Line Use
 
 #### Running Many Tests in Parallel (Default)
 
-By default, `magellan` will try to run your the fastest way possible, in parallel, in the `phantomjs` browser.
+By default, `magellan` will try to run your test suite the fastest way possible, in parallel, in the `phantomjs` browser.
 
 To execute your tests, run:
 ```console
@@ -248,7 +248,7 @@ A bail option does not have to be used to set bail time. For example:
 $ magellan --bail_time=60000
 ```
 
-The `bail_time` setting can also be written to Magellan configuration. See
+The `bail_time` setting can also be written to Magellan configuration. See [Saving Configuration](#saving-configuration)
 
 Saving Configuration
 ====================
