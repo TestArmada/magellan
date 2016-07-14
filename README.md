@@ -48,8 +48,8 @@ Boilerplate / example projects:
 Installation:
 
 ```shell
-npm install --save testarmada-magellan
-npm install --save testarmada-magellan-mocha-plugin
+npm install --save-dev testarmada-magellan
+npm install --save-dev testarmada-magellan-mocha-plugin
 ```
 
 `magellan.json`
@@ -73,8 +73,8 @@ Helper Library: (note: this is not required for nightwatch support)
 Installation:
 
 ```shell
-npm install --save testarmada-magellan
-npm install --save testarmada-magellan-nightwatch-plugin
+npm install --save-dev testarmada-magellan
+npm install --save-dev testarmada-magellan-nightwatch-plugin
 ```
 
 `magellan.json`
