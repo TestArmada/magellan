@@ -1,5 +1,5 @@
 {
-  "mocha_tests": ["./test"],
+  "mocha_tests": ["./integration"],
   "framework": "vanilla-mocha",
   "max_workers": 7
 }
