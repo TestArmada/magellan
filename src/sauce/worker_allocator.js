@@ -43,7 +43,15 @@ util.inherits(SauceWorkerAllocator, BaseWorkerAllocator);
 SauceWorkerAllocator.prototype.initialize = function (callback) {
   this.initializeWorkers(this.MAX_WORKERS);
 
-  if (!sauceSettings.useTunnels) {
+  if (!sauceSettings.useTunnels && !sauceSettings.sauceTunnelId) {
+    return callback();
+  } else if (sauceSettings.sauceTunnelId) {
+    // Aoint test to a tunnel pool, no need to initialize tunnel
+    // TODO: verify if sauce connect pool is avaiable and if at least one
+    // tunnel in the pool is ready
+    this.tunnels.push({ name: "fake sc process" });
+    console.log("Connected to sauce tunnel pool with Tunnel ID", sauceSettings.sauceTunnelId);
+    this.assignTunnelsToWorkers(this.tunnels.length);
     return callback();
   } else {
     tunnel.initialize(function (initErr) {
@@ -183,7 +191,12 @@ SauceWorkerAllocator.prototype.assignTunnelsToWorkers = function (numOpenedTunne
 };
 
 SauceWorkerAllocator.prototype.getTunnelId = function (tunnelIndex) {
-  return sauceSettings.tunnelId + "_" + this.tunnelPrefix + "_" + tunnelIndex;
+  if (sauceSettings.sauceTunnelId) {
+    // if sauce tunnel id exists
+    return sauceSettings.sauceTunnelId;
+  } else {
+    return this.tunnelPrefix + "_" + tunnelIndex;
+  }
 };
 
 SauceWorkerAllocator.prototype.teardown = function (callback) {

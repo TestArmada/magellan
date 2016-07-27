@@ -10,12 +10,13 @@ var clc = require("cli-color");
 /*eslint-disable no-magic-numbers*/
 var config = {
   // required:
-  tunnelId: process.env.SAUCE_TUNNEL_ID,
   username: process.env.SAUCE_USERNAME,
   accessKey: process.env.SAUCE_ACCESS_KEY,
   sauceConnectVersion: process.env.SAUCE_CONNECT_VERSION,
 
   // optional:
+  sauceTunnelId: argv.sauce_tunnel_id,
+  sharedSauceParentAccount: argv.shared_sauce_parent_account,
   tunnelTimeout: process.env.SAUCE_TUNNEL_CLOSE_TIMEOUT,
   useTunnels: !!argv.create_tunnels,
   maxTunnels: argv.num_tunnels || 1,
@@ -36,10 +37,6 @@ if (typeof config.locksServerLocation === "string" && config.locksServerLocation
 }
 
 var parameterWarnings = {
-  tunnelId: {
-    required: config.useTunnels ? true : false,
-    envKey: "SAUCE_TUNNEL_ID"
-  },
   username: {
     required: true,
     envKey: "SAUCE_USERNAME"
@@ -75,6 +72,15 @@ if (argv.sauce) {
 
   if (!valid) {
     throw new Error("Missing configuration for Saucelabs connection.");
+  }
+
+  if (argv.sauce_tunnel_id && argv.create_tunnels) {
+    throw new Error("Only one Saucelabs tunnel arg is allowed, --sauce_tunnel_id " +
+      "or --create_tunnels.");
+  }
+
+  if (argv.shared_sauce_parent_account && argv.create_tunnels) {
+    throw new Error("--shared_sauce_parent_account only works with --sauce_tunnel_id.");
   }
 }
 
