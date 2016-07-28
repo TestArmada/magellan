@@ -69,6 +69,10 @@ module.exports = {
         logfile: logFilePath
       };
 
+      if (settings.fastFailRegexps) {
+        sauceOptions.fastFailRegexps = settings.fastFailRegexps;
+      }
+
       var seleniumPort = options.seleniumPort;
       if (seleniumPort) {
         sauceOptions.port = seleniumPort;
