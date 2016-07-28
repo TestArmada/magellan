@@ -20,6 +20,7 @@ var config = {
   tunnelTimeout: process.env.SAUCE_TUNNEL_CLOSE_TIMEOUT,
   useTunnels: !!argv.create_tunnels,
   maxTunnels: argv.num_tunnels || 1,
+  fastFailRegexps: process.env.SAUCE_TUNNEL_FAST_FAIL_REGEXPS,
 
   locksServerLocation: argv.locks_server || process.env.LOCKS_SERVER,
   locksOutageTimeout: 1000 * 60 * 5,
