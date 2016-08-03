@@ -318,7 +318,14 @@ browsers.initialize(isSauce)
   .then(browserOptions.detectFromCLI.bind({}, margs.argv, isSauce, isNodeBased))
   .then(function (_selectedBrowsers) {
     selectedBrowsers = _selectedBrowsers;
-    if (_selectedBrowsers.length === 0) {
+    if (!_selectedBrowsers) {
+      // If this list comes back completely undefined, it's because we didn't
+      // get anything back from either profile lookup or the saucelabs API, which
+      // likely means we requested a browser that doesn't exist or no longer exists.
+      console.log(clc.redBright("\nError: No matching browsers have been found."
+        + "\nTo see a list of sauce browsers, use the --list_browsers option.\n"));
+      throw new Error("Invalid browser specified for Sauce support");
+    } else if (_selectedBrowsers.length === 0) {
       console.log(clc.redBright("\nError: To use --sauce mode, you need to specify a browser."
         + "\nTo see a list of sauce browsers, use the --list_browsers option.\n"));
       throw new Error("No browser specified for Sauce support");
