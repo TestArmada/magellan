@@ -285,7 +285,7 @@ TestRunner.prototype = {
     var sentry;
 
     var seleniumSessionId;
-    var stdout = "";
+    var stdout = "{timestamp} : magellan test runner clock-start";
     var stderr = "";
 
     try {
