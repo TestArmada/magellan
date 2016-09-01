@@ -285,7 +285,7 @@ TestRunner.prototype = {
     var sentry;
 
     var seleniumSessionId;
-    var stdout = "{timestamp} : magellan test runner clock-start";
+    var stdout = clc.greenBright(logStamp()) + " " + " Magellan child process start\n\n";
     var stderr = "";
 
     try {
