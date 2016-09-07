@@ -264,7 +264,7 @@ TestRunner.prototype = {
       env: env,
       silent: true,
       detached: false,
-      stdio: ["pipe", "pipe", "pipe"]
+      stdio: ["pipe", "pipe", "pipe", "ipc"]
     };
 
     var childProcess;
