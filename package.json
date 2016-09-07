@@ -1,6 +1,6 @@
 {
   "name": "testarmada-magellan",
-  "version": "8.8.3",
+  "version": "8.8.4",
   "description": "Massively parallel automated testing",
   "main": "src/main",
   "directories": {
