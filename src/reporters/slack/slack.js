@@ -35,8 +35,7 @@ Reporter.prototype.initialize = function () {
   var hasAllConfig = true;
   [
     // slack-related
-    "account",
-    "key",
+    "slackURL",
     "channel",
     "username",
     "iconURL",
@@ -50,7 +49,13 @@ Reporter.prototype.initialize = function () {
       console.error("Missing Slack configuration variable: " + key);
     }
   });
-  if (!hasAllConfig) {
+
+  if (this.config.hook || this.config.key) {
+    deferred.reject(new Error(
+      "Error: Slack configuration has changed. \"slackURL\" should be " +
+      "provided instead of \"key\" and \"channel\""
+    ));
+  } else if (!hasAllConfig) {
     deferred.reject(new Error("Error: Missing required Slack configuration variables"));
   }
 
@@ -58,11 +63,12 @@ Reporter.prototype.initialize = function () {
   this.buildDisplayName = this.config.buildDisplayName;
   this.buildURL = this.config.buildURL;
 
-  this.slack = new Slack(this.config.account, this.config.key, {
+  this.slack = new Slack(this.config.slackURL, {
     channel: this.config.channel,
     username: this.config.username,
     /*eslint-disable camelcase*/
     icon_url: this.config.iconURL
+    /*eslint-enable camelcase*/
   });
 
   deferred.resolve();
