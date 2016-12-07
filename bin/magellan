@@ -39,6 +39,7 @@ var browserOptions = require("../src/detect_browsers");
 var settings = require("../src/settings");
 var Q = require("q");
 var sauceSettings = require("../src/sauce/settings");
+var MongoEmitter = require("../src/mongo_emitter");
 var async = require("async");
 var clc = require("cli-color");
 var browsers = require("../src/sauce/browsers");
@@ -58,6 +59,9 @@ var MAX_WORKERS;
 var magellanGlobals = {
   analytics: analytics
 };
+
+// Initialize the mongo emitter
+MongoEmitter.setup();
 
 analytics.push("magellan-run");
 analytics.push("magellan-busy", undefined, "idle");

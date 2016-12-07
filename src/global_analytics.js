@@ -2,6 +2,7 @@
 
 var _ = require("lodash");
 var EventEmitter = require("events").EventEmitter;
+var MongoEmitter = require("./mongo_emitter");
 var timeline = [];
 
 module.exports = {
@@ -31,6 +32,7 @@ module.exports = {
     };
 
     this._emitter.emit("message", ev);
+    MongoEmitter.globalMessage(ev);
     timeline.push(ev);
   },
 
@@ -49,6 +51,7 @@ module.exports = {
     };
 
     this._emitter.emit("message", ev);
+    MongoEmitter.globalMessage(ev);
     timeline.push(ev);
   },
 
