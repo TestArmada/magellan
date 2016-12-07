@@ -14,7 +14,7 @@ var mkdirSync = require("./mkdir_sync");
 var guid = require("./util/guid");
 var logStamp = require("./util/logstamp");
 var sanitizeFilename = require("sanitize-filename");
-
+var mongoEmitter = require("./mongo_emitter");
 var sauceBrowsers = require("./sauce/browsers");
 var analytics = require("./global_analytics");
 
@@ -281,6 +281,10 @@ TestRunner.prototype = {
     var statusEmitter = new EventEmitter();
     statusEmitter.stdout = childProcess.stdout;
     statusEmitter.stderr = childProcess.stderr;
+    var statusEmitterEmit = function (type, message) {
+      statusEmitter.emit(type, message);
+      mongoEmitter.testRunMessage(testRun, test, message);
+    };
 
     var sentry;
 
@@ -297,7 +301,7 @@ TestRunner.prototype = {
         }
       });
 
-      statusEmitter.emit("message", {
+      statusEmitterEmit("message", {
         type: "worker-status",
         status: "started",
         name: test.locator.toString()
@@ -308,7 +312,7 @@ TestRunner.prototype = {
       return deferred.promise;
     }
 
-    statusEmitter.emit("message", {
+    statusEmitterEmit("message", {
       type: "analytics-event",
       data: {
         name: "test-run-" + testRun.guid,
@@ -338,7 +342,7 @@ TestRunner.prototype = {
     var workerClosed = once(function (code) {
       self.maybeIdle();
 
-      statusEmitter.emit("message", {
+      statusEmitterEmit("message", {
         type: "analytics-event-mark",
         eventName: "test-run-" + testRun.guid,
         data: {
@@ -350,7 +354,7 @@ TestRunner.prototype = {
       test.stopClock();
       clearInterval(sentry);
 
-      statusEmitter.emit("message", {
+      statusEmitterEmit("message", {
         type: "worker-status",
         status: "finished",
         name: test.locator.toString(),
@@ -714,6 +718,7 @@ TestRunner.prototype = {
         } else {
           self.onFailure(self.failedTests);
         }
+        mongoEmitter.shutdown();
       });
     }, FINAL_CLEANUP_DELAY, true);
   },
