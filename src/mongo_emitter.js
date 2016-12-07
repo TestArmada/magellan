@@ -10,7 +10,7 @@ var MongoClient = require("mongodb").MongoClient;
 var Q = require("q");
 
 var _mongoConfig = {
-  enabled: process.env.MAGELLAN_MONGO_URL !== null && process.env.MAGELLAN_MONGO_DB  !== null,
+  enabled: process.env.MAGELLAN_MONGO_URL && process.env.MAGELLAN_MONGO_DB,
   url: process.env.MAGELLAN_MONGO_URL,
   collection: process.env.MAGELLAN_MONGO_COLLECTION,
   mockCollection: null
@@ -23,18 +23,15 @@ var _getDB = function () {
     MongoClient.connect(_mongoConfig.url, function (err, database) {
       if (err) {
         def.reject(err);
-      }
-      else {
+      } else {
         def.resolve(database);
       }
     });
-    return _dbPromise = def.promise;
-  } else {
-    return _dbPromise;
+    _dbPromise = def.promise;
   }
+  return _dbPromise;
 };
 
-var _mongoCollection = null;
 var _insert = function (message) {
   if (_mongoConfig.mockCollection) {
     _mongoConfig.mockCollection.insertOne(message);
@@ -47,7 +44,7 @@ var _insert = function (message) {
 };
 
 module.exports = {
-  setup: function() {
+  setup: function () {
   },
   shutdown: function () {
     if (_mongoConfig.enabled) {
