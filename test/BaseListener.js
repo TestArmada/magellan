@@ -19,7 +19,7 @@ describe('listener', function() {
 
   it('should flush', function() {
     var myListener = new BaseListener();
-    myListener.flush().then(() => {});
+    myListener.flush().then(function() {});
     expect(myListener.flush).to.not.be.null;
   });
 

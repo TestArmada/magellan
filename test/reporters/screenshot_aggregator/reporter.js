@@ -149,7 +149,6 @@ describe('ScreenshotAggregator Reporter', function() {
         },
         glob: {
           sync: function(pattern) {
-            console.log(pattern);
             return pattern.indexOf("png") > -1 ? ["a"] : [];
           }
         },
