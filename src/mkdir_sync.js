@@ -2,9 +2,15 @@
 
 var fs = require("fs");
 
-module.exports = function (path) {
+module.exports = function (path, opts) {
+  var _fs = fs;
+  /* istanbul ignore next */
+  if (opts && opts.fs) {
+    _fs = opts.fs;
+  }
+
   try {
-    fs.mkdirSync(path);
+    _fs.mkdirSync(path);
   } catch (e) {
     if (e.code !== "EEXIST") {
       throw e;

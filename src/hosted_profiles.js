@@ -19,8 +19,14 @@ module.exports = {
     }
   },
 
-  getProfilesAtURL: function (url) {
-    var res = syncRequest("GET", url);
+  getProfilesAtURL: function (url, opts) {
+    var _syncRequest = syncRequest;
+    /* istanbul ignore next */
+    if (opts && opts.syncRequest) {
+      _syncRequest = opts.syncRequest;
+    }
+
+    var res = _syncRequest("GET", url);
     var data;
 
     try {

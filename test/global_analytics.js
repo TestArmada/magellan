@@ -4,6 +4,7 @@ var global_analytics = require('../src/global_analytics');
 describe('global_analytics', function() {
 
   it('should create an empty timeline', function() {
+    expect(global_analytics.getEmitter()).to.not.be.null;
     expect(global_analytics.sync()).to.be.empty;
   });
 

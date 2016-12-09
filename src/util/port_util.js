@@ -30,10 +30,16 @@ var util = {
   //
   // 1) an Error object, if we couldnt' find a port
   // 2) null and a foundPort as the second argument
-  acquirePort: function (callback) {
+  acquirePort: function (callback, opts) {
+    var _checkPorts = checkPorts;
+    /* istanbul ignore next */
+    if (opts && opts.checkPorts) {
+      _checkPorts = opts.checkPorts;
+    }
+
     var attempts = 0;
     var acquire = function () {
-      checkPorts([util.getNextPort()], function (result) {
+      _checkPorts([util.getNextPort()], function (result) {
         if (result[0].available) {
           return callback(null, result[0].port);
         } else {

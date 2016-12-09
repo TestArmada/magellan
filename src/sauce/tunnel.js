@@ -3,7 +3,7 @@
 var clc = require("cli-color");
 
 var settings = require("../settings");
-var sauceSettings = require("./settings");
+var sauceSettingsFunc = require("./settings");
 var analytics = require("../global_analytics");
 
 var path = require("path");
@@ -19,9 +19,26 @@ var BAILED = false;
 
 module.exports = {
 
-  initialize: function (callback) {
+  initialize: function (callback, opts) {
+    var sauceSettings = sauceSettingsFunc(opts);
     username = sauceSettings.username;
     accessKey = sauceSettings.accessKey;
+
+    var _console = console;
+    /* istanbul ignore next */
+    if (opts && opts.console) {
+      _console = opts.console;
+    }
+    var _analytics = analytics;
+    /* istanbul ignore next */
+    if (opts && opts.analytics) {
+      _analytics = opts.analytics;
+    }
+    var _scl = sauceConnectLauncher;
+    /* istanbul ignore next */
+    if (opts && opts.sauceConnectLauncher) {
+      _scl = opts.sauceConnectLauncher;
+    }
 
     if (!username) {
       return callback("Sauce tunnel support is missing configuration: Sauce username.");
@@ -31,30 +48,45 @@ module.exports = {
       return callback("Sauce tunnel support is missing configuration: Sauce access key.");
     }
 
-    analytics.push("sauce-connect-launcher-download");
-    sauceConnectLauncher.download({
+    _analytics.push("sauce-connect-launcher-download");
+    _scl.download({
       logger: console.log.bind(console)
     }, function (err) {
       if (err) {
-        analytics.mark("sauce-connect-launcher-download", "failed");
-        console.log(clc.redBright("Failed to download sauce connect binary:"));
-        console.log(clc.redBright(err));
-        console.log(clc.redBright("sauce-connect-launcher will attempt to re-download " +
+        _analytics.mark("sauce-connect-launcher-download", "failed");
+        _console.log(clc.redBright("Failed to download sauce connect binary:"));
+        _console.log(clc.redBright(err));
+        _console.log(clc.redBright("sauce-connect-launcher will attempt to re-download " +
           "next time it is run."));
       } else {
-        analytics.mark("sauce-connect-launcher-download");
+        _analytics.mark("sauce-connect-launcher-download");
       }
       callback(err);
     });
   },
 
-  open: function (options) {
+  open: function (options, mockOpts) {
+    var _console = console;
+    /* istanbul ignore next */
+    if (mockOpts && mockOpts.console) {
+      _console = mockOpts.console;
+    }
+    var _scl = sauceConnectLauncher;
+    /* istanbul ignore next */
+    if (mockOpts && mockOpts.sauceConnectLauncher) {
+      _scl = mockOpts.sauceConnectLauncher;
+    }
+    var _settings = settings;
+    /* istanbul ignore next */
+    if (mockOpts && mockOpts.settings) {
+      _settings = mockOpts.settings;
+    }
 
     var tunnelInfo = {};
     var tunnelId = options.tunnelId;
     var callback = options.callback;
 
-    console.info("Opening Sauce Tunnel ID: " + tunnelId + " for user " + username);
+    _console.info("Opening Sauce Tunnel ID: " + tunnelId + " for user " + username);
 
     var connect = function (/*runDiagnostics*/) {
       var logFilePath = path.resolve(settings.tempDir) + "/build-"
@@ -69,8 +101,8 @@ module.exports = {
         logfile: logFilePath
       };
 
-      if (settings.fastFailRegexps) {
-        sauceOptions.fastFailRegexps = settings.fastFailRegexps;
+      if (_settings.fastFailRegexps) {
+        sauceOptions.fastFailRegexps = _settings.fastFailRegexps;
       }
 
       var seleniumPort = options.seleniumPort;
@@ -78,15 +110,15 @@ module.exports = {
         sauceOptions.port = seleniumPort;
       }
 
-      if (settings.debug) {
-        console.log("calling sauceConnectLauncher() w/ ", sauceOptions);
+      if (_settings.debug) {
+        _console.log("calling sauceConnectLauncher() w/ ", sauceOptions);
       }
-      sauceConnectLauncher(sauceOptions, function (err, sauceConnectProcess) {
+      _scl(sauceOptions, function (err, sauceConnectProcess) {
         if (err) {
-          if (settings.debug) {
-            console.log("Error from sauceConnectLauncher():");
+          if (_settings.debug) {
+            _console.log("Error from sauceConnectLauncher():");
           }
-          console.error(err.message);
+          _console.error(err.message);
           if (err.message && err.message.indexOf("Could not start Sauce Connect") > -1) {
             return callback(err.message);
           } else if (BAILED) {
@@ -105,7 +137,7 @@ module.exports = {
                 + connectFailures + " attempts."));
             } else {
               // Otherwise, keep retrying, and hope this is merely a blip and not an outage.
-              console.log(">>> Sauce Tunnel Connection Failed!  Retrying "
+              _console.log(">>> Sauce Tunnel Connection Failed!  Retrying "
                 + connectFailures + " of " + MAX_CONNECT_RETRIES + " attempts...");
               connect();
             }
@@ -120,9 +152,14 @@ module.exports = {
     connect();
   },
 
-  close: function (tunnelInfo, callback) {
+  close: function (tunnelInfo, callback, altConsole) {
+    var _console = console;
+    /* istanbul ignore next */
+    if (altConsole) {
+      _console = altConsole;
+    }
     tunnelInfo.process.close(function () {
-      console.log("Closed Sauce Connect process");
+      _console.log("Closed Sauce Connect process");
       callback();
     });
   }

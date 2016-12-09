@@ -7,10 +7,26 @@ var portscanner = require("portscanner");
 var PORT_STATUS_IN_USE = 0;
 var PORT_STATUS_AVAILABLE = 1;
 
-var checkPortStatus = function (desiredPort, callback) {
-  request("http://127.0.0.1:" + desiredPort + "/wd/hub/static/resource/hub.html", function (seleniumErr) {
+var checkPortStatus = function (desiredPort, callback, opts) {
+  var _request = request;
+  /* istanbul ignore next */
+  if (opts && opts.request) {
+    _request = opts.request;
+  }
+  var _portscanner = portscanner;
+  /* istanbul ignore next */
+  if (opts && opts.portscanner) {
+    _portscanner = opts.portscanner;
+  }
+  var _console = console;
+  /* istanbul ignore next */
+  if (opts && opts.console) {
+    _console = opts.console;
+  }
+
+  _request("http://127.0.0.1:" + desiredPort + "/wd/hub/static/resource/hub.html", function (seleniumErr) {
     if (seleniumErr && seleniumErr.code === "ECONNREFUSED") {
-      portscanner.checkPortStatus(desiredPort, "127.0.0.1", function (error, portStatus) {
+      _portscanner.checkPortStatus(desiredPort, "127.0.0.1", function (error, portStatus) {
         if (portStatus === "open") {
           return callback(PORT_STATUS_IN_USE);
         } else {
@@ -18,7 +34,7 @@ var checkPortStatus = function (desiredPort, callback) {
         }
       });
     } else {
-      console.log("Found selenium HTTP server at port " + desiredPort + ", port is in use.");
+      _console.log("Found selenium HTTP server at port " + desiredPort + ", port is in use.");
       return callback(PORT_STATUS_IN_USE);
     }
   });
@@ -33,7 +49,7 @@ var checkPortStatus = function (desiredPort, callback) {
 //
 // [{ port: number, available: boolean }]
 //
-var checkPortRange = function (portNumbers, callback) {
+var checkPortRange = function (portNumbers, callback, opts) {
   portNumbers = _.cloneDeep(portNumbers);
   var statuses = [];
 
@@ -47,7 +63,7 @@ var checkPortRange = function (portNumbers, callback) {
           available: portStatus === PORT_STATUS_AVAILABLE
         });
         checkNextPort();
-      });
+      }, opts);
     } else {
       return callback(statuses);
     }

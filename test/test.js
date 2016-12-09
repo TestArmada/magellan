@@ -13,9 +13,25 @@ describe('Test Class', function() {
     expect(myTest.locator).to.equal(locator);
   });
 
+  it('should get runtime', function() {
+    var browser = "myBrowser";
+    var myTest = new Test("", browser);
+    myTest.runningTime = 50;
+    expect(myTest.getRuntime()).to.eql(50);
+  });
+
+  it('should convert to a string', function() {
+    var browser = "myBrowser";
+    var myTest = new Test("", browser);
+    myTest.getRuntime();
+    expect(myTest.toString()).to.equal(" @undefined ");
+  });
+
   it('should use passed in browser', function() {
     var browser = "myBrowser";
     var myTest = new Test("", browser);
+    myTest.toString();
+    myTest.getRuntime();
     expect(myTest.browser).to.equal(browser);
   });
 

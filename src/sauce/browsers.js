@@ -10,17 +10,22 @@ module.exports = {
   //
   // TODO: the actual listing of browsers should be provided by guacamole
   //
-  listBrowsers: function () {
+  listBrowsers: function (altConsole) {
+    var _c = console;
+    /* istanbul ignore next */
+    if (altConsole) {
+      _c = altConsole;
+    }
     listSauceCliBrowsers(function (browserTable) {
       // convert table heading
       browserTable.options.head[1] = "Copy-Paste Command-Line Option";
-      console.log(browserTable.toString());
-      console.log("");
-      console.log("Non-Sauce Browser List:");
-      console.log("  --browser=chrome\t\tLocal Chrome browser");
-      console.log("  --browser=firefox\t\tLocal Firefox browser");
-      console.log("  --browser=safari\t\tLocal Safari browser");
-      console.log("  --browser=phantomjs\t\tLocal Phantomjs browser [default in non-sauce mode]");
+      _c.log(browserTable.toString());
+      _c.log("");
+      _c.log("Non-Sauce Browser List:");
+      _c.log("  --browser=chrome\t\tLocal Chrome browser");
+      _c.log("  --browser=firefox\t\tLocal Firefox browser");
+      _c.log("  --browser=safari\t\tLocal Safari browser");
+      _c.log("  --browser=phantomjs\t\tLocal Phantomjs browser [default in non-sauce mode]");
     });
   },
 

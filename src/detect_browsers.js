@@ -25,13 +25,20 @@ var createBrowser = function (id, resolution, orientation) {
 };
 
 module.exports = {
+  createBrowser: createBrowser,
 
   // FIXME: reduce complexity so we can pass lint without this disable
   /*eslint-disable complexity*/
   /*eslint-disable no-magic-numbers*/
   // Return a promise that we'll resolve with a list of browsers selected
   // by the user from command line arguments
-  detectFromCLI: function (argv, sauceEnabled, isNodeBased) {
+  detectFromCLI: function (argv, sauceEnabled, isNodeBased, opts) {
+    var _console = console;
+    /* istanbul ignore next */
+    if (opts && opts.console) {
+      _console = opts.console;
+    }
+
     var deferred = Q.defer();
     var browsers;
 
@@ -44,17 +51,18 @@ module.exports = {
         // We fetch profiles from an URL if it starts with http: or https:
         // We assume it will have a #fragment to identify a given desired profile.
         // Note: The hosted profiles are merged on top of any local profiles.
-        var fetchedProfiles = hostedProfiles.getProfilesAtURL(argv.profile.split("#")[0]);
+        var fetchedProfiles = hostedProfiles.getProfilesAtURL(argv.profile.split("#")[0], opts);
+        /* istanbul ignore else */
         if (fetchedProfiles && fetchedProfiles.profiles) {
           argv.profiles = _.extend({}, argv.profiles, fetchedProfiles.profiles);
 
-          console.log("Loaded hosted profiles from " + argv.profile.split("#")[0]);
+          _console.log("Loaded hosted profiles from " + argv.profile.split("#")[0]);
         }
 
         argv.profile = hostedProfiles.getProfileNameFromURL(argv.profile);
       }
 
-      console.log("Requested profile(s): ", argv.profile);
+      _console.log("Requested profile(s): ", argv.profile);
 
       // NOTE: We check "profiles" (plural) here because that's what has
       // the actual profile definition. "profile" is the argument from the
@@ -172,9 +180,9 @@ module.exports = {
         });
 
         if (unrecognizedBrowsers.length > 0) {
-          console.log("Error! Unrecognized saucelabs browsers specified:");
+          _console.log("Error! Unrecognized saucelabs browsers specified:");
           unrecognizedBrowsers.forEach(function (browser) {
-            console.log("  " + browser.browserId + " " + (browser.resolution ? " at resolution: "
+            _console.log("  " + browser.browserId + " " + (browser.resolution ? " at resolution: "
               + browser.resolution : ""));
           });
 

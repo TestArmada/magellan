@@ -4,8 +4,6 @@ var _ = require("lodash");
 var clc = require("cli-color");
 var settings = require("./settings");
 var portUtil = require("./util/port_util");
-var checkPorts = portUtil.checkPorts;
-var getNextPort = portUtil.getNextPort;
 
 var MAX_ALLOCATION_ATTEMPTS = 120;
 var WORKER_START_DELAY = 1000;
@@ -13,10 +11,32 @@ var WORKER_START_DELAY = 1000;
 // Create a worker allocator for MAX_WORKERS workers. Note that the allocator
 // is not obliged to honor the creation of MAX_WORKERS, just some number of workers
 // between 0 and MAX_WORKERS.
-function Allocator(MAX_WORKERS) {
-  if (settings.debug) {
-    console.log("Worker Allocator starting.");
-    console.log("Port allocation range from: " + settings.BASE_PORT_START + " to "
+function Allocator(MAX_WORKERS, testSettings) {
+  this.testSettings = {};
+  if (testSettings) {
+    this.testSettings = testSettings;
+  }
+  this.console = console;
+  if (this.testSettings.console) {
+    this.console = this.testSettings.console;
+  }
+  this.setTimeout = setTimeout;
+  if (this.testSettings.setTimeout) {
+    this.setTimeout = this.testSettings.setTimeout;
+  }
+  this.checkPorts = portUtil.checkPorts;
+  if (this.testSettings.checkPorts) {
+    this.checkPorts = this.testSettings.checkPorts;
+  }
+  this.getNextPort = portUtil.getNextPort;
+  if (this.testSettings.getNextPort) {
+    this.getNextPort = this.testSettings.getNextPort;
+  }
+
+  if (settings.debug || this.testSettings.debug) {
+
+    this.console.log("Worker Allocator starting.");
+    this.console.log("Port allocation range from: " + settings.BASE_PORT_START + " to "
       + (settings.BASE_PORT_START + settings.BASE_PORT_RANGE - 1) + " with "
       + settings.BASE_PORT_SPACING + " ports available to each worker.");
   }
@@ -61,12 +81,12 @@ Allocator.prototype = {
           return callback(errorMessage);
         } else {
           // If we didn't get a worker, try again
-          setTimeout(poll, WORKER_START_DELAY);
+          this.setTimeout(poll, WORKER_START_DELAY);
         }
       }.bind(this));
     }.bind(this);
 
-    setTimeout(poll, WORKER_START_DELAY);
+    this.setTimeout(poll, WORKER_START_DELAY);
   },
 
   _get: function (callback) {
@@ -78,7 +98,7 @@ Allocator.prototype = {
       // occupy this worker while we test if we can use it
       availableWorker.occupied = true;
 
-      var portOffset = getNextPort();
+      var portOffset = this.getNextPort();
 
       // Standard Magellan convention: port = mock, port + 1 = selenium
       // Other ports after this within the BASE_PORT_SPACING range can
@@ -92,7 +112,8 @@ Allocator.prototype = {
         desiredPorts.push(portOffset + i);
       }
 
-      checkPorts(desiredPorts, function (statuses) {
+      var self = this;
+      this.checkPorts(desiredPorts, function (statuses) {
         if (_.every(statuses, function (status) { return status.available; })) {
           availableWorker.portOffset = portOffset;
           availableWorker.occupied = true;
@@ -102,10 +123,10 @@ Allocator.prototype = {
           // Print a message that ports are not available, show which ones in the range
           availableWorker.occupied = false;
 
-          console.log(clc.yellowBright("Detected port contention while spinning up worker: "));
+          self.console.log(clc.yellowBright("Detected port contention while spinning up worker: "));
           statuses.forEach(function (status, portIndex) {
             if (!status.available) {
-              console.log(clc.yellowBright("  in use: #: " + status.port + " purpose: "
+              self.console.log(clc.yellowBright("  in use: #: " + status.port + " purpose: "
                 + (desiredPortLabels[portIndex] ? desiredPortLabels[portIndex] : "generic")));
             }
           });
