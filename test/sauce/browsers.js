@@ -4,6 +4,7 @@ var sinon = require("sinon");
 
 describe('browsers', function() {
   before(function(done) {
+    this.timeout(5000);
     browsers.initialize(false).then(function () {
       browsers.initialize(true).then(function () {
         done();

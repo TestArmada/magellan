@@ -5,7 +5,7 @@ describe('cli_help', function() {
   it('should return default help', function() {
     cli_help.help({
       console: {
-        log: () => {}
+        log: function () {}
       },
       settings: {
         testFramework: {
@@ -24,7 +24,7 @@ describe('cli_help', function() {
   it('should return default help without example', function() {
     cli_help.help({
       console: {
-        log: () => {}
+        log: function () {}
       },
       settings: {
         testFramework: {
@@ -42,7 +42,7 @@ describe('cli_help', function() {
   it('should return default help with no help key', function() {
     cli_help.help({
       console: {
-        log: () => {}
+        log: function () {}
       },
       settings: {
         testFramework: {
@@ -55,7 +55,7 @@ describe('cli_help', function() {
   it('should return default help with no help keys', function() {
     cli_help.help({
       console: {
-        log: () => {}
+        log: function () {}
       },
       settings: {
       }

@@ -1,7 +1,6 @@
 var expect = require('chai').expect;
 var hosted_profile = require('../src/hosted_profiles');
 
-
 describe('hosted_profiles', function() {
   it('should return the #fragment from a URL', function() {
     expect(hosted_profile.getProfileNameFromURL('http://example.com/#boo')).to.eql('boo');
@@ -19,7 +18,7 @@ describe('hosted_profiles', function() {
     expect(hosted_profile.getProfilesAtURL("http://foozbaz.com", {
       syncRequest: function () {
         return {
-          getBody: () => {
+          getBody: function () {
             return JSON.stringify({
               profiles: "foo"
             });
@@ -34,7 +33,7 @@ describe('hosted_profiles', function() {
       hosted_profile.getProfilesAtURL("http://foozbaz.com", {
         syncRequest: function () {
           return {
-            getBody: () => {
+            getBody: function () {
               return JSON.stringify({});
             }
           }
@@ -50,7 +49,7 @@ describe('hosted_profiles', function() {
       hosted_profile.getProfilesAtURL("http://foozbaz.com", {
         syncRequest: function () {
           return {
-            getBody: () => {
+            getBody: function () {
               return {};
             }
           }

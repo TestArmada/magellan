@@ -7,7 +7,7 @@ describe('detectBrowsers', function() {
       console: {log: function() {}},
       syncRequest: function () {
         return {
-          getBody: () => {
+          getBody: function () {
             return JSON.stringify({
               profiles: "foo,bar,baz"
             });
@@ -22,7 +22,7 @@ describe('detectBrowsers', function() {
       console: {log: function() {}},
       syncRequest: function () {
         return {
-          getBody: () => {
+          getBody: function () {
             return JSON.stringify({
               profiles: "foo,bar,baz"
             });
@@ -37,7 +37,7 @@ describe('detectBrowsers', function() {
       console: {log: function() {}},
       syncRequest: function () {
         return {
-          getBody: () => {
+          getBody: function () {
             return JSON.stringify({
               profiles: []
             });
@@ -164,7 +164,7 @@ describe('detectBrowsers', function() {
       console: {log: function() {}},
       syncRequest: function () {
         return {
-          getBody: () => {
+          getBody: function () {
             return JSON.stringify({
               profiles: "foo,bar,baz"
             });
