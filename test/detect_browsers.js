@@ -110,7 +110,7 @@ describe('detectBrowsers', function() {
         browser: "bar",
         resolution: "1024",
         orientation: "left",
-        profiles: "bar,baz",
+        profiles: {bar: [1], baz: [1]},
         profile: "bar"
       }, true, true, {
       console: {log: function() {}}
@@ -122,7 +122,7 @@ describe('detectBrowsers', function() {
         browser: "bar",
         resolution: "1024",
         orientation: "left",
-        profiles: "bar,baz",
+        profiles: {bar: [1], baz: [1]},
         profile: "bar"
       }, false, true, {
       console: {log: function() {}}
@@ -134,7 +134,7 @@ describe('detectBrowsers', function() {
         browser: "iphone_9_3_OS_X_10_11_iPhone_5",
         resolution: "1024",
         orientation: "left",
-        profiles: "iphone_9_3_OS_X_10_11_iPhone_5,baz",
+        profiles: {baz: [1]},
         profile: "iphone_9_3_OS_X_10_11_iPhone_5"
       }, false, false, {
       console: {log: function() {}}
@@ -143,7 +143,7 @@ describe('detectBrowsers', function() {
 
   it('should detect with profiles but without sauce and not node', function() {
     detectBrowsers.detectFromCLI({
-        profiles: "iphone_9_3_OS_X_10_11_iPhone_5,baz",
+        profiles: {baz: [1]},
         profile: "iphone_9_3_OS_X_10_11_iPhone_5"
       }, false, false, {
       console: {log: function() {}}
