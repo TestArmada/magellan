@@ -18,7 +18,7 @@ describe('mkdirSync', function() {
     try {
       mkdirSync("foo", {
         fs: {
-          mkdirSync: () => {
+          mkdirSync: function () {
             throw ex;
           }
         }
@@ -33,7 +33,7 @@ describe('mkdirSync', function() {
     try {
       mkdirSync("foo", {
         fs: {
-          mkdirSync: () => {
+          mkdirSync: function () {
             throw ex;
           }
         }
