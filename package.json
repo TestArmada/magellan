@@ -26,7 +26,7 @@
   ],
   "license": "MIT",
   "scripts": {
-    "test": "eslint src/** bin/** && mocha",
+    "test": "eslint src/** bin/** && mocha --report lcovonly",
     "integration": "eslint src/** bin/** && ./bin/magellan",
     "lint": "eslint src/** bin/**"
   },
