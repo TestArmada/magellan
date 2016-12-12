@@ -1,9 +1,11 @@
-var expect = require('chai').expect;
-var mkdirSync = require('../src/mkdir_sync');
-var sinon = require('sinon');
+/* eslint no-undef: 0, no-unused-expressions: 0 */
+"use strict";
+var expect = require("chai").expect;
+var mkdirSync = require("../src/mkdir_sync");
+var sinon = require("sinon");
 
-describe('mkdirSync', function() {
-  it('should call mkdirSync', function() {
+describe("mkdirSync", function () {
+  it("should call mkdirSync", function () {
     var spy = sinon.spy();
     mkdirSync("foo", {
       fs: {
@@ -13,7 +15,7 @@ describe('mkdirSync', function() {
     expect(spy.called).to.be.true;
   });
 
-  it('should throw', function() {
+  it("should throw", function () {
     var ex = {code: "EEXIST"};
     try {
       mkdirSync("foo", {
@@ -23,12 +25,12 @@ describe('mkdirSync', function() {
           }
         }
       });
-    } catch(e) {
+    } catch (e) {
       expect(e).to.be.eql(ex);
     }
   });
 
-  it('should throw with odd error', function() {
+  it("should throw with odd error", function () {
     var ex = {code: "FOO"};
     try {
       mkdirSync("foo", {
@@ -38,7 +40,7 @@ describe('mkdirSync', function() {
           }
         }
       });
-    } catch(e) {
+    } catch (e) {
       expect(e).to.be.eql(ex);
     }
   });

@@ -1,8 +1,10 @@
-var expect = require('chai').expect;
-var testFilter = require('../src/test_filter');
+/* eslint no-undef: 0 */
+"use strict";
+var expect = require("chai").expect;
+var testFilter = require("../src/test_filter");
 
-describe('test_filter', function() {
-  it('should filter', function() {
+describe("test_filter", function () {
+  it("should filter", function () {
     expect(testFilter.filter(
       ["a", "b", "c"],
       {
@@ -13,8 +15,8 @@ describe('test_filter', function() {
         settings: {
           testFramework: {
             filters: {
-              a: function() { return true; },
-              b: function() { return false; }
+              a: function () { return true; },
+              b: function () { return false; }
             }
           }
         }
@@ -22,7 +24,7 @@ describe('test_filter', function() {
     )).to.eql(false);
   });
 
-  it('should filter to true', function() {
+  it("should filter to true", function () {
     expect(testFilter.filter(
       ["a", "b", "c"],
       {
@@ -37,10 +39,10 @@ describe('test_filter', function() {
           }
         }
       }
-    )).to.eql([ 'a', 'b', 'c' ]);
+    )).to.eql([ "a", "b", "c" ]);
   });
 
-  it('should detectFromCLI', function() {
+  it("should detectFromCLI", function () {
     expect(testFilter.detectFromCLI(
       {
         a: true,
@@ -50,8 +52,8 @@ describe('test_filter', function() {
         settings: {
           testFramework: {
             filters: {
-              a: function() {},
-              c: function() {}
+              a: function () {},
+              c: function () {}
             }
           }
         }

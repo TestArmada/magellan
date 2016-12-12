@@ -1,8 +1,10 @@
-var expect = require('chai').expect;
-var Reporter = require('../../src/reporters/reporter');
+/* eslint no-undef: 0, no-unused-expressions: 0 */
+"use strict";
+var expect = require("chai").expect;
+var Reporter = require("../../src/reporters/reporter");
 
-describe('Reporter', function() {
-  it('should be a listener', function() {
+describe("Reporter", function () {
+  it("should be a listener", function () {
     var r = new Reporter();
     expect(r.initialize).to.not.be.null;
     expect(r.listenTo).to.not.be.null;

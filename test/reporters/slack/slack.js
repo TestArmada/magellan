@@ -1,8 +1,9 @@
-var expect = require('chai').expect;
-var Reporter = require('../../../src/reporters/slack/slack');
+/* eslint no-undef: 0 */
+"use strict";
+var Reporter = require("../../../src/reporters/slack/slack");
 
-describe('Slack Reporter', function() {
-  it('should initialize correctly', function(done) {
+describe("Slack Reporter", function () {
+  it("should initialize correctly", function (done) {
     var r = new Reporter({
       account: "a",
       key: "a",
@@ -14,14 +15,14 @@ describe('Slack Reporter', function() {
       buildURL: "a"
     }, {
       console: {
-        log: function() {},
-        error: function() {}
+        log: function () {},
+        error: function () {}
       },
-      Slack: function() {
-        this.notify = function() {}
+      Slack: function () {
+        this.notify = function () {};
       }
     });
-    r.initialize().then(function() {
+    r.initialize().then(function () {
       r.flush();
       r._addFailure("a", "b", "c");
       r._addFailure("a");
@@ -33,7 +34,7 @@ describe('Slack Reporter', function() {
     });
   });
 
-  it('should have issues with lack of config', function(done) {
+  it("should have issues with lack of config", function (done) {
     var r = new Reporter({
       account: "a",
       key: "a",
@@ -44,17 +45,17 @@ describe('Slack Reporter', function() {
       buildURL: "a"
     }, {
       console: {
-        log: function() {},
-        error: function() {}
+        log: function () {},
+        error: function () {}
       },
-      Slack: function() {}
+      Slack: function () {}
     });
-    r.initialize().catch(function() {
+    r.initialize().catch(function () {
       done();
     });
   });
 
-  it('should handle messages', function(done) {
+  it("should handle messages", function (done) {
     var r = new Reporter({
       account: "a",
       key: "a",
@@ -66,14 +67,14 @@ describe('Slack Reporter', function() {
       buildURL: "a"
     }, {
       console: {
-        log: function() {},
-        error: function() {}
+        log: function () {},
+        error: function () {}
       },
-      Slack: function() {
-        this.notify = function() {}
+      Slack: function () {
+        this.notify = function () {};
       }
     });
-    r.initialize().then(function() {
+    r.initialize().then(function () {
       r._handleMessage("a", "b", {
         type: "worker-status",
         status: "finished",

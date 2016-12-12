@@ -28,7 +28,7 @@
   "scripts": {
     "test": "eslint src/** bin/** && mocha --recursive",
     "integration": "eslint src/** bin/** && ./bin/magellan",
-    "lint": "eslint src/** bin/**",
+    "lint": "eslint src/** bin/** test/**",
     "coverage": "istanbul cover _mocha -- --recursive"
   },
   "dependencies": {

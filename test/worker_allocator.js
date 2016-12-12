@@ -1,64 +1,66 @@
-var expect = require('chai').expect;
+/* eslint no-undef: 0, no-magic-numbers: 0, no-unused-expressions: 0 */
+"use strict";
+var expect = require("chai").expect;
 var sinon = require("sinon");
-var WorkerAllocator = require('../src/worker_allocator');
+var WorkerAllocator = require("../src/worker_allocator");
 
-describe('WorkerAllocator', function() {
-  it('should act like a class', function() {
+describe("WorkerAllocator", function () {
+  it("should act like a class", function () {
     expect(new WorkerAllocator(10, {
       console: {
-        log: function() {},
+        log: function () {}
       },
       debug: true
     })).to.be.an.instanceof(WorkerAllocator);
   });
 
-  it('should initialize', function() {
+  it("should initialize", function () {
     var spy = sinon.spy();
     var worker = new WorkerAllocator(10, {
       console: {
-        log: function() {}
+        log: function () {}
       }
     });
     worker.initialize(spy);
     expect(spy.called).to.be.true;
   });
 
-  it('should teardown', function() {
+  it("should teardown", function () {
     var spy = sinon.spy();
     var worker = new WorkerAllocator(10, {
       console: {
-        log: function() {}
+        log: function () {}
       }
     });
     worker.teardown(spy);
     expect(spy.called).to.be.true;
   });
 
-  it('should release', function() {
+  it("should release", function () {
     var workers = new WorkerAllocator(10, {
       console: {
-        log: function() {}
+        log: function () {}
       }
     });
     workers.release(workers.workers[0]);
     expect(workers.workers[0].occupied).to.be.false;
   });
 
-  it('should get', function() {
+  it("should get", function () {
     var spy = sinon.spy();
     var port = 1;
     var workers = new WorkerAllocator(10, {
       console: {
-        log: function() {}
+        log: function () {}
       },
-      setTimeout: function(cb) {
+      setTimeout: function (cb) {
         cb();
       },
-      getNextPort: function() {
+      getNextPort: function () {
         port++;
         return port;
       },
-      checkPorts: function(ports, cb) {
+      checkPorts: function (ports, cb) {
         var out = [];
         for (var p in ports) {
           out.push({
@@ -73,21 +75,21 @@ describe('WorkerAllocator', function() {
     expect(spy.called).to.be.true;
   });
 
-  it('should get and occupy everything', function() {
+  it("should get and occupy everything", function () {
     var spy = sinon.spy();
     var port = 1;
     var workers = new WorkerAllocator(1, {
       console: {
-        log: function() {}
+        log: function () {}
       },
-      setTimeout: function(cb) {
+      setTimeout: function (cb) {
         cb();
       },
-      getNextPort: function() {
+      getNextPort: function () {
         port++;
         return port;
       },
-      checkPorts: function(ports, cb) {
+      checkPorts: function (ports, cb) {
         var out = [];
         for (var p in ports) {
           out.push({
@@ -103,21 +105,21 @@ describe('WorkerAllocator', function() {
     workers.get(spy);
   });
 
-  it('should get with nothing available', function() {
+  it("should get with nothing available", function () {
     var spy = sinon.spy();
     var port = 1;
     var workers = new WorkerAllocator(10, {
       console: {
-        log: function() {}
+        log: function () {}
       },
-      setTimeout: function(cb) {
+      setTimeout: function (cb) {
         cb();
       },
-      getNextPort: function() {
+      getNextPort: function () {
         port++;
         return port;
       },
-      checkPorts: function(ports, cb) {
+      checkPorts: function (ports, cb) {
         var out = [];
         for (var p in ports) {
           out.push({

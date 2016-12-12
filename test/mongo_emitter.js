@@ -1,17 +1,18 @@
-var expect = require('chai').expect;
-var sinon = require('sinon');
-var MongoEmitter = require('../src/mongo_emitter');
+/* eslint no-undef: 0, no-empty: 0 */
+"use strict";
+var expect = require("chai").expect;
+var MongoEmitter = require("../src/mongo_emitter");
 
-describe('MongoEmitter', function() {
-  afterEach(function() {
+describe("MongoEmitter", function () {
+  afterEach(function () {
     MongoEmitter.setMock(null);
   });
 
-  it('should throw on a bad connection', function() {
+  it("should throw on a bad connection", function () {
     MongoEmitter.shutdown();
   });
 
-  it('should throw on a bad connection', function() {
+  it("should throw on a bad connection", function () {
     try {
       MongoEmitter.setMock("mongo://foo", {
         connect: function (url, cb) {
@@ -20,23 +21,23 @@ describe('MongoEmitter', function() {
         }
       });
       MongoEmitter.globalMessage({});
-    } catch(e) {
+    } catch (e) {
     }
   });
 
-  it('should send test run messages', function() {
+  it("should send test run messages", function () {
     MongoEmitter.setMock("mongo://foo", {
       connect: function (url, cb) {
         expect(url).to.eql("mongo://foo");
         cb(null, {
           collection: function () {
             return {
-              insertOne: function(data) {
+              insertOne: function (data) {
                 expect(data.testRun).to.eql("testRun");
                 expect(data.test).to.eql("test");
                 expect(data.message).to.eql("message");
               }
-            }
+            };
           }
         });
       },
@@ -46,17 +47,17 @@ describe('MongoEmitter', function() {
     MongoEmitter.testRunMessage("testRun", "test", "message");
   });
 
-  it('should send global messages', function() {
+  it("should send global messages", function () {
     MongoEmitter.setMock("mongo://foo", {
       connect: function (url, cb) {
         expect(url).to.eql("mongo://foo");
         cb(null, {
           collection: function () {
             return {
-              insertOne: function(data) {
+              insertOne: function (data) {
                 expect(data.message).to.eql("message");
               }
-            }
+            };
           }
         });
       },
@@ -65,9 +66,9 @@ describe('MongoEmitter', function() {
     MongoEmitter.globalMessage("message");
   });
 
-  it('should finish', function() {
+  it("should finish", function () {
     MongoEmitter.setMock("mongo://foo", {
-      connect: function(url, cb) {
+      connect: function (url, cb) {
         expect(url).to.eql("mongo://foo");
         cb(null, {});
       },

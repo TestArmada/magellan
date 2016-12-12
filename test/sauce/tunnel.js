@@ -1,23 +1,25 @@
-var expect = require('chai').expect;
-var tunnel = require('../../src/sauce/tunnel');
-var sinon = require('sinon');
+/* eslint no-undef: 0, no-magic-numbers: 0 */
+"use strict";
+var expect = require("chai").expect;
+var tunnel = require("../../src/sauce/tunnel");
+var sinon = require("sinon");
 
-describe('sauce/tunnel', function() {
-  it('should initialize without access key', function() {
+describe("sauce/tunnel", function () {
+  it("should initialize without access key", function () {
     var spy = sinon.spy();
-    var st = tunnel.initialize(spy,
+    tunnel.initialize(spy,
       {
         env: {
           SAUCE_USERNAME: "foo",
           SAUCE_ACCESS_KEY: null
         },
-        console: {log: function() {}},
+        console: {log: function () {}},
         analytics: {
-          push: function() {},
-          mark: function() {}
+          push: function () {},
+          mark: function () {}
         },
         sauceConnectLauncher: {
-          download: function(opts, cb) {
+          download: function (opts, cb) {
             cb(null);
           }
         }
@@ -25,20 +27,20 @@ describe('sauce/tunnel', function() {
     expect(spy.called).to.eql(true);
   });
 
-  it('should initialize without username', function() {
+  it("should initialize without username", function () {
     var spy = sinon.spy();
-    var st = tunnel.initialize(spy,
+    tunnel.initialize(spy,
       {
         env: {
           SAUCE_USERNAME: null
         },
-        console: {log: function() {}},
+        console: {log: function () {}},
         analytics: {
-          push: function() {},
-          mark: function() {}
+          push: function () {},
+          mark: function () {}
         },
         sauceConnectLauncher: {
-          download: function(opts, cb) {
+          download: function (opts, cb) {
             cb(null);
           }
         }
@@ -46,17 +48,17 @@ describe('sauce/tunnel', function() {
     expect(spy.called).to.eql(true);
   });
 
-  it('should initialize', function() {
+  it("should initialize", function () {
     var spy = sinon.spy();
-    var st = tunnel.initialize(spy,
+    tunnel.initialize(spy,
       {
-        console: {log: function() {}},
+        console: {log: function () {}},
         analytics: {
-          push: function() {},
-          mark: function() {}
+          push: function () {},
+          mark: function () {}
         },
         sauceConnectLauncher: {
-          download: function(opts, cb) {
+          download: function (opts, cb) {
             cb(null);
           }
         }
@@ -64,17 +66,17 @@ describe('sauce/tunnel', function() {
     expect(spy.called).to.eql(true);
   });
 
-  it('should initialize', function() {
+  it("should initialize", function () {
     var spy = sinon.spy();
-    var st = tunnel.initialize(spy,
+    tunnel.initialize(spy,
       {
-        console: {log: function() {}},
+        console: {log: function () {}},
         analytics: {
-          push: function() {},
-          mark: function() {}
+          push: function () {},
+          mark: function () {}
         },
         sauceConnectLauncher: {
-          download: function(opts, cb) {
+          download: function (opts, cb) {
             cb(null);
           }
         }
@@ -82,21 +84,21 @@ describe('sauce/tunnel', function() {
     expect(spy.called).to.eql(true);
   });
 
-  it('should initialize with error', function() {
+  it("should initialize with error", function () {
     var spy = sinon.spy();
-    var st = tunnel.initialize(spy,
+    tunnel.initialize(spy,
       {
         env: {
           SAUCE_USERNAME: "foo",
           SAUCE_ACCESS_KEY: "bar"
         },
-        console: {log: function() {}},
+        console: {log: function () {}},
         analytics: {
-          push: function() {},
-          mark: function() {}
+          push: function () {},
+          mark: function () {}
         },
         sauceConnectLauncher: {
-          download: function(opts, cb) {
+          download: function (opts, cb) {
             cb(new Error("foo"));
           }
         }
@@ -104,21 +106,21 @@ describe('sauce/tunnel', function() {
     expect(spy.called).to.eql(true);
   });
 
-  it('should initialize without', function() {
+  it("should initialize without", function () {
     var spy = sinon.spy();
-    var st = tunnel.initialize(spy,
+    tunnel.initialize(spy,
       {
         env: {
           SAUCE_USERNAME: "foo",
           SAUCE_ACCESS_KEY: "bar"
         },
-        console: {log: function() {}},
+        console: {log: function () {}},
         analytics: {
-          push: function() {},
-          mark: function() {}
+          push: function () {},
+          mark: function () {}
         },
         sauceConnectLauncher: {
-          download: function(opts, cb) {
+          download: function (opts, cb) {
             cb(null);
           }
         }
@@ -126,9 +128,9 @@ describe('sauce/tunnel', function() {
     expect(spy.called).to.eql(true);
   });
 
-  it('should open', function() {
+  it("should open", function () {
     var spy = sinon.spy();
-    var st = tunnel.open(
+    tunnel.open(
       {
         tunnelId: "foo",
         callback: spy,
@@ -144,19 +146,19 @@ describe('sauce/tunnel', function() {
           SAUCE_ACCESS_KEY: "bar"
         },
         console: {
-          log: function() {},
-          info: function() {}
+          log: function () {},
+          info: function () {}
         },
-        sauceConnectLauncher: function(opts, cb) {
+        sauceConnectLauncher: function (opts, cb) {
           cb(null, 15);
         }
       });
     expect(spy.called).to.eql(true);
   });
 
-  it('should open with error', function() {
+  it("should open with error", function () {
     var spy = sinon.spy();
-    var st = tunnel.open(
+    tunnel.open(
       {
         tunnelId: "foo",
         callback: spy
@@ -169,20 +171,20 @@ describe('sauce/tunnel', function() {
           SAUCE_ACCESS_KEY: "bar"
         },
         console: {
-          log: function() {},
-          info: function() {},
-          error: function() {}
+          log: function () {},
+          info: function () {},
+          error: function () {}
         },
-        sauceConnectLauncher: function(opts, cb) {
+        sauceConnectLauncher: function (opts, cb) {
           cb({message: "bar"});
         }
       });
     expect(spy.called).to.eql(true);
   });
 
-  it('should open with error with debug', function() {
+  it("should open with error with debug", function () {
     var spy = sinon.spy();
-    var st = tunnel.open(
+    tunnel.open(
       {
         tunnelId: "foo",
         callback: spy
@@ -196,20 +198,20 @@ describe('sauce/tunnel', function() {
           SAUCE_ACCESS_KEY: "bar"
         },
         console: {
-          log: function() {},
-          info: function() {},
-          error: function() {}
+          log: function () {},
+          info: function () {},
+          error: function () {}
         },
-        sauceConnectLauncher: function(opts, cb) {
+        sauceConnectLauncher: function (opts, cb) {
           cb({message: "bar"});
         }
       });
     expect(spy.called).to.eql(true);
   });
 
-  it('should open with error with not connecting', function() {
+  it("should open with error with not connecting", function () {
     var spy = sinon.spy();
-    var st = tunnel.open(
+    tunnel.open(
       {
         tunnelId: "foo",
         callback: spy
@@ -223,27 +225,27 @@ describe('sauce/tunnel', function() {
           SAUCE_ACCESS_KEY: "bar"
         },
         console: {
-          log: function() {},
-          info: function() {},
-          error: function() {}
+          log: function () {},
+          info: function () {},
+          error: function () {}
         },
-        sauceConnectLauncher: function(opts, cb) {
+        sauceConnectLauncher: function (opts, cb) {
           cb({message: "Could not start Sauce Connect"});
         }
       });
     expect(spy.called).to.eql(true);
   });
 
-  it('should handle close', function() {
+  it("should handle close", function () {
     var spy = sinon.spy();
-    var st = tunnel.close(
+    tunnel.close(
       {process: {
         close: function (cb) {
           cb();
         }
       }},
       spy,
-      {log: function() {}});
+      {log: function () {}});
     expect(spy.called).to.eql(true);
   });
 });

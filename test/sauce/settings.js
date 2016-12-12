@@ -1,15 +1,17 @@
-var expect = require('chai').expect;
-var settingsFunc = require('../../src/sauce/settings');
+/* eslint no-undef: 0, no-magic-numbers: 0, camelcase: 0, no-unused-expressions: 0 */
+"use strict";
+var expect = require("chai").expect;
+var settingsFunc = require("../../src/sauce/settings");
 
-describe('sauce/settings', function() {
-  it('should handle no args or env', function() {
-    var st = settingsFunc({console: {log: function() {}}});
+describe("sauce/settings", function () {
+  it("should handle no args or env", function () {
+    var st = settingsFunc({console: {log: function () {}}});
     expect(st.locksPollingInterval).to.eql(2500);
   });
 
-  it('should handle locksServerLocation', function() {
+  it("should handle locksServerLocation", function () {
     var st = settingsFunc({
-      console: {log: function() {}},
+      console: {log: function () {}},
       argv: {
         locks_server: "foo/",
         debug: true
@@ -18,9 +20,9 @@ describe('sauce/settings', function() {
     expect(st.locksPollingInterval).to.eql(2500);
   });
 
-  it('should handle invalid locksServerLocation', function() {
+  it("should handle invalid locksServerLocation", function () {
     var st = settingsFunc({
-      console: {log: function() {}},
+      console: {log: function () {}},
       argv: {
         locks_server: "foo"
       }
@@ -28,9 +30,9 @@ describe('sauce/settings', function() {
     expect(st.locksPollingInterval).to.eql(2500);
   });
 
-  it('should handle SAUCE_USERNAME', function() {
+  it("should handle SAUCE_USERNAME", function () {
     var st = settingsFunc({
-      console: {log: function() {}},
+      console: {log: function () {}},
       env: {
         SAUCE_USERNAME: "foo"
       }
@@ -38,9 +40,9 @@ describe('sauce/settings', function() {
     expect(st.locksPollingInterval).to.eql(2500);
   });
 
-  it('should sauce argv', function() {
+  it("should sauce argv", function () {
     var st = settingsFunc({
-      console: {log: function() {}},
+      console: {log: function () {}},
       argv: {
         sauce: true
       },
@@ -53,9 +55,9 @@ describe('sauce/settings', function() {
     expect(st.username).to.eql("jack");
   });
 
-  it('should sauce argv without optional version', function() {
+  it("should sauce argv without optional version", function () {
     var st = settingsFunc({
-      console: {log: function() {}},
+      console: {log: function () {}},
       argv: {
         sauce: true
       },
@@ -67,11 +69,11 @@ describe('sauce/settings', function() {
     expect(st.username).to.eql("jack");
   });
 
-  it('should sauce throw argv without user', function() {
+  it("should sauce throw argv without user", function () {
     var ex = null;
     try {
-      var st = settingsFunc({
-        console: {log: function() {}},
+      settingsFunc({
+        console: {log: function () {}},
         argv: {
           sauce: true
         },
@@ -80,17 +82,17 @@ describe('sauce/settings', function() {
           SAUCE_CONNECT_VERSION: "doobie"
         }
       });
-    } catch(e) {
+    } catch (e) {
       ex = e;
     }
     expect(ex).to.not.be.null;
   });
 
-  it('should throw on bad tunnel config', function() {
+  it("should throw on bad tunnel config", function () {
     var ex = null;
     try {
-      var st = settingsFunc({
-        console: {log: function() {}},
+      settingsFunc({
+        console: {log: function () {}},
         argv: {
           sauce: true,
           sauce_tunnel_id: "foo",
@@ -102,17 +104,17 @@ describe('sauce/settings', function() {
           SAUCE_CONNECT_VERSION: "doobie"
         }
       });
-    } catch(e) {
+    } catch (e) {
       ex = e;
     }
     expect(ex).to.not.be.null;
   });
 
-  it('should throw on bad tunnel parent config', function() {
+  it("should throw on bad tunnel parent config", function () {
     var ex = null;
     try {
-      var st = settingsFunc({
-        console: {log: function() {}},
+      settingsFunc({
+        console: {log: function () {}},
         argv: {
           sauce: true,
           shared_sauce_parent_account: "foo",
@@ -124,7 +126,7 @@ describe('sauce/settings', function() {
           SAUCE_CONNECT_VERSION: "doobie"
         }
       });
-    } catch(e) {
+    } catch (e) {
       ex = e;
     }
     expect(ex).to.not.be.null;

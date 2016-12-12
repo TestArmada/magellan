@@ -1,18 +1,20 @@
-var expect = require('chai').expect;
-var WorkerAllocator = require('../../src/sauce/worker_allocator');
-var sinon = require('sinon');
-var _ = require('lodash');
+/* eslint no-undef: 0, no-magic-numbers: 0, no-unused-expressions: 0 */
+"use strict";
+var expect = require("chai").expect;
+var WorkerAllocator = require("../../src/sauce/worker_allocator");
+var sinon = require("sinon");
+var _ = require("lodash");
 
-var _settingsBuilder = function(extra) {
+var _settingsBuilder = function (extra) {
   return _.merge({
-    console: {log: function() {}},
+    console: {log: function () {}},
     setTimeout: function (cb) {cb();},
     clearTimeout: function () {},
     tunnel: {
-      initialize: function(cb) {
+      initialize: function (cb) {
         cb(null);
       },
-      open: function(opts) {
+      open: function (opts) {
         opts.callback(null, {});
       }
     },
@@ -24,11 +26,11 @@ var _settingsBuilder = function(extra) {
   }, extra);
 };
 
-describe('sauce/worker_allocator', function() {
-  it('should create', function() {
+describe("sauce/worker_allocator", function () {
+  it("should create", function () {
     var wa = new WorkerAllocator(10, {
       console: {
-        log: function() {}
+        log: function () {}
       },
       sauceSettings: {
         locksServerLocation: "foo/"
@@ -37,21 +39,21 @@ describe('sauce/worker_allocator', function() {
     expect(wa.tunnelPrefix).to.not.be.null;
   });
 
-  it('should create without sauceSettings', function() {
+  it("should create without sauceSettings", function () {
     var wa = new WorkerAllocator(10, {
       console: {
-        log: function() {}
+        log: function () {}
       }
     });
     expect(wa.tunnelPrefix).to.not.be.null;
   });
 
-  it('should release', function() {
+  it("should release", function () {
     var wa = new WorkerAllocator(10, {
       console: {
-        log: function() {}
+        log: function () {}
       },
-      request: function(opts, cb) {
+      request: function (opts, cb) {
         expect(opts).to.not.be.null;
         cb();
       },
@@ -62,12 +64,12 @@ describe('sauce/worker_allocator', function() {
     wa.release(wa.workers[0]);
   });
 
-  it('should release without server loc', function() {
+  it("should release without server loc", function () {
     var wa = new WorkerAllocator(10, {
       console: {
-        log: function() {}
+        log: function () {}
       },
-      request: function(opts, cb) {
+      request: function (opts, cb) {
         expect(opts).to.not.be.null;
         cb();
       },
@@ -77,13 +79,13 @@ describe('sauce/worker_allocator', function() {
     wa.release(wa.workers[0]);
   });
 
-  it('should teardown', function() {
+  it("should teardown", function () {
     var spy = sinon.spy();
     var wa = new WorkerAllocator(10, {
       console: {
-        log: function() {}
+        log: function () {}
       },
-      request: function(opts, cb) {
+      request: function (opts, cb) {
         expect(opts).to.not.be.null;
         cb();
       },
@@ -95,13 +97,13 @@ describe('sauce/worker_allocator', function() {
     expect(spy.called).to.be.true;
   });
 
-  it('should teardown with tunnels', function() {
+  it("should teardown with tunnels", function () {
     var spy = sinon.spy();
     var wa = new WorkerAllocator(10, {
       console: {
-        log: function() {}
+        log: function () {}
       },
-      request: function(opts, cb) {
+      request: function (opts, cb) {
         expect(opts).to.not.be.null;
         cb();
       },
@@ -120,13 +122,13 @@ describe('sauce/worker_allocator', function() {
     expect(spy.called).to.be.true;
   });
 
-  it('should initialize with nothing', function() {
+  it("should initialize with nothing", function () {
     var spy = sinon.spy();
     var wa = new WorkerAllocator(10, {
       console: {
-        log: function() {}
+        log: function () {}
       },
-      request: function(opts, cb) {
+      request: function (opts, cb) {
         expect(opts).to.not.be.null;
         cb();
       },
@@ -144,13 +146,13 @@ describe('sauce/worker_allocator', function() {
     expect(spy.called).to.be.true;
   });
 
-  it('should initialize with sauceTunnelId', function() {
+  it("should initialize with sauceTunnelId", function () {
     var spy = sinon.spy();
     var wa = new WorkerAllocator(10, {
       console: {
-        log: function() {}
+        log: function () {}
       },
-      request: function(opts, cb) {
+      request: function (opts, cb) {
         expect(opts).to.not.be.null;
         cb();
       },
@@ -166,13 +168,13 @@ describe('sauce/worker_allocator', function() {
     expect(spy.called).to.be.true;
   });
 
-  it('should initialize without sauceTunnelId', function(done) {
+  it("should initialize without sauceTunnelId", function (done) {
     var spy = sinon.spy();
     var wa = new WorkerAllocator(10, {
       console: {
-        log: function() {}
+        log: function () {}
       },
-      request: function(opts, cb) {
+      request: function (opts, cb) {
         expect(opts).to.not.be.null;
         cb();
       },
@@ -181,13 +183,13 @@ describe('sauce/worker_allocator', function() {
       },
       clearTimeout: function () {},
       tunnel: {
-        initialize: function(cb) {
+        initialize: function (cb) {
           cb(null);
         },
-        open: function(opts) {
+        open: function (opts) {
           opts.callback(null, {});
         },
-        close: function(tunnel, cb) {
+        close: function (tunnel, cb) {
           cb();
         }
       },
@@ -196,19 +198,19 @@ describe('sauce/worker_allocator', function() {
         maxTunnels: 2
       }
     });
-    wa.initialize(function() {
+    wa.initialize(function () {
       wa.teardownTunnels(spy);
       done();
     });
   });
 
-  it('should initialize without sauceTunnelId with tunnel error', function() {
+  it("should initialize without sauceTunnelId with tunnel error", function () {
     var spy = sinon.spy();
     var wa = new WorkerAllocator(10, {
       console: {
-        log: function() {}
+        log: function () {}
       },
-      request: function(opts, cb) {
+      request: function (opts, cb) {
         expect(opts).to.not.be.null;
         cb();
       },
@@ -217,10 +219,10 @@ describe('sauce/worker_allocator', function() {
       },
       clearTimeout: function () {},
       tunnel: {
-        initialize: function(cb) {
+        initialize: function (cb) {
           cb(null);
         },
-        open: function(opts) {
+        open: function (opts) {
           opts.callback(new Error("bad tunnel"), {});
         }
       },
@@ -233,13 +235,13 @@ describe('sauce/worker_allocator', function() {
     wa.teardownTunnels(spy);
   });
 
-  it('should initialize without sauceTunnelId with error', function() {
+  it("should initialize without sauceTunnelId with error", function () {
     var spy = sinon.spy();
     var wa = new WorkerAllocator(10, {
       console: {
-        log: function() {}
+        log: function () {}
       },
-      request: function(opts, cb) {
+      request: function (opts, cb) {
         expect(opts).to.not.be.null;
         cb();
       },
@@ -248,12 +250,12 @@ describe('sauce/worker_allocator', function() {
       },
       clearTimeout: function () {},
       tunnel: {
-        initialize: function(cb) {
+        initialize: function (cb) {
           cb(new Error("foo"));
         }
       },
       analytics: {
-        push: function() {}
+        push: function () {}
       },
       sauceSettings: {
         useTunnels: true,
@@ -263,14 +265,14 @@ describe('sauce/worker_allocator', function() {
     wa.initialize(spy);
   });
 
-  it('should initialize without sauceTunnelId and get', function() {
+  it("should initialize without sauceTunnelId and get", function () {
     var spy = sinon.spy();
     var wa = new WorkerAllocator(10, {
       console: {
-        log: function() {}
+        log: function () {}
       },
       request: {
-        post: function(opts, cb) {
+        post: function (opts, cb) {
           expect(opts).to.not.be.null;
           cb(null, {}, JSON.stringify(
             {
@@ -285,10 +287,10 @@ describe('sauce/worker_allocator', function() {
       },
       clearTimeout: function () {},
       tunnel: {
-        initialize: function(cb) {
+        initialize: function (cb) {
           cb(null);
         },
-        open: function(opts) {
+        open: function (opts) {
           opts.callback(null, {});
         }
       },
@@ -306,31 +308,31 @@ describe('sauce/worker_allocator', function() {
     wa.teardownTunnels(spy);
   });
 
-    it('should initialize without sauceTunnelId and get', function() {
-      var spy = sinon.spy();
-      var wa = new WorkerAllocator(10, _settingsBuilder({
-        request: {
-          post: function(opts, cb) {
-            expect(opts).to.not.be.null;
-            cb(null, {}, JSON.stringify(
-              {
-                accepted: true,
-                token: "foo"
-              }
-            ));
-          }
+  it("should initialize without sauceTunnelId and get", function () {
+    var spy = sinon.spy();
+    var wa = new WorkerAllocator(10, _settingsBuilder({
+      request: {
+        post: function (opts, cb) {
+          expect(opts).to.not.be.null;
+          cb(null, {}, JSON.stringify(
+            {
+              accepted: true,
+              token: "foo"
+            }
+          ));
         }
-      }));
-      wa.initialize(spy);
-      wa.get(spy);
-      wa.teardownTunnels(spy);
-    });
+      }
+    }));
+    wa.initialize(spy);
+    wa.get(spy);
+    wa.teardownTunnels(spy);
+  });
 
-  it('should initialize without sauceTunnelId and get without locksServerLocation', function() {
+  it("should initialize without sauceTunnelId and get without locksServerLocation", function () {
     var spy = sinon.spy();
     var wa = new WorkerAllocator(10, {
       console: {
-        log: function() {}
+        log: function () {}
       },
       request: {
       },
@@ -339,10 +341,10 @@ describe('sauce/worker_allocator', function() {
       },
       clearTimeout: function () {},
       tunnel: {
-        initialize: function(cb) {
+        initialize: function (cb) {
           cb(null);
         },
-        open: function(opts) {
+        open: function (opts) {
           opts.callback(null, {});
         }
       },
@@ -356,14 +358,14 @@ describe('sauce/worker_allocator', function() {
     wa.teardownTunnels(spy);
   });
 
-  it('should initialize without sauceTunnelId with bad payload', function() {
+  it("should initialize without sauceTunnelId with bad payload", function () {
     var spy = sinon.spy();
     var wa = new WorkerAllocator(10, _settingsBuilder({
       request: {
-        post: function(opts, cb) {
+        post: function (opts, cb) {
           expect(opts).to.not.be.null;
           cb(null, {}, "foo");
-        },
+        }
       },
       sauceSettings: {
         useTunnels: true,
@@ -376,14 +378,14 @@ describe('sauce/worker_allocator', function() {
     wa.get(spy);
   });
 
-  it('should initialize without sauceTunnelId with err', function() {
+  it("should initialize without sauceTunnelId with err", function () {
     var spy = sinon.spy();
     var wa = new WorkerAllocator(10, _settingsBuilder({
       request: {
-        post: function(opts, cb) {
+        post: function (opts, cb) {
           expect(opts).to.not.be.null;
           cb(new Error("Bad req"), {}, "foo");
-        },
+        }
       },
       sauceSettings: {
         useTunnels: true,
@@ -399,14 +401,14 @@ describe('sauce/worker_allocator', function() {
     wa.get(spy);
   });
 
-  it('should initialize without sauceTunnelId with null result', function() {
+  it("should initialize without sauceTunnelId with null result", function () {
     var spy = sinon.spy();
     var wa = new WorkerAllocator(10, _settingsBuilder({
       request: {
-        post: function(opts, cb) {
+        post: function (opts, cb) {
           expect(opts).to.not.be.null;
           cb(null, {}, "null");
-        },
+        }
       },
       sauceSettings: {
         useTunnels: true,
@@ -419,14 +421,14 @@ describe('sauce/worker_allocator', function() {
     wa.get(spy);
   });
 
-  it('should initialize without sauceTunnelId with empty result', function() {
+  it("should initialize without sauceTunnelId with empty result", function () {
     var spy = sinon.spy();
     var wa = new WorkerAllocator(10, _settingsBuilder({
       request: {
-        post: function(opts, cb) {
+        post: function (opts, cb) {
           expect(opts).to.not.be.null;
           cb(null, {}, "{}");
-        },
+        }
       },
       sauceSettings: {
         useTunnels: true,
@@ -438,14 +440,14 @@ describe('sauce/worker_allocator', function() {
     wa.initialize(spy);
   });
 
-  it('should initialize without sauceTunnelId with empty result and debug', function() {
+  it("should initialize without sauceTunnelId with empty result and debug", function () {
     var spy = sinon.spy();
     var wa = new WorkerAllocator(10, _settingsBuilder({
       request: {
-        post: function(opts, cb) {
+        post: function (opts, cb) {
           expect(opts).to.not.be.null;
           cb(null, {}, "{}");
-        },
+        }
       },
       sauceSettings: {
         useTunnels: true,
@@ -461,14 +463,14 @@ describe('sauce/worker_allocator', function() {
     wa.get(spy);
   });
 
-  it('should initialize without sauceTunnelId with one good, one bad', function() {
+  it("should initialize without sauceTunnelId with one good, one bad", function () {
     var spy = sinon.spy();
     var index = 0;
     var wa = new WorkerAllocator(10, {
       console: {
-        log: function() {}
+        log: function () {}
       },
-      request: function(opts, cb) {
+      request: function (opts, cb) {
         expect(opts).to.not.be.null;
         cb();
       },
@@ -477,10 +479,10 @@ describe('sauce/worker_allocator', function() {
       },
       clearTimeout: function () {},
       tunnel: {
-        initialize: function(cb) {
+        initialize: function (cb) {
           cb(null);
         },
-        open: function(opts) {
+        open: function (opts) {
           opts.callback(
             index === 1 ? new Error("bad tunnel") : null,
             {}
@@ -493,7 +495,6 @@ describe('sauce/worker_allocator', function() {
       sauceSettings: {
         useTunnels: true,
         locksServerLocation: "foo",
-        useTunnels: true,
         maxTunnels: 2
       }
     });

@@ -1,11 +1,14 @@
-var expect = require('chai').expect;
-var TestRunner = require('../src/test_runner');
-var _ = require('lodash');
+/* eslint no-undef: 0, no-invalid-this: 0, no-magic-numbers: 0, no-unused-expressions: 0,
+  no-throw-literal: 0 */
+"use strict";
+var expect = require("chai").expect;
+var TestRunner = require("../src/test_runner");
+var _ = require("lodash");
 var EventEmitter = require("events").EventEmitter;
 
 var MockIO = function () {
-  this.unpipe = function() {};
-}
+  this.unpipe = function () {};
+};
 MockIO.prototype = new EventEmitter();
 
 var MockChildProcess = function () {
@@ -14,10 +17,10 @@ var MockChildProcess = function () {
   this.stderr = new MockIO();
   this.stderr.setMaxListeners(50);
   this.removeAllListeners = function () {};
-}
+};
 MockChildProcess.prototype = new EventEmitter();
 
-var _testStruct = function(moreOpts) {
+var _testStruct = function (moreOpts) {
   return _.merge({
     testLocator: "baz",
     stopClock: function () {},
@@ -29,21 +32,21 @@ var _testStruct = function(moreOpts) {
     },
     locator: "bar",
     status: 3,
-    canRun: function() {
+    canRun: function () {
       return true;
     }
   }, moreOpts);
-}
+};
 
-var _tests = function() {
+var _tests = function () {
   return [
     {test: "foo", locator: "bar"},
     {test: "bar", locator: "bar"},
-    {test: "baz", locator: "bar"},
+    {test: "baz", locator: "bar"}
   ];
 };
 
-var _options = function(moreOpts) {
+var _options = function (moreOpts) {
   return _.merge({
     browsers: [{
       browserId: "chrome",
@@ -51,29 +54,29 @@ var _options = function(moreOpts) {
       orientation: "portrait"
     }],
     allocator: {
-      get: function(cb) {
+      get: function (cb) {
         cb(null, {index: 0, tunnelId: 50, token: "foo"});
       },
-      release: function() {},
+      release: function () {}
     },
     listeners: [
       {
-        listenTo: function() {},
+        listenTo: function () {}
       },
       {
-        listenTo: function() {},
-        flush: function() {}
+        listenTo: function () {},
+        flush: function () {}
       },
       {
-        listenTo: function() {},
-        flush: function() {
+        listenTo: function () {},
+        flush: function () {
           return {
-            then: function() {
+            then: function () {
               return {
-                catch: function(cb) {cb({})}
+                catch: function (cb) { cb({}); }
               };
-            },
-          }
+            }
+          };
         }
       }
     ],
@@ -81,9 +84,9 @@ var _options = function(moreOpts) {
       user: "Jack"
     }
   }, moreOpts);
-}
+};
 
-var _testOptions = function(moreOpts) {
+var _testOptions = function (moreOpts) {
   return _.merge({
     console: {
       log: function () {},
@@ -125,19 +128,19 @@ var _testOptions = function(moreOpts) {
       buildId: "buildId-bar"
     },
     clearInterval: function () {},
-    setTimeout: function (cb) {cb()},
-    setInterval: function (cb) {cb()},
+    setTimeout: function (cb) { cb(); },
+    setInterval: function (cb) { cb(); },
     prettyMs: function () {return "";}
   }, moreOpts);
 };
 
-describe('TestRunner Class', function() {
-  it('should initialize', function() {
+describe("TestRunner Class", function () {
+  it("should initialize", function () {
     var tr = new TestRunner(_tests(), _options({}), _testOptions({}));
     expect(tr).to.be.not.be.null;
   });
 
-  it('should initialize with bail options', function() {
+  it("should initialize with bail options", function () {
     var tr1 = new TestRunner(_tests(), _options({bailFast: true}), _testOptions({}));
     expect(tr1).to.be.not.be.null;
 
@@ -152,7 +155,7 @@ describe('TestRunner Class', function() {
     expect(tr3).to.be.not.be.null;
   });
 
-  it('should initialize with trends', function() {
+  it("should initialize with trends", function () {
     var tr = new TestRunner(_tests(), _options(), _testOptions({
       settings: {
         gatherTrends: true
@@ -161,7 +164,7 @@ describe('TestRunner Class', function() {
     expect(tr).to.be.not.be.null;
   });
 
-  it('should start', function() {
+  it("should start", function () {
     var tr1 = new TestRunner(_tests(), _options(), _testOptions({}));
     tr1.start();
 
@@ -176,7 +179,7 @@ describe('TestRunner Class', function() {
     tr3.start();
   });
 
-  it('should idle', function() {
+  it("should idle", function () {
     var tr1 = new TestRunner(_tests(), _options(), _testOptions({}));
     tr1.notIdle();
     expect(tr1.busyCount).to.eql(1);
@@ -192,22 +195,22 @@ describe('TestRunner Class', function() {
     expect(tr1.busyCount).to.eql(0);
   });
 
-  it('should idle', function() {
+  it("should idle", function () {
     var tr1 = new TestRunner(_tests(), _options(), _testOptions({}));
-    tr1.stageTest(_testStruct(), function() {});
+    tr1.stageTest(_testStruct(), function () {});
 
-    // Uncle Owen! This one's got a bad motivator!
+    // Uncle Owen! This one"s got a bad motivator!
     var tr2 = new TestRunner(_tests(), _options({
       allocator: {
-        get: function(cb) {
+        get: function (cb) {
           cb({bad: "stuff"});
         }
       }
     }), _testOptions({}));
-    tr2.stageTest(_testStruct(), function() {});
+    tr2.stageTest(_testStruct(), function () {});
   });
 
-  it('should run through a passing test', function() {
+  it("should run through a passing test", function () {
     var myMock = new MockChildProcess();
     var tr1 = new TestRunner(_tests(), _options({
       listeners: [
@@ -222,7 +225,7 @@ describe('TestRunner Class', function() {
         gatherTrends: true
       }
     }));
-    tr1.stageTest(_testStruct(), function() {});
+    tr1.stageTest(_testStruct(), function () {});
 
     myMock.emit("message", {sessionId: 52});
     myMock.emit("message", {type: "selenium-session-info", sessionId: 52});
@@ -244,7 +247,7 @@ describe('TestRunner Class', function() {
     tr1.summarizeCompletedBuild();
   });
 
-  it('should run through a passing test w/o debugging', function() {
+  it("should run through a passing test w/o debugging", function () {
     var myMock = new MockChildProcess();
     var tr1 = new TestRunner(_tests(), _options({
       listeners: [
@@ -258,7 +261,7 @@ describe('TestRunner Class', function() {
         gatherTrends: true
       }
     }));
-    tr1.stageTest(_testStruct(), function() {});
+    tr1.stageTest(_testStruct(), function () {});
 
     myMock.emit("message", {sessionId: 52});
     myMock.emit("message", {type: "selenium-session-info", sessionId: 52});
@@ -269,7 +272,7 @@ describe('TestRunner Class', function() {
     tr1.summarizeCompletedBuild();
   });
 
-  it('should have failed tests', function() {
+  it("should have failed tests", function () {
     var tr1 = new TestRunner(_tests(), _options(), _testOptions({}));
     tr1.failedTests = [
       {}
@@ -279,7 +282,7 @@ describe('TestRunner Class', function() {
     tr1.summarizeCompletedBuild();
   });
 
-  it('should handled failed tests', function() {
+  it("should handled failed tests", function () {
     var myMock = new MockChildProcess();
     var tr1 = new TestRunner(_tests(), _options(), _testOptions({
       fork: function () {
@@ -289,7 +292,7 @@ describe('TestRunner Class', function() {
         gatherTrends: true
       }
     }));
-    tr1.stageTest(_testStruct(), function() {});
+    tr1.stageTest(_testStruct(), function () {});
     myMock.emit("close", -1);
 
     tr1.gatherTrends();
@@ -297,7 +300,7 @@ describe('TestRunner Class', function() {
     tr1.summarizeCompletedBuild();
   });
 
-  it('should handle inability to get test environment', function() {
+  it("should handle inability to get test environment", function () {
     var tr1 = new TestRunner(_tests(), _options(), _testOptions({
       settings: {
         testFramework: {
@@ -306,37 +309,37 @@ describe('TestRunner Class', function() {
               getEnvironment: function () {
                 throw new Error("Nope!");
               }
-            }
+            };
           }
         }
       }
     }));
-    tr1.stageTest(_testStruct(), function() {});
+    tr1.stageTest(_testStruct(), function () {});
   });
 
-  it('should handle inability to fork', function() {
+  it("should handle inability to fork", function () {
     var tr2 = new TestRunner(_tests(), _options(), _testOptions({
       fork: function () {
         throw new Error("Nope!");
       }
     }));
-    tr2.stageTest(_testStruct(), function() {});
+    tr2.stageTest(_testStruct(), function () {});
   });
 
-  it('should handle throwing in listenTo', function() {
+  it("should handle throwing in listenTo", function () {
     var tr2 = new TestRunner(_tests(), _options({
       listeners: [
         {
-          listenTo: function() {
-            throw new "Whoops!";
+          listenTo: function () {
+            throw "Whoops!";
           }
         }
       ]
     }), _testOptions());
-    tr2.stageTest(_testStruct(), function() {});
+    tr2.stageTest(_testStruct(), function () {});
   });
 
-  it('should handle bailing', function() {
+  it("should handle bailing", function () {
     var myMock = new MockChildProcess();
     var tr1 = new TestRunner(_tests(), _options({
       bailOnThreshold: 1
@@ -348,7 +351,7 @@ describe('TestRunner Class', function() {
         gatherTrends: true
       }
     }));
-    tr1.stageTest(_testStruct(), function() {});
+    tr1.stageTest(_testStruct(), function () {});
     myMock.emit("close", -1);
     myMock.emit("close", -1);
     myMock.emit("close", -1);
@@ -364,8 +367,7 @@ describe('TestRunner Class', function() {
     tr1.summarizeCompletedBuild();
   });
 
-  it('should have bail fast logic', function() {
-    var myMock = new MockChildProcess();
+  it("should have bail fast logic", function () {
     var tr1 = new TestRunner(_tests(), _options({
       bailFast: true
     }), _testOptions({}));
@@ -377,8 +379,7 @@ describe('TestRunner Class', function() {
     tr1.shouldBail();
   });
 
-  it('should have bail fast logic', function() {
-    var myMock = new MockChildProcess();
+  it("should have bail fast logic", function () {
     var tr1 = new TestRunner(_tests(), _options({
       bailFast: true
     }), _testOptions({}));
@@ -393,8 +394,7 @@ describe('TestRunner Class', function() {
     tr1.checkBuild();
   });
 
-  it('should have bail early logic', function() {
-    var myMock = new MockChildProcess();
+  it("should have bail early logic", function () {
     var tr1 = new TestRunner(_tests(), _options({
       bailOnThreshold: 1
     }), _testOptions({}));
@@ -406,8 +406,7 @@ describe('TestRunner Class', function() {
     tr1.shouldBail();
   });
 
-  it('should summarize under various circumnstances', function() {
-    var myMock = new MockChildProcess();
+  it("should summarize under various circumnstances", function () {
     var tr1 = new TestRunner(_tests(), _options(), _testOptions());
 
     tr1.summarizeCompletedBuild();
@@ -417,14 +416,14 @@ describe('TestRunner Class', function() {
 
     tr1.tests = [
       {status: 0},
-      {status: 3, getRetries: function() { return 0; }},
-      {status: 3, getRetries: function() { return 1; }},
-      {status: 3, getRetries: function() { return 1; }}
-    ]
+      {status: 3, getRetries: function () { return 0; }},
+      {status: 3, getRetries: function () { return 1; }},
+      {status: 3, getRetries: function () { return 1; }}
+    ];
     tr1.summarizeCompletedBuild();
   });
 
-  it('should handle various forms of test completion', function() {
+  it("should handle various forms of test completion", function () {
     var tr1 = new TestRunner(_tests(), _options(), _testOptions({
       settings: {
         gatherTrends: true

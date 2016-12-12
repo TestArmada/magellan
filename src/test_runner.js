@@ -729,7 +729,6 @@ TestRunner.prototype = {
       this.console.log("    Skipped: " + skipped);
     }
 
-    var self = this;
     var flushNextListener = function () {
       if (this.listeners.length === 0) {
         // There are no listeners left to flush. We've summarized all build reports.

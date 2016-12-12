@@ -1,11 +1,13 @@
-var expect = require('chai').expect;
-var getTests = require('../src/get_tests');
+/* eslint no-undef: 0 */
+"use strict";
+var expect = require("chai").expect;
+var getTests = require("../src/get_tests");
 
-describe('getTests', function() {
-  it('should get tests', function() {
+describe("getTests", function () {
+  it("should get tests", function () {
     expect(getTests({
-      a: function() { return true; },
-      b: function() { return true; }
+      a: function () { return true; },
+      b: function () { return true; }
     }, {
       settings: {
         testFramework: {
@@ -13,8 +15,8 @@ describe('getTests', function() {
             return ["a", "b", "c"];
           },
           filters: {
-            a: function() { return true; },
-            b: function() { return true; }
+            a: function () { return true; },
+            b: function () { return true; }
           }
         }
       }
