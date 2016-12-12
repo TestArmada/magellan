@@ -1,3 +1,4 @@
+/* eslint complexity: 0, no-invalid-this: 0 */
 "use strict";
 
 var fork = require("child_process").fork;
@@ -53,14 +54,65 @@ var strictness = {
 //   debug               - true/false flag for magellan debugging mode
 //   onSuccess           - function() callback
 //   onFailure           - function(failedTests) callback
-//
-function TestRunner(tests, options) {
+// opts: testing options
+function TestRunner(tests, options, opts) {
   var self = this;
 
-  // Allow for bail time to be set "late" (eg: unit tests)
-  strictness.LONG_RUNNING_TEST = settings.bailTime;
+  this.console = console;
+  /* istanbul ignore next */
+  if (opts && opts.console) {
+    this.console = opts.console;
+  }
+  this.fs = fs;
+  /* istanbul ignore next */
+  if (opts && opts.fs) {
+    this.fs = opts.fs;
+  }
+  this.mkdirSync = mkdirSync;
+  /* istanbul ignore next */
+  if (opts && opts.mkdirSync) {
+    this.mkdirSync = opts.mkdirSync;
+  }
+  this.fork = fork;
+  /* istanbul ignore next */
+  if (opts && opts.fork) {
+    this.fork = opts.fork;
+  }
+  this.sauceBrowsers = sauceBrowsers;
+  /* istanbul ignore next */
+  if (opts && opts.sauceBrowsers) {
+    this.sauceBrowsers = opts.sauceBrowsers;
+  }
+  this.settings = settings;
+  /* istanbul ignore next */
+  if (opts && opts.settings) {
+    this.settings = opts.settings;
+  }
+  this.setTimeout = setTimeout;
+  /* istanbul ignore next */
+  if (opts && opts.setTimeout) {
+    this.setTimeout = opts.setTimeout;
+  }
+  this.clearInterval = clearInterval;
+  /* istanbul ignore next */
+  if (opts && opts.clearInterval) {
+    this.clearInterval = opts.clearInterval;
+  }
+  this.setInterval = setInterval;
+  /* istanbul ignore next */
+  if (opts && opts.setInterval) {
+    this.setInterval = opts.setInterval;
+  }
+  this.prettyMs = prettyMs;
+  /* istanbul ignore next */
+  if (opts && opts.prettyMs) {
+    this.prettyMs = opts.prettyMs;
+  }
 
-  this.buildId = settings.buildId;
+  // Allow for bail time to be set "late" (eg: unit tests)
+  strictness.LONG_RUNNING_TEST = this.settings.bailTime;
+
+  this.buildId = this.settings.buildId;
 
   this.busyCount = 0;
 
@@ -73,7 +125,7 @@ function TestRunner(tests, options) {
     ? strictness.BAIL_FAST
     : (options.bailOnThreshold
       ? strictness.BAIL_EARLY
-      : (settings.bailTimeExplicitlySet
+      : (this.settings.bailTimeExplicitlySet
         ? strictness.BAIL_TIME_ONLY
         : strictness.BAIL_NEVER
       )
@@ -106,17 +158,17 @@ function TestRunner(tests, options) {
   this.tests = _.flatten(tests.map(function (testLocator) {
     return options.browsers.map(function (requestedBrowser) {
       // Note: For non-sauce browsers, this can come back empty, which is just fine.
-      var sauceBrowserSettings = sauceBrowsers.browser(requestedBrowser.browserId,
+      var sauceBrowserSettings = self.sauceBrowsers.browser(requestedBrowser.browserId,
         requestedBrowser.resolution, requestedBrowser.orientation);
       return new Test(testLocator, requestedBrowser, sauceBrowserSettings, self.MAX_TEST_ATTEMPTS);
     });
   }));
 
-  if (settings.gatherTrends) {
+  if (this.settings.gatherTrends) {
     this.trends = {
       failures: {}
     };
-    console.log("Gathering trends to ./trends.json");
+    this.console.log("Gathering trends to ./trends.json");
   }
 
   this.numTests = this.tests.length;
@@ -140,9 +192,11 @@ TestRunner.prototype = {
     browserStatement += this.browsers.map(function (b) { return b.toString(); }).join(", ");
 
     if (this.serial) {
-      console.log("\nRunning " + this.numTests + " tests in serial mode" + browserStatement + "\n");
+      this.console.log(
+        "\nRunning " + this.numTests + " tests in serial mode" + browserStatement + "\n"
+      );
     } else {
-      console.log("\nRunning " + this.numTests + " tests with " + this.MAX_WORKERS
+      this.console.log("\nRunning " + this.numTests + " tests with " + this.MAX_WORKERS
         + " workers" + browserStatement + "\n");
     }
 
@@ -210,8 +264,10 @@ TestRunner.prototype = {
             // This indicates something went wrong with magellan itself. We still need
             // to drain the queue, so we fail the test, even though the test itself may
             // have not actually failed.
-            console.log(clc.redBright("Fatal internal error while running a test:", runTestError));
-            console.log(clc.redBright(runTestError.stack));
+            self.console.log(clc.redBright(
+              "Fatal internal error while running a test:", runTestError
+            ));
+            self.console.log(clc.redBright(runTestError.stack));
 
             // Give this worker back to the allocator
             self.allocator.release(worker);
@@ -228,8 +284,8 @@ TestRunner.prototype = {
         analytics.mark("acquire-worker-" + analyticsGuid, "failed");
         // If the allocator could not give us a worker, pass
         // back a failed test result with the allocator's error.
-        console.error("Worker allocator error: " + error);
-        console.error(error.stack);
+        this.console.error("Worker allocator error: " + error);
+        this.console.error(error.stack);
 
         /*eslint-disable no-magic-numbers*/
         test.workerIndex = -1;
@@ -254,7 +310,7 @@ TestRunner.prototype = {
 
     var env;
     try {
-      env = testRun.getEnvironment(settings.environment);
+      env = testRun.getEnvironment(this.settings.environment);
     } catch (e) {
       deferred.reject(e);
       return deferred.promise;
@@ -269,7 +325,7 @@ TestRunner.prototype = {
 
     var childProcess;
     try {
-      childProcess = fork(testRun.getCommand(), testRun.getArguments(), options);
+      childProcess = this.fork(testRun.getCommand(), testRun.getArguments(), options);
       this.notIdle();
     } catch (e) {
       deferred.reject(e);
@@ -352,7 +408,7 @@ TestRunner.prototype = {
       });
 
       test.stopClock();
-      clearInterval(sentry);
+      self.clearInterval(sentry);
 
       statusEmitterEmit("message", {
         type: "worker-status",
@@ -392,7 +448,7 @@ TestRunner.prototype = {
     if (this.debug) {
       // For debugging purposes.
       childProcess.on("message", function (msg) {
-        console.log("Message from worker:", msg);
+        self.console.log("Message from worker:", msg);
       });
     }
 
@@ -459,7 +515,7 @@ TestRunner.prototype = {
     // strictness level except BAIL_NEVER, we kill a worker process and its
     // process tree if its been running for too long.
     test.startClock();
-    sentry = setInterval(function () {
+    sentry = this.setInterval(function () {
       if (this.strictness === strictness.BAIL_NEVER) {
         return;
       }
@@ -474,7 +530,7 @@ TestRunner.prototype = {
         // Stop the sentry now because we are going to yield for a moment before
         // calling workerClosed(), which is normally responsible for stopping
         // the sentry from monitoring.
-        clearInterval(sentry);
+        this.clearInterval(sentry);
 
         // Tell the child to shut down the running test immediately
         childProcess.send({
@@ -483,7 +539,7 @@ TestRunner.prototype = {
             + "ms (long running test)"
         });
 
-        setTimeout(function () {
+        this.setTimeout(function () {
           // We pass code 1 to simulate a failure return code from fork()
           workerClosed(1);
         }, WORKER_STOP_DELAY);
@@ -517,20 +573,20 @@ TestRunner.prototype = {
 
       msg.push("running test: " + test.toString());
 
-      console.log(msg.join(" "));
+      this.console.log(msg.join(" "));
     }
 
     var testRun;
 
     try {
-      var TestRunClass = settings.testFramework.TestRun;
+      var TestRunClass = this.settings.testFramework.TestRun;
       var childBuildId = guid();
 
       // Note: we must sanitize the buildid because it might contain slashes or "..", etc
-      var tempAssetPath = path.resolve(settings.tempDir + "/build-"
+      var tempAssetPath = path.resolve(this.settings.tempDir + "/build-"
         + sanitizeFilename(this.buildId) + "_" + childBuildId + "__temp_assets");
 
-      mkdirSync(tempAssetPath);
+      this.mkdirSync(tempAssetPath);
 
       testRun = new TestRunClass({
         guid: childBuildId,
@@ -565,7 +621,7 @@ TestRunner.prototype = {
     }
 
     if (testRun) {
-      setTimeout(function () {
+      this.setTimeout(function () {
         this.spawnTestProcess(testRun, test)
           .then(deferred.resolve)
           .catch(deferred.reject);
@@ -576,14 +632,14 @@ TestRunner.prototype = {
   },
 
   gatherTrends: function () {
-    if (settings.gatherTrends) {
-      console.log("Updating trends ...");
+    if (this.settings.gatherTrends) {
+      this.console.log("Updating trends ...");
 
       var existingTrends;
       var self = this;
 
       try {
-        existingTrends = JSON.parse(fs.readFileSync("./trends.json"));
+        existingTrends = JSON.parse(this.fs.readFileSync("./trends.json"));
       } catch (e) {
         existingTrends = {failures: {}};
       }
@@ -595,23 +651,24 @@ TestRunner.prototype = {
           ? existingTrends.failures[key] + localFailureCount : localFailureCount;
       });
 
-      fs.writeFileSync("./trends.json", JSON.stringify(existingTrends, null, 2));
+      this.fs.writeFileSync("./trends.json", JSON.stringify(existingTrends, null, 2));
 
-      console.log("Updated trends at ./trends.json");
+      this.console.log("Updated trends at ./trends.json");
     }
   },
 
   logFailedTests: function () {
-    console.log(clc.redBright("\n============= Failed Tests:  =============\n"));
+    this.console.log(clc.redBright("\n============= Failed Tests:  =============\n"));
 
+    var self = this;
     this.failedTests.forEach(function (failedTest) {
-      console.log("\n- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -"
+      self.console.log("\n- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -"
         + " - - - - - - - - - - - - - - - ");
-      console.log("Failed Test: " + failedTest.toString());
-      console.log(" # attempts: " + failedTest.attempts);
-      console.log("     output: ");
-      console.log(failedTest.stdout);
-      console.log(failedTest.stderr);
+      self.console.log("Failed Test: " + failedTest.toString());
+      self.console.log(" # attempts: " + failedTest.attempts);
+      self.console.log("     output: ");
+      self.console.log(failedTest.stdout);
+      self.console.log(failedTest.stderr);
     });
   },
 
@@ -652,25 +709,27 @@ TestRunner.prototype = {
       }
     });
 
-    console.log(clc.greenBright("\n============= Suite Complete =============\n"));
-    console.log("     Status: " + status);
-    console.log("    Runtime: " + prettyMs((new Date()).getTime() - this.startTime));
-    console.log("Total tests: " + this.numTests);
-    console.log(" Successful: " + this.passedTests.length + " / " + this.numTests);
+    this.console.log(clc.greenBright("\n============= Suite Complete =============\n"));
+    this.console.log("     Status: " + status);
+    this.console.log("    Runtime: " + this.prettyMs((new Date()).getTime() - this.startTime));
+    this.console.log("Total tests: " + this.numTests);
+    this.console.log(" Successful: " + this.passedTests.length + " / " + this.numTests);
 
+    var self = this;
     _.forOwn(retryMetrics, function (testCount, numRetries) {
-      console.log(testCount + " test(s) have retried: " + numRetries + " time(s)");
+      self.console.log(testCount + " test(s) have retried: " + numRetries + " time(s)");
     });
 
     if (this.failedTests.length > 0) {
-      console.log("     Failed: " + this.failedTests.length + " / " + this.numTests);
+      this.console.log("     Failed: " + this.failedTests.length + " / " + this.numTests);
     }
 
     var skipped = this.numTests - (this.passedTests.length + this.failedTests.length);
     if (this.hasBailed && skipped > 0) {
-      console.log("    Skipped: " + skipped);
+      this.console.log("    Skipped: " + skipped);
     }
 
+    var self = this;
     var flushNextListener = function () {
       if (this.listeners.length === 0) {
         // There are no listeners left to flush. We've summarized all build reports.
@@ -687,7 +746,7 @@ TestRunner.prototype = {
             promise
               .then(flushNextListener)
               .catch(function (error) {
-                console.log("Error when flushing listener output: ", error);
+                self.console.log("Error when flushing listener output: ", error);
                 flushNextListener();
               });
           } else {
@@ -711,7 +770,7 @@ TestRunner.prototype = {
   buildFinished: function () {
     var self = this;
 
-    setTimeout(function () {
+    this.setTimeout(function () {
       self.summarizeCompletedBuild().then(function () {
         if (self.failedTests.length === 0) {
           self.onSuccess();
@@ -728,7 +787,7 @@ TestRunner.prototype = {
     if (this.hasBailed) {
       // Ignore results from this test if we've bailed. This is likely a test that
       // was killed when the build went into bail mode.
-      console.log("\u2716 " + clc.redBright("KILLED ") + " " + test.toString()
+      this.console.log("\u2716 " + clc.redBright("KILLED ") + " " + test.toString()
         + (this.serial ? "\n" : ""));
       return;
     }
@@ -743,7 +802,7 @@ TestRunner.prototype = {
       this.failedTests = _.difference(this.failedTests, this.passedTests);
     } else {
 
-      if (settings.gatherTrends) {
+      if (this.settings.gatherTrends) {
         var key = test.toString();
         /*eslint-disable no-magic-numbers*/
         this.trends.failures[key] = this.trends.failures[key] > -1
@@ -779,7 +838,7 @@ TestRunner.prototype = {
 
     var requeueNote = testRequeued ? clc.cyanBright("(will retry).  Spent "
         + test.getRuntime() + " msec") : "";
-    console.log(prefix + " "
+    this.console.log(prefix + " "
       + (successful ? clc.greenBright("PASS ") : clc.redBright("FAIL ")) + requeueNote + " "
       + test.toString() + " " + suffix);
 
@@ -832,7 +891,7 @@ TestRunner.prototype = {
 
       if (totalAttempts > strictness.THRESHOLD_MIN_ATTEMPTS) {
         if (ratio > strictness.THRESHOLD) {
-          console.log("Magellan has seen at least " + (strictness.THRESHOLD * 100) + "% of "
+          this.console.log("Magellan has seen at least " + (strictness.THRESHOLD * 100) + "% of "
             + " tests fail after seeing at least " + strictness.THRESHOLD_MIN_ATTEMPTS
             + " tests run. Bailing early.");
           return true;
