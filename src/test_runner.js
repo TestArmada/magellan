@@ -1,6 +1,9 @@
 /* eslint complexity: 0, no-invalid-this: 0 */
 "use strict";
 
+// TODO: Extract trending into another class
+// TODO: Move bailFast to a strategy pattern implementation
+
 var fork = require("child_process").fork;
 var async = require("async");
 var _ = require("lodash");
@@ -68,7 +71,8 @@ function TestRunner(tests, options, opts) {
     setTimeout: setTimeout,
     clearInterval: clearInterval,
     setInterval: setInterval,
-    prettyMs: prettyMs
+    prettyMs: prettyMs,
+    analytics: analytics
   }, opts);
 
   // Allow for bail time to be set "late" (eg: unit tests)
@@ -178,7 +182,7 @@ TestRunner.prototype = {
 
     if (this.busyCount === 1) {
       // we transitioned from being idle to being busy
-      analytics.mark("magellan-busy", "busy");
+      this.analytics.mark("magellan-busy", "busy");
     }
   },
 
@@ -187,7 +191,7 @@ TestRunner.prototype = {
 
     if (this.busyCount === 0) {
       // we transitioned from being busy into being idle
-      analytics.mark("magellan-busy", "idle");
+      this.analytics.mark("magellan-busy", "idle");
     }
   },
 
@@ -196,11 +200,11 @@ TestRunner.prototype = {
     var self = this;
     var analyticsGuid = guid();
 
-    analytics.push("acquire-worker-" + analyticsGuid);
+    this.analytics.push("acquire-worker-" + analyticsGuid);
 
     this.allocator.get(function (error, worker) {
       if (!error) {
-        analytics.mark("acquire-worker-" + analyticsGuid);
+        this.analytics.mark("acquire-worker-" + analyticsGuid);
 
         this.runTest(test, worker)
           .then(function (runResults) {
@@ -243,7 +247,7 @@ TestRunner.prototype = {
             onTestComplete(runTestError, test);
           });
       } else {
-        analytics.mark("acquire-worker-" + analyticsGuid, "failed");
+        this.analytics.mark("acquire-worker-" + analyticsGuid, "failed");
         // If the allocator could not give us a worker, pass
         // back a failed test result with the allocator's error.
         this.console.error("Worker allocator error: " + error);
@@ -656,9 +660,9 @@ TestRunner.prototype = {
     }
 
     if (this.failedTests.length > 0) {
-      analytics.mark("magellan-run", "failed");
+      this.analytics.mark("magellan-run", "failed");
     } else {
-      analytics.mark("magellan-run", "passed");
+      this.analytics.mark("magellan-run", "passed");
     }
 
     this.tests.forEach(function (test) {
@@ -858,10 +862,13 @@ TestRunner.prototype = {
           return true;
         }
       }
+      return false;
     } else if (this.strictness === strictness.BAIL_FAST) {
       // --bail_fast
       // Bail as soon as a test has failed.
       return this.failedTests.length > 0;
+    } else {
+      return false;
     }
   }
 };
