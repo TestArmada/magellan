@@ -103,7 +103,9 @@ var _testOptions = function (moreOpts) {
     },
     mkdirSync: function () {},
     fork: function () {
-      return new MockChildProcess();
+      var m = new MockChildProcess();
+      m.setMaxListeners(50);
+      return m;
     },
     sauceBrowsers: {
       browser: function () {
@@ -212,6 +214,7 @@ describe("TestRunner Class", function () {
 
   it("should run through a passing test", function () {
     var myMock = new MockChildProcess();
+    myMock.setMaxListeners(50);
     var tr1 = new TestRunner(_tests(), _options({
       listeners: [
         {}
@@ -249,6 +252,7 @@ describe("TestRunner Class", function () {
 
   it("should run through a passing test w/o debugging", function () {
     var myMock = new MockChildProcess();
+    myMock.setMaxListeners(50);
     var tr1 = new TestRunner(_tests(), _options({
       listeners: [
         {}
@@ -284,6 +288,7 @@ describe("TestRunner Class", function () {
 
   it("should handled failed tests", function () {
     var myMock = new MockChildProcess();
+    myMock.setMaxListeners(50);
     var tr1 = new TestRunner(_tests(), _options(), _testOptions({
       fork: function () {
         return myMock;
@@ -341,6 +346,7 @@ describe("TestRunner Class", function () {
 
   it("should handle bailing", function () {
     var myMock = new MockChildProcess();
+    myMock.setMaxListeners(50);
     var tr1 = new TestRunner(_tests(), _options({
       bailOnThreshold: 1
     }), _testOptions({

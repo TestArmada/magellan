@@ -17,7 +17,12 @@ describe("browsers", function () {
 
   it("should listBrowsers", function () {
     var spy = sinon.spy();
-    browsers.listBrowsers({log: spy});
+    browsers.listBrowsers({
+      console: {log: spy},
+      listSauceCliBrowsers: function(cb) {
+        cb({options: {head: {}}});
+      }
+    });
     expect(spy.called).to.be.true;
   });
 

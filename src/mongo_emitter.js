@@ -1,3 +1,4 @@
+/* eslint callback-return: 0 */
 /*
 To enable MongoDB event export set the `MAGELLAN_MONGO_URL` environment variable to a URL
 appropriate for client connect (e.g. `mongodb://localhost:27017/myproject`). As well as
@@ -60,11 +61,14 @@ var _insert = function (message) {
 module.exports = {
   setup: function () {
   },
-  shutdown: function () {
+  shutdown: function (cb) {
     if (_mongoConfig.enabled) {
       _getDB().then(function (db) {
         _console("Closing mongo connection");
         db.close();
+        if (cb) {
+          cb();
+        }
       });
     }
   },

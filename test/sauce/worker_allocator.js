@@ -196,6 +196,9 @@ describe("sauce/worker_allocator", function () {
       sauceSettings: {
         useTunnels: true,
         maxTunnels: 2
+      },
+      delay: function (cb) {
+        cb();
       }
     });
     wa.initialize(function () {

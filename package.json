@@ -27,6 +27,7 @@
   "license": "MIT",
   "scripts": {
     "test": "eslint src/** bin/** && mocha --recursive",
+    "dev-test": "mocha --recursive && eslint src/** bin/**",
     "integration": "eslint src/** bin/** && ./bin/magellan",
     "lint": "eslint src/** bin/** test/**",
     "coverage": "istanbul cover _mocha -- --recursive"

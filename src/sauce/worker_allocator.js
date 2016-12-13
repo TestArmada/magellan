@@ -39,6 +39,11 @@ function SauceWorkerAllocator(_MAX_WORKERS, opts) {
   if (opts && opts.clearTimeout) {
     this.clearTimeout = opts.clearTimeout;
   }
+  this.setTimeout = setTimeout;
+  /* istanbul ignore next */
+  if (opts && opts.setTimeout) {
+    this.setTimeout = opts.setTimeout;
+  }
   this.tunnel = tunnel;
   /* istanbul ignore next */
   if (opts && opts.tunnel) {
@@ -53,6 +58,11 @@ function SauceWorkerAllocator(_MAX_WORKERS, opts) {
   /* istanbul ignore next */
   if (opts && opts.settings) {
     this.settings = opts.settings;
+  }
+  this.delay = _.delay;
+  /* istanbul ignore next */
+  if (opts && opts.delay) {
+    this.delay = opts.delay;
   }
 
   this.tunnels = [];
@@ -297,7 +307,7 @@ SauceWorkerAllocator.prototype.openTunnels = function (callback) {
   _.times(this.maxTunnels, function (n) {
     // worker numbers are 1-indexed
     self.console.log("Waiting " + n + " sec to open tunnel #" + n);
-    _.delay(function () {
+    self.delay(function () {
       openTunnel(n);
     }, n * SECOND_MS);
   });

@@ -2,14 +2,28 @@
 "use strict";
 var expect = require("chai").expect;
 var MongoEmitter = require("../src/mongo_emitter");
+var sinon = require("sinon");
 
 describe("MongoEmitter", function () {
   afterEach(function () {
     MongoEmitter.setMock(null);
   });
 
-  it("should throw on a bad connection", function () {
-    MongoEmitter.shutdown();
+  it("should shutdown", function () {
+    var spy = sinon.spy();
+    MongoEmitter.setMock("mongo://foo", {
+      connect: function (url, cb) {
+        expect(url).to.eql("mongo://foo");
+        cb(null, {
+          close: spy
+        });
+      }
+    }, {
+      log: function () {}
+    });
+    MongoEmitter.shutdown(function () {
+      expect(spy.called).to.be.true;
+    });
   });
 
   it("should throw on a bad connection", function () {

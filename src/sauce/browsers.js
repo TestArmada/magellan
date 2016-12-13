@@ -10,13 +10,19 @@ module.exports = {
   //
   // TODO: the actual listing of browsers should be provided by guacamole
   //
-  listBrowsers: function (altConsole) {
+  listBrowsers: function (opts) {
     var _c = console;
     /* istanbul ignore next */
-    if (altConsole) {
-      _c = altConsole;
+    if (opts && opts.console) {
+      _c = opts.console;
     }
-    listSauceCliBrowsers(function (browserTable) {
+    var _listSauceCliBrowsers = listSauceCliBrowsers;
+    /* istanbul ignore next */
+    if (opts && opts.listSauceCliBrowsers) {
+      _listSauceCliBrowsers = opts.listSauceCliBrowsers;
+    }
+
+    _listSauceCliBrowsers(function (browserTable) {
       // convert table heading
       browserTable.options.head[1] = "Copy-Paste Command-Line Option";
       _c.log(browserTable.toString());

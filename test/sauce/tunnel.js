@@ -245,7 +245,11 @@ describe("sauce/tunnel", function () {
         }
       }},
       spy,
-      {log: function () {}});
+      {
+        console: {
+          log: function () {}
+        }
+      });
     expect(spy.called).to.eql(true);
   });
 });

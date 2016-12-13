@@ -65,21 +65,21 @@ module.exports = {
     });
   },
 
-  open: function (options, mockOpts) {
+  open: function (options, opts) {
     var _console = console;
     /* istanbul ignore next */
-    if (mockOpts && mockOpts.console) {
-      _console = mockOpts.console;
+    if (opts && opts.console) {
+      _console = opts.console;
     }
     var _scl = sauceConnectLauncher;
     /* istanbul ignore next */
-    if (mockOpts && mockOpts.sauceConnectLauncher) {
-      _scl = mockOpts.sauceConnectLauncher;
+    if (opts && opts.sauceConnectLauncher) {
+      _scl = opts.sauceConnectLauncher;
     }
     var _settings = settings;
     /* istanbul ignore next */
-    if (mockOpts && mockOpts.settings) {
-      _settings = mockOpts.settings;
+    if (opts && opts.settings) {
+      _settings = opts.settings;
     }
 
     var tunnelInfo = {};
@@ -152,11 +152,11 @@ module.exports = {
     connect();
   },
 
-  close: function (tunnelInfo, callback, altConsole) {
+  close: function (tunnelInfo, callback, opts) {
     var _console = console;
     /* istanbul ignore next */
-    if (altConsole) {
-      _console = altConsole;
+    if (opts && opts.console) {
+      _console = opts.console;
     }
     tunnelInfo.process.close(function () {
       _console.log("Closed Sauce Connect process");
