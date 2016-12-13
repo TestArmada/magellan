@@ -2,6 +2,7 @@
 
 var syncRequest = require("sync-request");
 var URL = require("url");
+var _ = require("lodash");
 
 module.exports = {
 
@@ -20,13 +21,11 @@ module.exports = {
   },
 
   getProfilesAtURL: function (url, opts) {
-    var _syncRequest = syncRequest;
-    /* istanbul ignore next */
-    if (opts && opts.syncRequest) {
-      _syncRequest = opts.syncRequest;
-    }
+    var runOpts = _.assign({
+      syncRequest: syncRequest
+    }, opts);
 
-    var res = _syncRequest("GET", url);
+    var res = runOpts.syncRequest("GET", url);
     var data;
 
     try {

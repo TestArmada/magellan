@@ -19,51 +19,17 @@ var SECONDS_MINUTE = 60;
 function SauceWorkerAllocator(_MAX_WORKERS, opts) {
   BaseWorkerAllocator.call(this, _MAX_WORKERS, opts);
 
-  this.console = console;
-  /* istanbul ignore next */
-  if (opts && opts.console) {
-    this.console = opts.console;
-  }
-  this.sauceSettings = sauceSettings;
-  /* istanbul ignore next */
-  if (opts && opts.sauceSettings) {
-    this.sauceSettings = opts.sauceSettings;
-  }
-  this.request = request;
-  /* istanbul ignore next */
-  if (opts && opts.request) {
-    this.request = opts.request;
-  }
-  this.clearTimeout = clearTimeout;
-  /* istanbul ignore next */
-  if (opts && opts.clearTimeout) {
-    this.clearTimeout = opts.clearTimeout;
-  }
-  this.setTimeout = setTimeout;
-  /* istanbul ignore next */
-  if (opts && opts.setTimeout) {
-    this.setTimeout = opts.setTimeout;
-  }
-  this.tunnel = tunnel;
-  /* istanbul ignore next */
-  if (opts && opts.tunnel) {
-    this.tunnel = opts.tunnel;
-  }
-  this.analytics = analytics;
-  /* istanbul ignore next */
-  if (opts && opts.analytics) {
-    this.analytics = opts.analytics;
-  }
-  this.settings = settings;
-  /* istanbul ignore next */
-  if (opts && opts.settings) {
-    this.settings = opts.settings;
-  }
-  this.delay = _.delay;
-  /* istanbul ignore next */
-  if (opts && opts.delay) {
-    this.delay = opts.delay;
-  }
+  _.assign(this, {
+    console: console,
+    sauceSettings: sauceSettings,
+    request: request,
+    clearTimeout: clearTimeout,
+    setTimeout: setTimeout,
+    tunnel: tunnel,
+    analytics: analytics,
+    settings: settings,
+    delay: _.delay
+  }, opts);
 
   this.tunnels = [];
   this.tunnelErrors = [];

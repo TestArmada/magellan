@@ -11,29 +11,16 @@ var WORKER_START_DELAY = 1000;
 // Create a worker allocator for MAX_WORKERS workers. Note that the allocator
 // is not obliged to honor the creation of MAX_WORKERS, just some number of workers
 // between 0 and MAX_WORKERS.
-function Allocator(MAX_WORKERS, testSettings) {
-  this.testSettings = {};
-  if (testSettings) {
-    this.testSettings = testSettings;
-  }
-  this.console = console;
-  if (this.testSettings.console) {
-    this.console = this.testSettings.console;
-  }
-  this.setTimeout = setTimeout;
-  if (this.testSettings.setTimeout) {
-    this.setTimeout = this.testSettings.setTimeout;
-  }
-  this.checkPorts = portUtil.checkPorts;
-  if (this.testSettings.checkPorts) {
-    this.checkPorts = this.testSettings.checkPorts;
-  }
-  this.getNextPort = portUtil.getNextPort;
-  if (this.testSettings.getNextPort) {
-    this.getNextPort = this.testSettings.getNextPort;
-  }
+function Allocator(MAX_WORKERS, opts) {
+  _.assign(this, {
+    console: console,
+    setTimeout: setTimeout,
+    checkPorts: portUtil.checkPorts,
+    getNextPort: portUtil.getNextPort,
+    debug: settings.debug
+  }, opts);
 
-  if (settings.debug || this.testSettings.debug) {
+  if (this.debug) {
 
     this.console.log("Worker Allocator starting.");
     this.console.log("Port allocation range from: " + settings.BASE_PORT_START + " to "

@@ -10,45 +10,19 @@ var path = require("path");
 var async = require("async");
 var BaseReporter = require("../reporter");
 var util = require("util");
+var _ = require("lodash");
 
 var MAX_CONCURRENT_UPLOADS = 2;
 
 function ScreenshotAggregator(opts) {
-  this.console = console;
-  /* istanbul ignore next */
-  if (opts && opts.console) {
-    this.console = opts.console;
-  }
-
-  this.request = request;
-  /* istanbul ignore next */
-  if (opts && opts.request) {
-    this.request = opts.request;
-  }
-
-  this.fs = fs;
-  /* istanbul ignore next */
-  if (opts && opts.fs) {
-    this.fs = opts.fs;
-  }
-
-  this.glob = glob;
-  /* istanbul ignore next */
-  if (opts && opts.glob) {
-    this.glob = opts.glob;
-  }
-
-  this.settings = settings;
-  /* istanbul ignore next */
-  if (opts && opts.settings) {
-    this.settings = opts.settings;
-  }
-
-  this.path = path;
-  /* istanbul ignore next */
-  if (opts && opts.path) {
-    this.path = opts.path;
-  }
+  _.assign(this, {
+    console: console,
+    request: request,
+    fs: fs,
+    glob: glob,
+    settings: settings,
+    path: path
+  }, opts);
 
   // This is an URL where we've stored screenshots at for this entire build (regardless of subtests)
   // If we successfully upload any screenshots, this value will be assigned.

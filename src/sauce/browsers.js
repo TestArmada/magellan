@@ -11,27 +11,22 @@ module.exports = {
   // TODO: the actual listing of browsers should be provided by guacamole
   //
   listBrowsers: function (opts) {
-    var _c = console;
-    /* istanbul ignore next */
-    if (opts && opts.console) {
-      _c = opts.console;
-    }
-    var _listSauceCliBrowsers = listSauceCliBrowsers;
-    /* istanbul ignore next */
-    if (opts && opts.listSauceCliBrowsers) {
-      _listSauceCliBrowsers = opts.listSauceCliBrowsers;
-    }
+    var runOpts = _.assign({}, {
+      console: console,
+      listSauceCliBrowsers: listSauceCliBrowsers
+    }, opts);
 
-    _listSauceCliBrowsers(function (browserTable) {
+    runOpts.listSauceCliBrowsers(function (browserTable) {
       // convert table heading
       browserTable.options.head[1] = "Copy-Paste Command-Line Option";
-      _c.log(browserTable.toString());
-      _c.log("");
-      _c.log("Non-Sauce Browser List:");
-      _c.log("  --browser=chrome\t\tLocal Chrome browser");
-      _c.log("  --browser=firefox\t\tLocal Firefox browser");
-      _c.log("  --browser=safari\t\tLocal Safari browser");
-      _c.log("  --browser=phantomjs\t\tLocal Phantomjs browser [default in non-sauce mode]");
+      runOpts.console.log(browserTable.toString());
+      runOpts.console.log("");
+      runOpts.console.log("Non-Sauce Browser List:");
+      runOpts.console.log("  --browser=chrome\t\tLocal Chrome browser");
+      runOpts.console.log("  --browser=firefox\t\tLocal Firefox browser");
+      runOpts.console.log("  --browser=safari\t\tLocal Safari browser");
+      runOpts.console.log(
+        "  --browser=phantomjs\t\tLocal Phantomjs browser [default in non-sauce mode]");
     });
   },
 

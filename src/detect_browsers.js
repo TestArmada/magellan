@@ -1,9 +1,10 @@
 "use strict";
 
-var sauceBrowsers = require("./sauce/browsers.js");
 var Q = require("q");
-var hostedProfiles = require("./hosted_profiles");
 var _ = require("lodash");
+
+var sauceBrowsers = require("./sauce/browsers.js");
+var hostedProfiles = require("./hosted_profiles");
 
 var createBrowser = function (id, resolution, orientation) {
   var result = {
@@ -33,11 +34,9 @@ module.exports = {
   // Return a promise that we'll resolve with a list of browsers selected
   // by the user from command line arguments
   detectFromCLI: function (argv, sauceEnabled, isNodeBased, opts) {
-    var _console = console;
-    /* istanbul ignore next */
-    if (opts && opts.console) {
-      _console = opts.console;
-    }
+    var runOpts = _.assign({
+      console: console
+    }, opts);
 
     var deferred = Q.defer();
     var browsers;
@@ -56,13 +55,13 @@ module.exports = {
         if (fetchedProfiles && fetchedProfiles.profiles) {
           argv.profiles = _.extend({}, argv.profiles, fetchedProfiles.profiles);
 
-          _console.log("Loaded hosted profiles from " + argv.profile.split("#")[0]);
+          runOpts.console.log("Loaded hosted profiles from " + argv.profile.split("#")[0]);
         }
 
         argv.profile = hostedProfiles.getProfileNameFromURL(argv.profile);
       }
 
-      _console.log("Requested profile(s): ", argv.profile);
+      runOpts.console.log("Requested profile(s): ", argv.profile);
 
       // NOTE: We check "profiles" (plural) here because that's what has
       // the actual profile definition. "profile" is the argument from the
@@ -180,9 +179,10 @@ module.exports = {
         });
 
         if (unrecognizedBrowsers.length > 0) {
-          _console.log("Error! Unrecognized saucelabs browsers specified:");
+          runOpts.console.log("Error! Unrecognized saucelabs browsers specified:");
           unrecognizedBrowsers.forEach(function (browser) {
-            _console.log("  " + browser.browserId + " " + (browser.resolution ? " at resolution: "
+            runOpts.console.log(
+              "  " + browser.browserId + " " + (browser.resolution ? " at resolution: "
               + browser.resolution : ""));
           });
 

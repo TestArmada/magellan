@@ -58,56 +58,18 @@ var strictness = {
 function TestRunner(tests, options, opts) {
   var self = this;
 
-  this.console = console;
-  /* istanbul ignore next */
-  if (opts && opts.console) {
-    this.console = opts.console;
-  }
-  this.fs = fs;
-  /* istanbul ignore next */
-  if (opts && opts.fs) {
-    this.fs = opts.fs;
-  }
-  this.mkdirSync = mkdirSync;
-  /* istanbul ignore next */
-  if (opts && opts.mkdirSync) {
-    this.mkdirSync = opts.mkdirSync;
-  }
-  this.fork = fork;
-  /* istanbul ignore next */
-  if (opts && opts.fork) {
-    this.fork = opts.fork;
-  }
-  this.sauceBrowsers = sauceBrowsers;
-  /* istanbul ignore next */
-  if (opts && opts.sauceBrowsers) {
-    this.sauceBrowsers = opts.sauceBrowsers;
-  }
-  this.settings = settings;
-  /* istanbul ignore next */
-  if (opts && opts.settings) {
-    this.settings = opts.settings;
-  }
-  this.setTimeout = setTimeout;
-  /* istanbul ignore next */
-  if (opts && opts.setTimeout) {
-    this.setTimeout = opts.setTimeout;
-  }
-  this.clearInterval = clearInterval;
-  /* istanbul ignore next */
-  if (opts && opts.clearInterval) {
-    this.clearInterval = opts.clearInterval;
-  }
-  this.setInterval = setInterval;
-  /* istanbul ignore next */
-  if (opts && opts.setInterval) {
-    this.setInterval = opts.setInterval;
-  }
-  this.prettyMs = prettyMs;
-  /* istanbul ignore next */
-  if (opts && opts.prettyMs) {
-    this.prettyMs = opts.prettyMs;
-  }
+  _.assign(this, {
+    console: console,
+    fs: fs,
+    mkdirSync: mkdirSync,
+    fork: fork,
+    sauceBrowsers: sauceBrowsers,
+    settings: settings,
+    setTimeout: setTimeout,
+    clearInterval: clearInterval,
+    setInterval: setInterval,
+    prettyMs: prettyMs
+  }, opts);
 
   // Allow for bail time to be set "late" (eg: unit tests)
   strictness.LONG_RUNNING_TEST = this.settings.bailTime;

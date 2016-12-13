@@ -1,16 +1,15 @@
 "use strict";
 
 var fs = require("fs");
+var _ = require("lodash");
 
 module.exports = function (path, opts) {
-  var _fs = fs;
-  /* istanbul ignore next */
-  if (opts && opts.fs) {
-    _fs = opts.fs;
-  }
+  var runOpts = _.assign({
+    fs: fs
+  }, opts);
 
   try {
-    _fs.mkdirSync(path);
+    runOpts.fs.mkdirSync(path);
   } catch (e) {
     if (e.code !== "EEXIST") {
       throw e;

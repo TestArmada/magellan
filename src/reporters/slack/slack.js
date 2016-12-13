@@ -21,18 +21,10 @@ var util = require("util");
 function Reporter(config, opts) {
   this.config = config;
   this.failures = [];
-
-  this._console = console;
-  /* istanbul ignore next */
-  if (opts && opts.console) {
-    this._console = opts.console;
-  }
-
-  this.SlackDriver = Slack;
-  /* istanbul ignore next */
-  if (opts && opts.Slack) {
-    this.SlackDriver = opts.Slack;
-  }
+  _.assign(this, {
+    console: console,
+    Slack: Slack
+  }, opts);
 }
 
 util.inherits(Reporter, BaseReporter);
@@ -41,7 +33,7 @@ Reporter.prototype.initialize = function () {
   var deferred = Q.defer();
   var self = this;
 
-  this._console.log("Magellan Slack Reporter initializing..");
+  this.console.log("Magellan Slack Reporter initializing..");
 
   // Before setting up the node-slackr instance, verify we have everything we need.
   // If we don't, print the missing configuration variables and reject the promise.
@@ -60,7 +52,7 @@ Reporter.prototype.initialize = function () {
   ].forEach(function (key) {
     if (!self.config.hasOwnProperty(key)) {
       hasAllConfig = false;
-      self._console.error("Missing Slack configuration variable: " + key);
+      self.console.error("Missing Slack configuration variable: " + key);
     }
   });
   if (!hasAllConfig) {
@@ -71,7 +63,7 @@ Reporter.prototype.initialize = function () {
   this.buildDisplayName = this.config.buildDisplayName;
   this.buildURL = this.config.buildURL;
 
-  this.slack = new this.SlackDriver(this.config.account, this.config.key, {
+  this.slack = new this.Slack(this.config.account, this.config.key, {
     channel: this.config.channel,
     username: this.config.username,
     /*eslint-disable camelcase*/

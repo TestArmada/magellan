@@ -1,5 +1,7 @@
 "use strict";
 
+var _ = require("lodash");
+
 var settings = require("../settings");
 var checkPorts = require("./check_ports");
 
@@ -31,15 +33,13 @@ var util = {
   // 1) an Error object, if we couldnt' find a port
   // 2) null and a foundPort as the second argument
   acquirePort: function (callback, opts) {
-    var _checkPorts = checkPorts;
-    /* istanbul ignore next */
-    if (opts && opts.checkPorts) {
-      _checkPorts = opts.checkPorts;
-    }
+    var runOpts = _.assign({
+      checkPorts: checkPorts
+    }, opts);
 
     var attempts = 0;
     var acquire = function () {
-      _checkPorts([util.getNextPort()], function (result) {
+      runOpts.checkPorts([util.getNextPort()], function (result) {
         if (result[0].available) {
           return callback(null, result[0].port);
         } else {
