@@ -2,7 +2,7 @@
 "use strict";
 var expect = require("chai").expect;
 var _ = require("lodash");
-var Q = require("Q");
+var Q = require("q");
 var sinon = require("sinon");
 var cli = require("../src/cli");
 
