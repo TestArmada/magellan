@@ -19,7 +19,7 @@ describe("browsers", function () {
     var spy = sinon.spy();
     browsers.listBrowsers({
       console: {log: spy},
-      listSauceCliBrowsers: function(cb) {
+      listSauceCliBrowsers: function (cb) {
         cb({options: {head: {}}});
       }
     });

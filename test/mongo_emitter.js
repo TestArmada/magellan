@@ -1,4 +1,4 @@
-/* eslint no-undef: 0, no-empty: 0 */
+/* eslint no-undef: 0, no-empty: 0, no-unused-expressions: 0 */
 "use strict";
 var expect = require("chai").expect;
 var MongoEmitter = require("../src/mongo_emitter");

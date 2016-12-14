@@ -812,7 +812,7 @@ TestRunner.prototype = {
 
   // Check to see how the build is going and optionally fail the build early.
   checkBuild: function () {
-    if (!this.hasBailed && this.shouldBail()) {
+    if (!this.hasBailed && this.THRESHOLD_MIN_ATTEMPTS) {
       // Kill the rest of the queue, preventing any new tests from running and shutting
       // down buildFinished
       this.q.kill();

@@ -322,7 +322,7 @@ describe("TestRunner Class", function () {
         gatherTrends: true
       },
       console: {
-        log: function(t) {
+        log: function (t) {
           text += t;
         }
       },
