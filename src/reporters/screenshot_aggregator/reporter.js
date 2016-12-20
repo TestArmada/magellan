@@ -10,10 +10,20 @@ var path = require("path");
 var async = require("async");
 var BaseReporter = require("../reporter");
 var util = require("util");
+var _ = require("lodash");
 
 var MAX_CONCURRENT_UPLOADS = 2;
 
-function ScreenshotAggregator() {
+function ScreenshotAggregator(opts) {
+  _.assign(this, {
+    console: console,
+    request: request,
+    fs: fs,
+    glob: glob,
+    settings: settings,
+    path: path
+  }, opts);
+
   // This is an URL where we've stored screenshots at for this entire build (regardless of subtests)
   // If we successfully upload any screenshots, this value will be assigned.
   this.buildURL = null;
@@ -30,7 +40,7 @@ util.inherits(ScreenshotAggregator, BaseReporter);
 ScreenshotAggregator.prototype.initialize = function () {
   var deferred = Q.defer();
 
-  if (!settings.aggregatorURL) {
+  if (!this.settings.aggregatorURL) {
     deferred.reject(new Error("ScreenshotAggregator is missing an aggregatorURL"
       + " in its configuration"));
   } else {
@@ -52,7 +62,7 @@ ScreenshotAggregator.prototype._uploadImage = function (image, callback) {
     build_id: image.buildId,
     child_build_id: image.childBuildId,
     imagefile: {
-      value: fs.createReadStream(image.localFilePath),
+      value: this.fs.createReadStream(image.localFilePath),
       options: {
         filename: image.intendedFilename,
         contentType: "image/png"
@@ -60,8 +70,8 @@ ScreenshotAggregator.prototype._uploadImage = function (image, callback) {
     }
   };
 
-  request.post({
-    url: settings.aggregatorURL,
+  this.request.post({
+    url: this.settings.aggregatorURL,
     formData: formData
   }, function (err, httpResponse, body) {
     var result;
@@ -75,7 +85,7 @@ ScreenshotAggregator.prototype._uploadImage = function (image, callback) {
     if (!err && result && result.status === "success") {
       this.buildURL = result.buildURL;
     } else {
-      console.error("Error uploading screenshot to screenshot service. ", err);
+      this.console.error("Error uploading screenshot to screenshot service. ", err);
     }
 
     callback();
@@ -83,14 +93,15 @@ ScreenshotAggregator.prototype._uploadImage = function (image, callback) {
 };
 
 ScreenshotAggregator.prototype._getScreenshots = function (tempDir) {
-  return glob.sync(path.resolve(tempDir) + "/*.png").concat(
-    glob.sync(path.resolve(tempDir) + "/*.PNG"));
+  return this.glob.sync(this.path.resolve(tempDir) + "/*.png").concat(
+    this.glob.sync(this.path.resolve(tempDir) + "/*.PNG"));
 };
 
 ScreenshotAggregator.prototype._deleteScreenshots = function (tempDir) {
   // I couldn't figure out how to make nocase: true work -- it just produces empty results
+  var self = this;
   this._getScreenshots(tempDir).forEach(function (screenshotPath) {
-    fs.unlinkSync(screenshotPath);
+    self.fs.unlinkSync(screenshotPath);
   });
 };
 
@@ -110,7 +121,7 @@ ScreenshotAggregator.prototype._collectScreenshots = function (tempDir, buildId,
   var shots = this._getScreenshots(tempDir);
 
   shots.forEach(function (filePath) {
-    var fullPath = path.resolve(filePath);
+    var fullPath = this.path.resolve(filePath);
     var intendedFilename = fullPath;
     /*eslint-disable no-magic-numbers */
     if (fullPath.indexOf("/") > -1) {
@@ -137,14 +148,14 @@ ScreenshotAggregator.prototype.onQueueDrained = function () {
 // Summarize our results to the screen or optionally promise that we will, since summarizing
 // might require pending screenshots to finish uploading.
 ScreenshotAggregator.prototype.flush = function () {
-  console.log("");
+  this.console.log("");
 
   var showSummary = function () {
     if (this.counter > 0) {
-      console.log("There " + (this.counter > 1 ? "are " : "is ") + this.counter + " screenshot"
+      this.console.log("There " + (this.counter > 1 ? "are " : "is ") + this.counter + " screenshot"
         + (this.counter > 1 ? "s" : "") + " of this build available at " + this.buildURL);
     } else {
-      console.log("Screenshot aggregator enabled, but no screenshots were uploaded.");
+      this.console.log("Screenshot aggregator enabled, but no screenshots were uploaded.");
     }
   }.bind(this);
 
@@ -152,7 +163,7 @@ ScreenshotAggregator.prototype.flush = function () {
     return showSummary();
   } else {
     var awaitedUploads = this.q.length() + this.q.running();
-    console.log("Screenshot aggregator is waiting for " + (awaitedUploads > 1 ? awaitedUploads
+    this.console.log("Screenshot aggregator is waiting for " + (awaitedUploads > 1 ? awaitedUploads
       + " screenshots" : " screenshot") + " to finish uploading..");
 
     var deferSummary = Q.defer();

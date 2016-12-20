@@ -2,6 +2,7 @@
 
 var syncRequest = require("sync-request");
 var URL = require("url");
+var _ = require("lodash");
 
 module.exports = {
 
@@ -19,8 +20,12 @@ module.exports = {
     }
   },
 
-  getProfilesAtURL: function (url) {
-    var res = syncRequest("GET", url);
+  getProfilesAtURL: function (url, opts) {
+    var runOpts = _.assign({
+      syncRequest: syncRequest
+    }, opts);
+
+    var res = runOpts.syncRequest("GET", url);
     var data;
 
     try {

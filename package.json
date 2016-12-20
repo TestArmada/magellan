@@ -26,9 +26,12 @@
   ],
   "license": "MIT",
   "scripts": {
-    "test": "eslint src/** bin/** && mocha",
+    "test": "eslint src/** bin/** && mocha --recursive && npm run coverage && npm run check-coverage",
+    "dev-test": "mocha --recursive && eslint src/** bin/**",
     "integration": "eslint src/** bin/** && ./bin/magellan",
-    "lint": "eslint src/** bin/**"
+    "lint": "eslint src/** bin/** test/**",
+    "coverage": "istanbul cover _mocha -- --recursive",
+    "check-coverage": "istanbul check-coverage --statement 95 --function 95 --branch 90"
   },
   "dependencies": {
     "acorn": "2.1.0",
@@ -68,7 +71,9 @@
     "eslint": "^1.10.3",
     "eslint-config-defaults": "^8.0.2",
     "eslint-plugin-filenames": "^0.2.0",
+    "istanbul": "^0.4.5",
     "mocha": "^2.2.4",
+    "sinon": "^1.17.6",
     "testarmada-magellan-mocha-plugin": "^5.0.0"
   }
 }

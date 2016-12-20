@@ -1,3 +1,4 @@
+/* eslint callback-return: 0 */
 /*
 To enable MongoDB event export set the `MAGELLAN_MONGO_URL` environment variable to a URL
 appropriate for client connect (e.g. `mongodb://localhost:27017/myproject`). As well as
@@ -13,15 +14,31 @@ var _mongoConfig = {
   enabled: process.env.MAGELLAN_MONGO_URL && process.env.MAGELLAN_MONGO_DB,
   url: process.env.MAGELLAN_MONGO_URL,
   collection: process.env.MAGELLAN_MONGO_COLLECTION,
-  mockCollection: null
+  mockDB: null,
+  mockConsole: null
+};
+
+var _console = function (x) {
+  var _c = console;
+  /* istanbul ignore next */
+  if (_mongoConfig.mockConsole) {
+    _c = _mongoConfig.mockConsole;
+  }
+  _c.log(x);
 };
 
 var _dbPromise = null;
 var _getDB = function () {
+  var _mc = MongoClient;
+  /* istanbul ignore next */
+  if (_mongoConfig.mockDB) {
+    _mc = _mongoConfig.mockDB;
+  }
   if (_dbPromise === null) {
     var def = Q.defer();
-    MongoClient.connect(_mongoConfig.url, function (err, database) {
+    _mc.connect(_mongoConfig.url, function (err, database) {
       if (err) {
+        /* istanbul ignore next */
         def.reject(err);
       } else {
         def.resolve(database);
@@ -33,9 +50,7 @@ var _getDB = function () {
 };
 
 var _insert = function (message) {
-  if (_mongoConfig.mockCollection) {
-    _mongoConfig.mockCollection.insertOne(message);
-  } else if (_mongoConfig.enabled) {
+  if (_mongoConfig.enabled) {
     _getDB().then(function (db) {
       db.collection(_mongoConfig.collection).insertOne(message);
     });
@@ -46,11 +61,14 @@ var _insert = function (message) {
 module.exports = {
   setup: function () {
   },
-  shutdown: function () {
+  shutdown: function (cb) {
     if (_mongoConfig.enabled) {
       _getDB().then(function (db) {
-        console.log("Closing mongo connection");
+        _console("Closing mongo connection");
         db.close();
+        if (cb) {
+          cb();
+        }
       });
     }
   },
@@ -74,7 +92,11 @@ module.exports = {
       buildURL: globalSettings.buildURL
     });
   },
-  setMock: function (mockCollection) {
-    _mongoConfig.mockCollection = mockCollection;
+  setMock: function (mockURL, mockDB, mockConsole) {
+    _mongoConfig.url = mockURL;
+    _mongoConfig.mockDB = mockDB;
+    _mongoConfig.mockConsole = mockConsole;
+    _mongoConfig.enabled = mockDB;
+    _dbPromise = null;
   }
 };

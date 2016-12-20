@@ -20,6 +20,7 @@ var TEMP_DIR = path.resolve(argv.temp_dir || "./temp");
 try {
   // Check if TEMP_DIR already exists.
   // NOTE: This doesn't work in node 0.10. Those envs will suffer as a result
+  /* istanbul ignore else */
   if (fs.accessSync) {
     fs.accessSync(TEMP_DIR, fs.R_OK | fs.W_OK);
   } else {
@@ -27,6 +28,7 @@ try {
   }
 } catch (e) {
   // Create it if it doesn't..
+  /* istanbul ignore next */
   mkdirSync(TEMP_DIR);
 }
 
@@ -40,6 +42,7 @@ try {
   }
   console.log("Magellan is creating temporary files at: " + TEMP_DIR);
 } catch (e) {
+  /* istanbul ignore next */
   throw new Error("Magellan cannot write to or create the temporary directory: " + TEMP_DIR);
 }
 
