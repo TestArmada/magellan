@@ -29,28 +29,28 @@ invoke(test, callback){
 }
 
 /** DON'T 
+ *
+ * 1. Throws error out
+ * invoke(test, callback){
+ *   throws new Error(err);
+ * }
 
-1. Throws error out
-invoke(test, callback){
-  throws new Error(err);
-}
+ * 2. Eat error
+ * invoke(test, callback){
+ *   try{
+ *     do();
+ *   }catch(err){
+ *     // do nothing here 
+ *   }finally{
+ *     callback();
+ *   }
+ * }
 
-2. Eat error
-invoke(test, callback){
-  try{
-    do();
-  }catch(err){
-    // do nothing here 
-  }finally{
-    callback();
-  }
-}
-
-3. Put error in other param
-invoke(test, callback){
-  callback(null, err);
-}
-*/
+ * 3. Put error in other param
+ * invoke(test, callback){
+ *   callback(null, err);
+ * }
+ */
 ```
 
 ### Via return value 
@@ -63,21 +63,21 @@ group(prefix, testLocator) {
 }
 
 /** DON'T
-1. Eat error
-group(prefix, testLocator) {
-  try{
-    return do();
-  }catch(err){
-    // do nothing here
-    return null;
-  }
-}
-
-2. Return error
-group(prefix, testLocator) {
-  return new Error(PLGUIN NAME AND ERROR DETAIL);
-}
-*/
+ * 1. Eat error
+ * group(prefix, testLocator) {
+ *   try{
+ *     return do();
+ *   }catch(err){
+ *   // do nothing here
+ *     return null;
+ *   }
+ * }
+ *
+ * 2. Return error
+ * group(prefix, testLocator) {
+ *   return new Error(PLGUIN NAME AND ERROR DETAIL);
+ * }
+ */
 ```
 
 ### Via promise
@@ -101,22 +101,20 @@ drain(message){
 }
 
 /** DON'T
-1. Resolve error
-drain(messages){
-  return new Promise((resolve, reject) =>{
-    // if something is wrong, reject it
-    resolve(err);
-  });
-}
-
-// or 
-drain(message){
-  return Promise.resolve("PLGUIN NAME AND ERROR DETAIL");
-}
-*/
+ * 1. Resolve error
+ * drain(messages){
+ *   return new Promise((resolve, reject) =>{
+ *     // if something is wrong, reject it
+ *     resolve(err);
+ *   });
+ * }
+ *
+ * // or 
+ * drain(message){
+ *   return Promise.resolve("PLGUIN NAME AND ERROR DETAIL");
+ * }
+ */
 ```
-
-
 ## Via child process 
 
 **Summary**
