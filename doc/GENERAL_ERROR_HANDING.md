@@ -13,11 +13,11 @@ There are generally two ways that a reporter or plugin interacts with magellan.
 
 **Summary**
 
-| TYPE | DO | DON'T |
-| ---- | ---- | ---- |
-| Via callback | Error-first callback handling convention | Throw error out; Eat error; Put error in other param |
-| Via return value | Throw error out | Eat error; Return error |
-| Via promise | Reject error; Throw error | Resolve error |
+| TYPE | DO | DON'T | NOTE |
+| ---- | ---- | ---- | ---- | 
+| Via callback | Error-first callback handling convention | Throw error out; Eat error; Put error in other param | For future use |
+| Via return value | Throw error out | Eat error; Return error | How magellan interacts with all its **plugins** via [code](https://github.com/TestArmada/magellan/blob/master/src/get_tests.js#L14) |
+| Via promise | Reject error; Throw error | Resolve error | How magellan interacts with all its **reporters** via [code](https://github.com/TestArmada/magellan/blob/master/src/test_runner.js#L709) |
 
 **Example**
 
@@ -81,6 +81,7 @@ group(prefix, testLocator) {
 ```
 
 ### Via promise
+
 ```
 drain(messages){
   return new Promise((resolve, reject) =>{
@@ -119,9 +120,9 @@ drain(message){
 
 **Summary**
 
-| TYPE | DO | DON'T |
-| ---- | ---- | ---- |
-| Via return value | return zero | return a none zero value |
+| TYPE | DO | DON'T | NOTE |
+| ---- | ---- | ---- | ---- |
+| Via return value | return zero | return a none zero value | For future use | 
 
 **Example**
 
