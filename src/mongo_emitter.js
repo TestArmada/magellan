@@ -11,7 +11,7 @@ var MongoClient = require("mongodb").MongoClient;
 var Q = require("q");
 
 var _mongoConfig = {
-  enabled: process.env.MAGELLAN_MONGO_URL && process.env.MAGELLAN_MONGO_DB,
+  enabled: process.env.MAGELLAN_MONGO_URL && process.env.MAGELLAN_MONGO_COLLECTION,
   url: process.env.MAGELLAN_MONGO_URL,
   collection: process.env.MAGELLAN_MONGO_COLLECTION,
   mockDB: null,
