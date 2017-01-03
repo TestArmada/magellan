@@ -22,11 +22,15 @@ module.exports = function (mPath, moduleIsOptional, opts) {
   var RequiredModule;
   try {
     /*eslint global-require: 0*/
-    RequiredModule = runOpts.require(resolvedRequire);
+    RequiredModule = require(resolvedRequire);
   } catch (e) {
     if (e.code === "MODULE_NOT_FOUND" && moduleIsOptional !== true) {
-      runOpts.console.error(clc.redBright("Error loading a module from user configuration."));
-      runOpts.console.error(clc.redBright("Cannot find module: " + resolvedRequire));
+      console.error(clc.redBright("Error loading a module from user configuration."));
+      console.error(clc.redBright("Cannot find module: " + resolvedRequire));
+      throw new Error(e);
+    } else if (e.code === "MODULE_NOT_FOUND" && moduleIsOptional === true) {
+      // Do nothing
+    } else {
       throw new Error(e);
     }
   }
