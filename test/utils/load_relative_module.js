@@ -28,12 +28,29 @@ describe("loadRelativeModule", function () {
     expect(mod).not.to.eql("foo!");
   });
 
-  it("should fail", function () {
+  it("should fail with non-optional module not found", function () {
     var thrown = false;
     try {
       loadRelativeModule("foo.js", false, {
         require: function () {
           throw {code: "MODULE_NOT_FOUND"};
+        },
+        console: {
+          error: function () {}
+        }
+      });
+    } catch (e) {
+      thrown = e;
+    }
+    expect(thrown).to.not.be.null;
+  });
+
+  it("should fail with undefined error code", function () {
+    var thrown = false;
+    try {
+      loadRelativeModule("foo.js", true, {
+        require: function () {
+          throw {code: undefined};
         },
         console: {
           error: function () {}
@@ -56,4 +73,22 @@ describe("loadRelativeModule", function () {
     });
     expect(mod).to.be.null;
   });
+
+  it("should not throw error with optional module not found", function () {
+    var thrown = false;
+    try {
+      loadRelativeModule("foo.js", true, {
+        require: function () {
+          throw {code: "MODULE_NOT_FOUND"};
+        },
+        console: {
+          error: function () {}
+        }
+      });
+    } catch (e) {
+      thrown = e;
+    }
+    expect(thrown).to.be.false;
+  });
+
 });
