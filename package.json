@@ -68,9 +68,9 @@
   "devDependencies": {
     "chai": "^3.4.1",
     "chai-as-promised": "^6.0.0",
-    "eslint": "^3.12.2",
-    "eslint-config-defaults": "^9.0.0",
-    "eslint-plugin-filenames": "^1.1.0",
+    "eslint": "^1.10.3",
+    "eslint-config-defaults": "^8.0.2",
+    "eslint-plugin-filenames": "^0.2.0",
     "istanbul": "^0.4.5",
     "mocha": "^3.2.0",
     "sinon": "^1.17.6",
