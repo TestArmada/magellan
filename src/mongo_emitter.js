@@ -1,4 +1,4 @@
-/* eslint callback-return: 0 */
+/* eslint callback-return: 0, no-extra-parens: 0 */
 /*
 To enable MongoDB event export set the `MAGELLAN_MONGO_URL` environment variable to a URL
 appropriate for client connect (e.g. `mongodb://localhost:27017/myproject`). As well as
@@ -9,6 +9,9 @@ appropriate for client connect (e.g. `mongodb://localhost:27017/myproject`). As 
 var globalSettings = require("./settings");
 var MongoClient = require("mongodb").MongoClient;
 var Q = require("q");
+var EventEmitter = require("events").EventEmitter;
+
+var _evtEmitter = new EventEmitter();
 
 var _mongoConfig = {
   enabled: process.env.MAGELLAN_MONGO_URL && process.env.MAGELLAN_MONGO_COLLECTION,
@@ -36,11 +39,14 @@ var _getDB = function () {
   }
   if (_dbPromise === null) {
     var def = Q.defer();
+    var t = new Date();
     _mc.connect(_mongoConfig.url, function (err, database) {
       if (err) {
+        _evtEmitter.emit("connectFailure");
         /* istanbul ignore next */
         def.reject(err);
       } else {
+        _evtEmitter.emit("connect", (new Date()) - t);
         def.resolve(database);
       }
     });
@@ -49,16 +55,23 @@ var _getDB = function () {
   return _dbPromise;
 };
 
-var _insert = function (message) {
+var _insert = function (message, cb) {
   if (_mongoConfig.enabled) {
+    var t = new Date();
     _getDB().then(function (db) {
       db.collection(_mongoConfig.collection).insertOne(message);
+      var dt = (new Date()) - t;
+      _evtEmitter.emit("insert", dt);
+      if (cb) {
+        cb();
+      }
     });
   }
   return null;
 };
 
 module.exports = {
+  events: _evtEmitter,
   setup: function () {
   },
   shutdown: function (cb) {
@@ -72,7 +85,7 @@ module.exports = {
       });
     }
   },
-  testRunMessage: function (testRun, test, message) {
+  testRunMessage: function (testRun, test, message, cb) {
     _insert({
       type: "testRun",
       testRun: testRun,
@@ -81,7 +94,7 @@ module.exports = {
       jobName: globalSettings.jobName,
       buildDisplayName: globalSettings.buildDisplayName,
       buildURL: globalSettings.buildURL
-    });
+    }, cb);
   },
   globalMessage: function (message) {
     _insert({

@@ -57,8 +57,15 @@ describe("MongoEmitter", function () {
       },
       done: function () {}
     });
+    var gotInsert = false;
+    MongoEmitter.events.on("insert", function () {
+      gotInsert = true;
+    });
     MongoEmitter.testRunMessage("testRun", "test", "message");
-    MongoEmitter.testRunMessage("testRun", "test", "message");
+    MongoEmitter.testRunMessage("testRun", "test", "message", function () {
+      MongoEmitter.events.removeAllListeners("insert");
+      expect(gotInsert).to.be.true;
+    });
   });
 
   it("should send global messages", function () {

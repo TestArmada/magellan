@@ -86,7 +86,8 @@ module.exports = function (opts) {
   var MAX_WORKERS;
 
   var magellanGlobals = {
-    analytics: runOpts.analytics
+    analytics: runOpts.analytics,
+    mongo: MongoEmitter
   };
 
   // Initialize the mongo emitter
