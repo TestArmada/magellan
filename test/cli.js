@@ -1,4 +1,5 @@
-/* eslint no-undef: 0, no-unused-expressions: 0 */
+/* eslint no-undef: 0, no-unused-expressions: 0, no-invalid-this: 0,
+  no-throw-literal: 0, no-empty: 0, camelcase: 0, no-unused-vars: 0 */
 "use strict";
 var expect = require("chai").expect;
 var _ = require("lodash");
@@ -13,7 +14,7 @@ var _fakeReporter = function () {
   };
 };
 
-var _fakeRequire = function(overrides) {
+var _fakeRequire = function (overrides) {
   return function (name) {
     if (overrides && overrides(name)) {
       return overrides(name);
@@ -45,7 +46,7 @@ var _fakeRequire = function(overrides) {
     }
     if (name.match(/\/index/)) {
       return {
-        initialize: function() {},
+        initialize: function () {},
         getPluginOptions: function () {}
       };
     }
@@ -72,12 +73,12 @@ var _testConfig = function (overrides) {
       mark: function () {},
       push: function () {}
     },
-    getTests: function() {
+    getTests: function () {
       return [
         {test: "a"},
         {test: "b"},
         {test: "c"}
-      ]
+      ];
     },
     margs: {
       init: function () {},
@@ -91,7 +92,7 @@ var _testConfig = function (overrides) {
       cb();
     },
     path: {
-      join: function(a, b) {
+      join: function (a, b) {
         var arr = [a, b];
         return arr.join("/");
       },
@@ -123,7 +124,7 @@ var _testConfig = function (overrides) {
       this.opts = opts;
       this.start = function () {
         this.opts.onSuccess();
-      }
+      };
     },
     browsers: {
       initialize: function () {
@@ -233,7 +234,6 @@ describe("CLI", function () {
   });
 
   it("allow for sauce", function (done) {
-    var spy = sinon.spy();
     cli(_testConfig({
       margs: {
         argv: {
@@ -241,7 +241,7 @@ describe("CLI", function () {
         }
       },
       browsers: {
-        initialize: function(sauce) {
+        initialize: function (sauce) {
           expect(sauce).to.be.true;
           var defer = Q.defer();
           defer.resolve();
@@ -280,7 +280,7 @@ describe("CLI", function () {
       require: _fakeRequire(function (name) {
         if (name.match(/\/index/)) {
           return {
-            initialize: function() {}
+            initialize: function () {}
           };
         }
       })
@@ -294,14 +294,14 @@ describe("CLI", function () {
       require: _fakeRequire(function (name) {
         if (name.match(/\/index/)) {
           return {
-            initialize: function() {
+            initialize: function () {
               throw "Hey!";
             }
           };
         }
       })
     })).then(function () {
-    }).catch(function() {
+    }).catch(function () {
       done();
     });
   });
@@ -371,7 +371,7 @@ describe("CLI", function () {
               defer.reject({});
               return defer.promise;
             };
-          }
+          };
         }
       })
     })).then(function () {
@@ -398,7 +398,7 @@ describe("CLI", function () {
               defer.resolve();
               return defer.promise;
             };
-          }
+          };
         }
       })
     })).then(function () {
@@ -426,7 +426,7 @@ describe("CLI", function () {
               defer.resolve();
               return defer.promise;
             };
-          }
+          };
         }
       })
     })).then(function () {
@@ -521,7 +521,7 @@ describe("CLI", function () {
         this.opts = opts;
         this.start = function () {
           this.opts.onSuccess();
-        }
+        };
       }
     })).then(function () {
       done();
@@ -551,7 +551,7 @@ describe("CLI", function () {
         this.opts = opts;
         this.start = function () {
           this.opts.onFailure();
-        }
+        };
       }
     })).then(function () {
     }).catch(function (e) {
@@ -573,7 +573,7 @@ describe("CLI", function () {
             cb();
           }
         };
-      },
+      }
     })).then(function () {
     }).catch(function (e) {
       expect(called).to.be.true;
@@ -593,7 +593,7 @@ describe("CLI", function () {
         this.opts = opts;
         this.start = function () {
           this.opts.onSuccess();
-        }
+        };
       }
     })).then(function () {
       done();
@@ -613,8 +613,8 @@ describe("CLI", function () {
         this.opts = opts;
         this.start = function () {
           this.opts.onSuccess();
-        }
-      },
+        };
+      }
     })).then(function () {
       done();
     }).catch(function (e) {
@@ -640,7 +640,7 @@ describe("CLI", function () {
                 return defer.promise;
               }
             };
-          }
+          };
         }
       })
     })).then(function () {
@@ -719,7 +719,7 @@ describe("CLI", function () {
       expect(spy.called).to.be.true;
       done();
     })
-    .catch(function(err) {
+    .catch(function (err) {
     });
   });
 

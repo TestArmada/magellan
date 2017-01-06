@@ -1,3 +1,4 @@
+/* eslint operator-assignment: 0 */
 "use strict";
 
 var _ = require("lodash");
