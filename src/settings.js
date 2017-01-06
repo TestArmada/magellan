@@ -1,6 +1,6 @@
 "use strict";
 
-/*eslint-disable no-magic-numbers, no-bitwise*/
+/*eslint-disable no-magic-numbers, no-bitwise, no-console */
 
 var guid = require("./util/guid");
 var argv = require("marge").argv;

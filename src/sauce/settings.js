@@ -1,4 +1,4 @@
-/* eslint complexity: 0 */
+/* eslint complexity: 0, no-console: 0 */
 "use strict";
 var _ = require("lodash");
 
