@@ -1,23 +1,23 @@
 /* eslint complexity: 0, no-console: 0 */
 "use strict";
-var _ = require("lodash");
+const _ = require("lodash");
 
 // Sauce Settings
 //
 // Cobble together settings for sauce either from process.env or from a sauce configuration file
 
-var argv = require("marge").argv;
-var clc = require("cli-color");
+const argv = require("marge").argv;
+const clc = require("cli-color");
 
-module.exports = function (opts) {
-  var runOpts = _.assign({}, {
-    argv: argv,
-    console: console,
+module.exports = (opts) => {
+  const runOpts = _.assign({}, {
+    argv,
+    console,
     env: process.env
   }, opts);
 
   /*eslint-disable no-magic-numbers*/
-  var config = {
+  const config = {
     // required:
     username: runOpts.env.SAUCE_USERNAME,
     accessKey: runOpts.env.SAUCE_ACCESS_KEY,
@@ -45,7 +45,7 @@ module.exports = function (opts) {
     }
   }
 
-  var parameterWarnings = {
+  const parameterWarnings = {
     username: {
       required: true,
       envKey: "SAUCE_USERNAME"
@@ -62,9 +62,9 @@ module.exports = function (opts) {
 
   // Validate configuration if we have --sauce
   if (runOpts.argv.sauce) {
-    var valid = true;
-    Object.keys(parameterWarnings).forEach(function (key) {
-      var param = parameterWarnings[key];
+    let valid = true;
+    Object.keys(parameterWarnings).forEach((key) => {
+      const param = parameterWarnings[key];
 
       if (!config[key]) {
         if (param.required) {

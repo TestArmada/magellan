@@ -2,16 +2,16 @@
 /* eslint no-process-exit: 0, no-console: 0 */
 
 "use strict";
-var yargs = require("yargs");
-var margs = require("marge");
+const yargs = require("yargs");
+const margs = require("marge");
 
-var defaultConfigFilePath = "./magellan.json";
-var configFilePath = yargs.argv.config;
+const defaultConfigFilePath = "./magellan.json";
+const configFilePath = yargs.argv.config;
 
 if (configFilePath) {
-  console.log("Will try to load configuration from " + configFilePath);
+  console.log(`Will try to load configuration from ${configFilePath}`);
 } else {
-  console.log("Will try to load configuration from default of " + defaultConfigFilePath);
+  console.log(`Will try to load configuration from default of ${defaultConfigFilePath}`);
 }
 
 // NOTE: marge can throw an error here if --config points at a file that doesn't exist
@@ -19,9 +19,5 @@ if (configFilePath) {
 margs.init(defaultConfigFilePath, configFilePath);
 
 require("../src/cli")()
-  .then(function () {
-    process.exit(0);
-  })
-  .catch(function () {
-    process.exit(1);
-  });
+  .then(() => process.exit(0))
+  .catch(() => process.exit(1));

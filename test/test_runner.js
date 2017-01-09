@@ -1,46 +1,76 @@
 /* eslint no-undef: 0, no-invalid-this: 0, no-magic-numbers: 0, no-unused-expressions: 0,
   no-throw-literal: 0 */
 "use strict";
-var expect = require("chai").expect;
-var _ = require("lodash");
-var EventEmitter = require("events").EventEmitter;
-var sinon = require("sinon");
+const expect = require("chai").expect;
+const _ = require("lodash");
+const EventEmitter = require("events").EventEmitter;
+const sinon = require("sinon");
 
-var TestRunner = require("../src/test_runner");
+const TestRunner = require("../src/test_runner");
 
-var MockIO = function () {
-  this.unpipe = function () {};
-};
-MockIO.prototype = new EventEmitter();
+class BadTestRun {
+  getEnvironment() {
+    throw new Error("foo");
+  }
+  getCommand() {
+    return "command";
+  }
+  getArguments() {
+    return "args";
+  }
+}
 
-var MockChildProcess = function () {
-  this.stdout = new MockIO();
-  this.stdout.setMaxListeners(50);
-  this.stderr = new MockIO();
-  this.stderr.setMaxListeners(50);
-  this.removeAllListeners = function () {};
-};
-MockChildProcess.prototype = new EventEmitter();
+class FakeTestRun {
+  getEnvironment() {
+    return "foo";
+  }
+  getCommand() {
+    return "command";
+  }
+  getArguments() {
+    return "args";
+  }
+}
 
-var _testStruct = function (moreOpts) {
+class MockIO extends EventEmitter {
+  constructor() {
+    super();
+  }
+  unpipe() {
+  }
+}
+
+class MockChildProcess extends EventEmitter {
+  constructor() {
+    super();
+    this.stdout = new MockIO();
+    this.stdout.setMaxListeners(50);
+    this.stderr = new MockIO();
+    this.stderr.setMaxListeners(50);
+  }
+  removeAllListeners() {
+  }
+}
+
+const _testStruct = (moreOpts) => {
   return _.merge({
     testLocator: "baz",
-    stopClock: function () {},
-    startClock: function () {},
-    getRuntime: function () {return 20;},
-    fail: function () {},
+    stopClock: () => {},
+    startClock: () => {},
+    getRuntime: () => {return 20;},
+    fail: () => {},
     browser: {
       browserId: "chrome"
     },
     locator: "bar",
     status: 3,
-    canRun: function () {
+    canRun: () => {
       return true;
     }
   }, moreOpts);
 };
 
-var _tests = function () {
+const _tests = () => {
   return [
     {test: "foo", locator: "bar"},
     {test: "bar", locator: "bar"},
@@ -48,7 +78,7 @@ var _tests = function () {
   ];
 };
 
-var _options = function (moreOpts) {
+const _options = (moreOpts) => {
   return _.merge({
     browsers: [{
       browserId: "chrome",
@@ -56,26 +86,26 @@ var _options = function (moreOpts) {
       orientation: "portrait"
     }],
     allocator: {
-      get: function (cb) {
+      get: (cb) => {
         cb(null, {index: 0, tunnelId: 50, token: "foo"});
       },
-      release: function () {}
+      release: () => {}
     },
     listeners: [
       {
-        listenTo: function () {}
+        listenTo: () => {}
       },
       {
-        listenTo: function () {},
-        flush: function () {}
+        listenTo: () => {},
+        flush: () => {}
       },
       {
-        listenTo: function () {},
-        flush: function () {
+        listenTo: () => {},
+        flush: () => {
           return {
-            then: function () {
+            then: () => {
               return {
-                catch: function (cb) { cb({}); }
+                catch: (cb) => { cb({}); }
               };
             }
           };
@@ -88,72 +118,62 @@ var _options = function (moreOpts) {
   }, moreOpts);
 };
 
-var _testOptions = function (moreOpts) {
+const _testOptions = (moreOpts) => {
   return _.merge({
     console: {
-      log: function () {},
-      error: function () {}
+      log: () => {},
+      error: () => {}
     },
     fs: {
-      readFileSync: function () {
+      readFileSync: () => {
         return JSON.stringify({failures: {
           foo: 1,
           baz: 2
         }});
       },
-      writeFileSync: function () {}
+      writeFileSync: () => {}
     },
-    mkdirSync: function () {},
-    fork: function () {
-      var m = new MockChildProcess();
+    mkdirSync: () => {},
+    fork: () => {
+      const m = new MockChildProcess();
       m.setMaxListeners(50);
       return m;
     },
     sauceBrowsers: {
-      browser: function () {
+      browser: () => {
         return {foo: 1};
       }
     },
     settings: {
       testFramework: {
-        TestRun: function () {
-          this.getEnvironment = function () {
-            return "foo";
-          };
-          this.getCommand = function () {
-            return "command";
-          };
-          this.getArguments = function () {
-            return "args";
-          };
-        }
+        TestRun: FakeTestRun
       },
       tempDir: "foo",
       buildId: "buildId-bar"
     },
-    clearInterval: function () {},
-    setTimeout: function (cb) { cb(); },
-    setInterval: function (cb) { cb(); },
-    prettyMs: function () {return "";}
+    clearInterval: () => {},
+    setTimeout: (cb) => { cb(); },
+    setInterval: (cb) => { cb(); },
+    prettyMs: () => {return "";}
   }, moreOpts);
 };
 
-describe("TestRunner Class", function () {
-  it("should initialize", function () {
-    var tr = new TestRunner(_tests(), _options({}), _testOptions({}));
+describe("TestRunner Class", () => {
+  it("should initialize", () => {
+    const tr = new TestRunner(_tests(), _options({}), _testOptions({}));
     expect(tr).to.be.not.be.null;
   });
 
-  it("should initialize with bail options", function () {
-    var tr1 = new TestRunner(_tests(), _options({bailFast: true}), _testOptions({}));
+  it("should initialize with bail options", () => {
+    const tr1 = new TestRunner(_tests(), _options({bailFast: true}), _testOptions({}));
     expect(tr1).to.be.not.be.null;
     expect(tr1.strictness).to.eql(4);
 
-    var tr2 = new TestRunner(_tests(), _options({bailOnThreshold: 3}), _testOptions({}));
+    const tr2 = new TestRunner(_tests(), _options({bailOnThreshold: 3}), _testOptions({}));
     expect(tr2).to.be.not.be.null;
     expect(tr2.strictness).to.eql(3);
 
-    var tr3 = new TestRunner(_tests(), _options(), _testOptions({
+    const tr3 = new TestRunner(_tests(), _options(), _testOptions({
       settings: {
         bailTimeExplicitlySet: 1000
       }
@@ -162,8 +182,8 @@ describe("TestRunner Class", function () {
     expect(tr3.strictness).to.eql(2);
   });
 
-  it("should initialize with trends", function () {
-    var tr = new TestRunner(_tests(), _options(), _testOptions({
+  it("should initialize with trends", () => {
+    const tr = new TestRunner(_tests(), _options(), _testOptions({
       settings: {
         gatherTrends: true
       }
@@ -172,26 +192,26 @@ describe("TestRunner Class", function () {
     expect(tr.trends).to.eql({failures: {}});
   });
 
-  it("should start", function () {
-    var tr1 = new TestRunner(_tests(), _options(), _testOptions({}));
+  it("should start", () => {
+    const tr1 = new TestRunner(_tests(), _options(), _testOptions({}));
     tr1.start();
     expect(tr1.startTime).to.not.be.null;
 
     // Test serial
-    var tr2 = new TestRunner(_tests(), _options({
+    const tr2 = new TestRunner(_tests(), _options({
       serial: true
     }), _testOptions({}));
     tr2.start();
     expect(tr2.startTime).to.not.be.null;
 
     // Test no tests
-    var tr3 = new TestRunner([], _options({}), _testOptions({}));
+    const tr3 = new TestRunner([], _options({}), _testOptions({}));
     tr3.start();
     expect(tr3.startTime).to.not.be.null;
   });
 
-  it("should idle", function () {
-    var tr1 = new TestRunner(_tests(), _options(), _testOptions({}));
+  it("should idle", () => {
+    const tr1 = new TestRunner(_tests(), _options(), _testOptions({}));
     tr1.notIdle();
     expect(tr1.busyCount).to.eql(1);
     tr1.notIdle();
@@ -206,48 +226,48 @@ describe("TestRunner Class", function () {
     expect(tr1.busyCount).to.eql(0);
   });
 
-  it("should run a test", function () {
-    var spy1 = sinon.spy();
-    var tr1 = new TestRunner(_tests(), _options(), _testOptions({
+  it("should run a test", () => {
+    const spy1 = sinon.spy();
+    const tr1 = new TestRunner(_tests(), _options(), _testOptions({
       analytics: {
         push: spy1,
         mark: spy1
       }
     }));
-    tr1.stageTest(_testStruct(), function () {});
+    tr1.stageTest(_testStruct(), () => {});
     expect(spy1.called).to.be.true;
   });
 
-  it("should fail on a bad worker allocation", function (done) {
+  it("should fail on a bad worker allocation", (done) => {
     // Uncle Owen! This one"s got a bad motivator!
-    var spy = sinon.spy();
-    var test = {
+    const spy = sinon.spy();
+    const test = {
       fail: spy
     };
-    var tr = new TestRunner(_tests(), _options({
+    const tr = new TestRunner(_tests(), _options({
       allocator: {
-        get: function (cb) {
+        get: (cb) => {
           cb({bad: "stuff"});
         }
       }
     }), _testOptions({}));
-    tr.stageTest(_testStruct(test), function () {
+    tr.stageTest(_testStruct(test), () => {
       expect(spy.called).to.be.true;
       done();
     });
   });
 
-  it("should run through a passing test", function (done) {
-    var myMock = new MockChildProcess();
+  it("should run through a passing test", (done) => {
+    const myMock = new MockChildProcess();
     myMock.setMaxListeners(50);
-    var spy = sinon.spy();
-    var tr = new TestRunner(_tests(), _options({
+    const spy = sinon.spy();
+    const tr = new TestRunner(_tests(), _options({
       listeners: [
         {}
       ],
       debug: true
     }), _testOptions({
-      fork: function () {
+      fork: () => {
         return myMock;
       },
       settings: {
@@ -256,7 +276,7 @@ describe("TestRunner Class", function () {
     }));
     tr.stageTest(_testStruct({
       pass: spy
-    }), function () {
+    }), () => {
       expect(spy.called).to.be.true;
 
       tr.trends.failures = {
@@ -282,16 +302,16 @@ describe("TestRunner Class", function () {
     myMock.emit("close", 0);
   });
 
-  it("should run through a passing test w/o debugging", function (done) {
-    var myMock = new MockChildProcess();
+  it("should run through a passing test w/o debugging", (done) => {
+    const myMock = new MockChildProcess();
     myMock.setMaxListeners(50);
-    var spy = sinon.spy();
-    var tr = new TestRunner(_tests(), _options({
+    const spy = sinon.spy();
+    const tr = new TestRunner(_tests(), _options({
       listeners: [
         {}
       ]
     }), _testOptions({
-      fork: function () {
+      fork: () => {
         return myMock;
       },
       settings: {
@@ -300,7 +320,7 @@ describe("TestRunner Class", function () {
     }));
     tr.stageTest(_testStruct({
       pass: spy
-    }), function () {
+    }), () => {
       expect(spy.called).to.be.true;
 
       tr.gatherTrends();
@@ -314,15 +334,15 @@ describe("TestRunner Class", function () {
     myMock.emit("close", 0);
   });
 
-  it("should report failed tests", function () {
-    var spy = sinon.spy();
-    var text = "";
-    var tr = new TestRunner(_tests(), _options(), _testOptions({
+  it("should report failed tests", () => {
+    const spy = sinon.spy();
+    let text = "";
+    const tr = new TestRunner(_tests(), _options(), _testOptions({
       settings: {
         gatherTrends: true
       },
       console: {
-        log: function (t) {
+        log: (t) => {
           text += t;
         }
       },
@@ -345,12 +365,12 @@ describe("TestRunner Class", function () {
     expect(text.match(/---BAAAZ---/).length).to.eql(1);
   });
 
-  it("should handle failed tests", function (done) {
-    var myMock = new MockChildProcess();
+  it("should handle failed tests", (done) => {
+    const myMock = new MockChildProcess();
     myMock.setMaxListeners(50);
-    var spy = sinon.spy();
-    var tr = new TestRunner(_tests(), _options(), _testOptions({
-      fork: function () {
+    const spy = sinon.spy();
+    const tr = new TestRunner(_tests(), _options(), _testOptions({
+      fork: () => {
         return myMock;
       },
       settings: {
@@ -359,7 +379,7 @@ describe("TestRunner Class", function () {
     }));
     tr.stageTest(_testStruct({
       fail: spy
-    }), function () {
+    }), () => {
       expect(spy.called).to.be.true;
       tr.gatherTrends();
       tr.logFailedTests();
@@ -369,50 +389,44 @@ describe("TestRunner Class", function () {
     myMock.emit("close", -1);
   });
 
-  it("should handle inability to get test environment", function (done) {
-    var spy = sinon.spy();
-    var tr = new TestRunner(_tests(), _options(), _testOptions({
+  it("should handle inability to get test environment", (done) => {
+    const spy = sinon.spy();
+    const tr = new TestRunner(_tests(), _options(), _testOptions({
       settings: {
         testFramework: {
-          TestRun: function () {
-            return {
-              getEnvironment: function () {
-                throw new Error("Nope!");
-              }
-            };
-          }
+          TestRun: BadTestRun
         }
       }
     }));
     tr.stageTest(_testStruct({
       fail: spy
-    }), function () {
+    }), () => {
       expect(spy.called).to.be.true;
       done();
     });
   });
 
-  it("should handle inability to fork", function (done) {
-    var spy = sinon.spy();
-    var tr = new TestRunner(_tests(), _options(), _testOptions({
-      fork: function () {
+  it("should handle inability to fork", (done) => {
+    const spy = sinon.spy();
+    const tr = new TestRunner(_tests(), _options(), _testOptions({
+      fork: () => {
         throw new Error("Nope!");
       }
     }));
     tr.stageTest(_testStruct({
       fail: spy
-    }), function () {
+    }), () => {
       expect(spy.called).to.be.true;
       done();
     });
   });
 
-  it("should handle throwing in listenTo", function () {
-    var spy = sinon.spy();
-    var tr = new TestRunner(_tests(), _options({
+  it("should handle throwing in listenTo", () => {
+    const spy = sinon.spy();
+    const tr = new TestRunner(_tests(), _options({
       listeners: [
         {
-          listenTo: function () {
+          listenTo: () => {
             throw "Whoops!";
           }
         }
@@ -420,27 +434,27 @@ describe("TestRunner Class", function () {
     }), _testOptions());
     tr.stageTest(_testStruct({
       fail: spy
-    }), function () {
+    }), () => {
       expect(spy.called).to.be.true;
       // Not sure this is actually correct behavior. A throw in a listener is not a test failure.
       done();
     });
   });
 
-  it("should handle bailing", function () {
-    var myMock = new MockChildProcess();
+  it("should handle bailing", () => {
+    const myMock = new MockChildProcess();
     myMock.setMaxListeners(50);
-    var tr = new TestRunner(_tests(), _options({
+    const tr = new TestRunner(_tests(), _options({
       bailOnThreshold: 1
     }), _testOptions({
-      fork: function () {
+      fork: () => {
         return myMock;
       },
       settings: {
         gatherTrends: true
       }
     }));
-    tr.stageTest(_testStruct(), function () {});
+    tr.stageTest(_testStruct(), () => {});
     myMock.emit("close", -1);
     myMock.emit("close", -1);
     myMock.emit("close", -1);
@@ -458,8 +472,8 @@ describe("TestRunner Class", function () {
     tr.summarizeCompletedBuild();
   });
 
-  it("should have bail fast logic", function () {
-    var tr = new TestRunner(_tests(), _options({
+  it("should have bail fast logic", () => {
+    const tr = new TestRunner(_tests(), _options({
       bailFast: true
     }), _testOptions({}));
 
@@ -470,8 +484,8 @@ describe("TestRunner Class", function () {
     expect(tr.shouldBail()).to.be.true;
   });
 
-  it("should have bail fast logic", function () {
-    var tr = new TestRunner(_tests(), _options({
+  it("should have bail fast logic", () => {
+    const tr = new TestRunner(_tests(), _options({
       bailFast: true
     }), _testOptions({}));
 
@@ -485,8 +499,8 @@ describe("TestRunner Class", function () {
     tr.checkBuild();
   });
 
-  it("should have bail early logic", function () {
-    var tr = new TestRunner(_tests(), _options({
+  it("should have bail early logic", () => {
+    const tr = new TestRunner(_tests(), _options({
       bailOnThreshold: 1
     }), _testOptions({}));
 
@@ -497,11 +511,11 @@ describe("TestRunner Class", function () {
     expect(tr.shouldBail()).to.be.true;
   });
 
-  it("should summarize under various circumnstances", function () {
-    var text = "";
-    var tr = new TestRunner(_tests(), _options(), _testOptions({
+  it("should summarize under constious circumnstances", () => {
+    let text = "";
+    const tr = new TestRunner(_tests(), _options(), _testOptions({
       console: {
-        log: function (t) {
+        log: (t) => {
           text += t;
         }
       }
@@ -518,22 +532,22 @@ describe("TestRunner Class", function () {
     text = "";
     tr.tests = [
       {status: 0},
-      {status: 3, getRetries: function () { return 0; }},
-      {status: 3, getRetries: function () { return 1; }},
-      {status: 3, getRetries: function () { return 1; }}
+      {status: 3, getRetries: () => { return 0; }},
+      {status: 3, getRetries: () => { return 1; }},
+      {status: 3, getRetries: () => { return 1; }}
     ];
     tr.summarizeCompletedBuild();
     expect(text.match(/Skipped: 3/).length).to.eql(1);
   });
 
-  it("should handle various forms of test completion", function () {
-    var text = "";
-    var tr1 = new TestRunner(_tests(), _options(), _testOptions({
+  it("should handle constious forms of test completion", () => {
+    let text = "";
+    const tr1 = new TestRunner(_tests(), _options(), _testOptions({
       settings: {
         gatherTrends: true
       },
       console: {
-        log: function (t) {
+        log: (t) => {
           text += t;
         }
       }
@@ -563,7 +577,7 @@ describe("TestRunner Class", function () {
     }));
     expect(text.match(/worker/)).to.be.null;
 
-    var tr2 = new TestRunner(_tests(), _options(), _testOptions());
+    const tr2 = new TestRunner(_tests(), _options(), _testOptions());
     tr2.onTestComplete(new Error("foo"), _testStruct({
       status: 0
     }));
@@ -571,7 +585,7 @@ describe("TestRunner Class", function () {
 
     tr2.onTestComplete(new Error("foo"), _testStruct({
       status: 0,
-      canRun: function () { return false; }
+      canRun: () => { return false; }
     }));
     expect(tr2.failedTests.length).to.eql(2);
   });

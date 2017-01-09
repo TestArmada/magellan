@@ -1,22 +1,20 @@
 /* eslint no-undef: 0 */
 "use strict";
-var expect = require("chai").expect;
-var getTests = require("../src/get_tests");
+const expect = require("chai").expect;
+const getTests = require("../src/get_tests");
 
-describe("getTests", function () {
-  it("should get tests", function () {
+describe("getTests", () => {
+  it("should get tests", () => {
     expect(getTests({
-      a: function () { return true; },
-      b: function () { return true; }
+      a: () => true,
+      b: () => true
     }, {
       settings: {
         testFramework: {
-          iterator: function () {
-            return ["a", "b", "c"];
-          },
+          iterator: () => ["a", "b", "c"],
           filters: {
-            a: function () { return true; },
-            b: function () { return true; }
+            a: () => true,
+            b: () => true
           }
         }
       }

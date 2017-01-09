@@ -1,11 +1,11 @@
 /* eslint no-undef: 0, no-unused-expressions: 0 */
 "use strict";
-var expect = require("chai").expect;
-var Reporter = require("../../src/reporters/reporter");
+const expect = require("chai").expect;
+const Reporter = require("../../src/reporters/reporter");
 
-describe("Reporter", function () {
-  it("should be a listener", function () {
-    var r = new Reporter();
+describe("Reporter", () => {
+  it("should be a listener", () => {
+    const r = new Reporter();
     expect(r.initialize).to.not.be.null;
     expect(r.listenTo).to.not.be.null;
     expect(r.flush).to.not.be.null;

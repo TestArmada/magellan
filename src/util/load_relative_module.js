@@ -1,16 +1,16 @@
 "use strict";
 
-var path = require("path");
-var clc = require("cli-color");
-var _ = require("lodash");
+const path = require("path");
+const clc = require("cli-color");
+const _ = require("lodash");
 
-module.exports = function (mPath, moduleIsOptional, opts) {
-  var resolvedRequire;
+module.exports = (mPath, moduleIsOptional, opts) => {
+  let resolvedRequire;
   mPath = mPath.trim();
 
-  var runOpts = _.assign({
-    require: require,
-    console: console
+  const runOpts = _.assign({
+    require,
+    console
   }, opts);
 
   if (mPath.charAt(0) === ".") {
@@ -19,7 +19,7 @@ module.exports = function (mPath, moduleIsOptional, opts) {
     resolvedRequire = mPath;
   }
 
-  var RequiredModule;
+  let RequiredModule;
   try {
     /*eslint global-require: 0*/
     RequiredModule = runOpts.require(resolvedRequire);

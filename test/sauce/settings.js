@@ -1,17 +1,17 @@
 /* eslint no-undef: 0, no-magic-numbers: 0, camelcase: 0, no-unused-expressions: 0 */
 "use strict";
-var expect = require("chai").expect;
-var settingsFunc = require("../../src/sauce/settings");
+const expect = require("chai").expect;
+const settingsFunc = require("../../src/sauce/settings");
 
-describe("sauce/settings", function () {
-  it("should handle no args or env", function () {
-    var st = settingsFunc({console: {log: function () {}}});
+describe("sauce/settings", () => {
+  it("should handle no args or env", () => {
+    const st = settingsFunc({console: {log: () => {}}});
     expect(st.locksPollingInterval).to.eql(2500);
   });
 
-  it("should handle locksServerLocation", function () {
-    var st = settingsFunc({
-      console: {log: function () {}},
+  it("should handle locksServerLocation", () => {
+    const st = settingsFunc({
+      console: {log: () => {}},
       argv: {
         locks_server: "foo/",
         debug: true
@@ -20,9 +20,9 @@ describe("sauce/settings", function () {
     expect(st.locksPollingInterval).to.eql(2500);
   });
 
-  it("should handle invalid locksServerLocation", function () {
-    var st = settingsFunc({
-      console: {log: function () {}},
+  it("should handle invalid locksServerLocation", () => {
+    const st = settingsFunc({
+      console: {log: () => {}},
       argv: {
         locks_server: "foo"
       }
@@ -30,9 +30,9 @@ describe("sauce/settings", function () {
     expect(st.locksPollingInterval).to.eql(2500);
   });
 
-  it("should handle SAUCE_USERNAME", function () {
-    var st = settingsFunc({
-      console: {log: function () {}},
+  it("should handle SAUCE_USERNAME", () => {
+    const st = settingsFunc({
+      console: {log: () => {}},
       env: {
         SAUCE_USERNAME: "foo"
       }
@@ -40,9 +40,9 @@ describe("sauce/settings", function () {
     expect(st.locksPollingInterval).to.eql(2500);
   });
 
-  it("should sauce argv", function () {
-    var st = settingsFunc({
-      console: {log: function () {}},
+  it("should sauce argv", () => {
+    const st = settingsFunc({
+      console: {log: () => {}},
       argv: {
         sauce: true
       },
@@ -55,9 +55,9 @@ describe("sauce/settings", function () {
     expect(st.username).to.eql("jack");
   });
 
-  it("should sauce argv without optional version", function () {
-    var st = settingsFunc({
-      console: {log: function () {}},
+  it("should sauce argv without optional version", () => {
+    const st = settingsFunc({
+      console: {log: () => {}},
       argv: {
         sauce: true
       },
@@ -69,11 +69,11 @@ describe("sauce/settings", function () {
     expect(st.username).to.eql("jack");
   });
 
-  it("should sauce throw argv without user", function () {
-    var ex = null;
+  it("should sauce throw argv without user", () => {
+    let ex = null;
     try {
       settingsFunc({
-        console: {log: function () {}},
+        console: {log: () => {}},
         argv: {
           sauce: true
         },
@@ -88,11 +88,11 @@ describe("sauce/settings", function () {
     expect(ex).to.not.be.null;
   });
 
-  it("should throw on bad tunnel config", function () {
-    var ex = null;
+  it("should throw on bad tunnel config", () => {
+    let ex = null;
     try {
       settingsFunc({
-        console: {log: function () {}},
+        console: {log: () => {}},
         argv: {
           sauce: true,
           sauce_tunnel_id: "foo",
@@ -110,11 +110,11 @@ describe("sauce/settings", function () {
     expect(ex).to.not.be.null;
   });
 
-  it("should throw on bad tunnel parent config", function () {
-    var ex = null;
+  it("should throw on bad tunnel parent config", () => {
+    let ex = null;
     try {
       settingsFunc({
-        console: {log: function () {}},
+        console: {log: () => {}},
         argv: {
           sauce: true,
           shared_sauce_parent_account: "foo",

@@ -1,34 +1,33 @@
 /* eslint no-console: 0 */
 "use strict";
 
-var clc = require("cli-color");
-var _ = require("lodash");
-var path = require("path");
-var sauceConnectLauncher = require("sauce-connect-launcher");
+const clc = require("cli-color");
+const _ = require("lodash");
+const path = require("path");
+const sauceConnectLauncher = require("sauce-connect-launcher");
 
-var settings = require("../settings");
-var sauceSettingsFunc = require("./settings");
-var analytics = require("../global_analytics");
+const settings = require("../settings");
+const sauceSettingsFunc = require("./settings");
+const analytics = require("../global_analytics");
 
-var username;
-var accessKey;
+let username;
+let accessKey;
 
-var connectFailures = 1;
+let connectFailures = 1;
 /*eslint-disable no-magic-numbers*/
-var MAX_CONNECT_RETRIES = process.env.SAUCE_CONNECT_NUM_RETRIES || 10;
-var BAILED = false;
+const MAX_CONNECT_RETRIES = process.env.SAUCE_CONNECT_NUM_RETRIES || 10;
+let BAILED = false;
 
 module.exports = {
-
-  initialize: function (callback, opts) {
-    var sauceSettings = sauceSettingsFunc(opts);
+  initialize: (callback, opts) => {
+    const sauceSettings = sauceSettingsFunc(opts);
     username = sauceSettings.username;
     accessKey = sauceSettings.accessKey;
 
-    var runOpts = _.assign({
-      console: console,
-      analytics: analytics,
-      sauceConnectLauncher: sauceConnectLauncher
+    const runOpts = _.assign({
+      console,
+      analytics,
+      sauceConnectLauncher
     }, opts);
 
     if (!username) {
@@ -42,7 +41,7 @@ module.exports = {
     runOpts.analytics.push("sauce-connect-launcher-download");
     runOpts.sauceConnectLauncher.download({
       logger: console.log.bind(console)
-    }, function (err) {
+    }, (err) => {
       if (err) {
         runOpts.analytics.mark("sauce-connect-launcher-download", "failed");
         runOpts.console.log(clc.redBright("Failed to download sauce connect binary:"));
@@ -56,25 +55,25 @@ module.exports = {
     });
   },
 
-  open: function (options, opts) {
-    var runOpts = _.assign({
-      console: console,
-      settings: settings,
-      sauceConnectLauncher: sauceConnectLauncher
+  open: (options, opts) => {
+    const runOpts = _.assign({
+      console,
+      settings,
+      sauceConnectLauncher
     }, opts);
 
-    var tunnelInfo = {};
-    var tunnelId = options.tunnelId;
-    var callback = options.callback;
+    const tunnelInfo = {};
+    const tunnelId = options.tunnelId;
+    const callback = options.callback;
 
     runOpts.console.info("Opening Sauce Tunnel ID: " + tunnelId + " for user " + username);
 
-    var connect = function (/*runDiagnostics*/) {
-      var logFilePath = path.resolve(settings.tempDir) + "/build-"
+    const connect = (/*runDiagnostics*/) => {
+      const logFilePath = path.resolve(settings.tempDir) + "/build-"
         + settings.buildId + "_sauceconnect_" + tunnelId + ".log";
-      var sauceOptions = {
-        username: username,
-        accessKey: accessKey,
+      const sauceOptions = {
+        username,
+        accessKey,
         tunnelIdentifier: tunnelId,
         readyFileId: tunnelId,
         verbose: settings.debug,
@@ -86,7 +85,7 @@ module.exports = {
         sauceOptions.fastFailRegexps = runOpts.settings.fastFailRegexps;
       }
 
-      var seleniumPort = options.seleniumPort;
+      const seleniumPort = options.seleniumPort;
       if (seleniumPort) {
         sauceOptions.port = seleniumPort;
       }
@@ -94,7 +93,7 @@ module.exports = {
       if (runOpts.settings.debug) {
         runOpts.console.log("calling sauceConnectLauncher() w/ ", sauceOptions);
       }
-      runOpts.sauceConnectLauncher(sauceOptions, function (err, sauceConnectProcess) {
+      runOpts.sauceConnectLauncher(sauceOptions, (err, sauceConnectProcess) => {
         if (err) {
           if (runOpts.settings.debug) {
             runOpts.console.log("Error from sauceConnectLauncher():");
@@ -133,12 +132,12 @@ module.exports = {
     connect();
   },
 
-  close: function (tunnelInfo, callback, opts) {
-    var runOpts = _.assign({
-      console: console
+  close: (tunnelInfo, callback, opts) => {
+    const runOpts = _.assign({
+      console
     }, opts);
 
-    tunnelInfo.process.close(function () {
+    tunnelInfo.process.close(() => {
       runOpts.console.log("Closed Sauce Connect process");
       callback();
     });

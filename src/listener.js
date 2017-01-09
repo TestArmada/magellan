@@ -1,29 +1,22 @@
 "use strict";
 
-var Q = require("q");
+const Q = require("q");
 
-function BaseListener() {
-
-}
-
-BaseListener.prototype = {
-
-  initialize: function () {
-    var deferred = Q.defer();
-    deferred.resolve();
-    return deferred.promise;
-  },
-
-  listenTo: function (/* testRun, test, source */) {
-
-  },
-
-  flush: function () {
-    var deferred = Q.defer();
+class BaseListener {
+  initialize() {
+    const deferred = Q.defer();
     deferred.resolve();
     return deferred.promise;
   }
 
-};
+  listenTo(/* testRun, test, source */) {
+  }
+
+  flush() {
+    const deferred = Q.defer();
+    deferred.resolve();
+    return deferred.promise;
+  }
+}
 
 module.exports = BaseListener;

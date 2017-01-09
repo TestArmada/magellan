@@ -1,20 +1,19 @@
 "use strict";
 
-var _ = require("lodash");
-var settings = require("./settings");
+const _ = require("lodash");
+const settings = require("./settings");
 
 module.exports = {
-
   // Detect and return filters specified by command line arguments
   // from an argv object args
-  detectFromCLI: function (args, opts) {
-    var runOpts = _.assign({
-      settings: settings
+  detectFromCLI: (args, opts) => {
+    const runOpts = _.assign({
+      settings
     }, opts);
 
-    var filters = {};
+    const filters = {};
 
-    _.keys(runOpts.settings.testFramework.filters).forEach(function (f) {
+    _.keys(runOpts.settings.testFramework.filters).forEach((f) => {
       if (args[f]) {
         filters[f] = args[f];
       }
@@ -25,14 +24,14 @@ module.exports = {
 
   // Successively reduce files to a smaller set of files by
   // running a list of filters on the list repeatedly
-  filter: function (files, filters, opts) {
-    var runOpts = _.assign({
-      settings: settings
+  filter: (files, filters, opts) => {
+    const runOpts = _.assign({
+      settings
     }, opts);
 
-    var allFiles = files;
+    let allFiles = files;
 
-    _.forEach(filters, function (n, k) {
+    _.forEach(filters, (n, k) => {
       if (runOpts.settings.testFramework.filters[k]) {
         // if we have this filter predefined in settings.js
         // do filter here
@@ -42,5 +41,4 @@ module.exports = {
 
     return allFiles;
   }
-
 };

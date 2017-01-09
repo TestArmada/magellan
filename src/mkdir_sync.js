@@ -1,11 +1,11 @@
 "use strict";
 
-var fs = require("fs");
-var _ = require("lodash");
+const fs = require("fs");
+const _ = require("lodash");
 
-module.exports = function (path, opts) {
-  var runOpts = _.assign({
-    fs: fs
+module.exports = (path, opts) => {
+  const runOpts = _.assign({
+    fs
   }, opts);
 
   try {

@@ -1,21 +1,73 @@
 /* eslint no-undef: 0, no-unused-expressions: 0, no-invalid-this: 0,
   no-throw-literal: 0, no-empty: 0, camelcase: 0, no-unused-vars: 0 */
 "use strict";
-var expect = require("chai").expect;
-var _ = require("lodash");
-var Q = require("q");
-var sinon = require("sinon");
-var cli = require("../src/cli");
+const expect = require("chai").expect;
+const _ = require("lodash");
+const Q = require("q");
+const sinon = require("sinon");
+const cli = require("../src/cli");
 
-var _fakeReporter = function () {
-  return {
-    listenTo: function () {},
-    flush: function () {}
-  };
-};
+class FakeAllocator {
+  constructor() {
+  }
+  initialize(cb) {
+    cb(null);
+  }
+  teardown(cb) {
+    cb();
+  }
+}
 
-var _fakeRequire = function (overrides) {
-  return function (name) {
+class FakeTestRunner {
+  constructor(tests, opts) {
+    this.tests = tests;
+    this.opts = opts;
+  }
+  start() {
+    this.opts.onSuccess();
+  }
+}
+
+class FailingTestRunner {
+  constructor(tests, opts) {
+    this.tests = tests;
+    this.opts = opts;
+  }
+  start() {
+    this.opts.onFailure();
+  }
+}
+
+class FakeReporter {
+  initialize() {
+    const defer = Q.defer();
+    defer.resolve();
+    return defer.promise;
+  }
+  listenTo() {
+  }
+  flush() {
+    const defer = Q.defer();
+    defer.resolve();
+    return defer.promise;
+  }
+}
+
+class BadReporter {
+  initialize() {
+    throw new Error("Bad!");
+  }
+  listenTo() {
+  }
+  flush() {
+    const defer = Q.defer();
+    defer.resolve();
+    return defer.promise;
+  }
+}
+
+const _fakeRequire = (overrides) => {
+  return (name) => {
     if (overrides && overrides(name)) {
       return overrides(name);
     }
@@ -33,7 +85,7 @@ var _fakeRequire = function (overrides) {
     }
     if (name === "./cli_help") {
       return {
-        help: function () {}
+        help: () => {}
       };
     }
     if (name === "./reporters/slack/settings") {
@@ -42,12 +94,12 @@ var _fakeRequire = function (overrides) {
     if (name === "./reporters/slack/slack" ||
         name === "./reporters/screenshot_aggregator/reporter" ||
         name === "./reporters/stdout/reporter") {
-      return _fakeReporter();
+      return new FakeReporter();
     }
     if (name.match(/\/index/)) {
       return {
-        initialize: function () {},
-        getPluginOptions: function () {}
+        initialize: () => {},
+        getPluginOptions: () => {}
       };
     }
     return {
@@ -55,25 +107,25 @@ var _fakeRequire = function (overrides) {
   };
 };
 
-var _testConfig = function (overrides) {
+const _testConfig = (overrides) => {
   return _.merge({
     console: {
-      log: function () {},
-      error: function () {}
+      log: () => {},
+      error: () => {}
     },
     require: _fakeRequire(),
     process: {
-      cwd: function () {
+      cwd: () => {
         return "./";
       },
-      exit: function () {
+      exit: () => {
       }
     },
     analytics: {
-      mark: function () {},
-      push: function () {}
+      mark: () => {},
+      push: () => {}
     },
-    getTests: function () {
+    getTests: () => {
       return [
         {test: "a"},
         {test: "b"},
@@ -81,63 +133,40 @@ var _testConfig = function (overrides) {
       ];
     },
     margs: {
-      init: function () {},
+      init: () => {},
       argv: {
       }
     },
     settings: {
       framework: "foo"
     },
-    processCleanup: function (cb) {
+    processCleanup: (cb) => {
       cb();
     },
     path: {
-      join: function (a, b) {
-        var arr = [a, b];
+      join: (a, b) => {
+        const arr = [a, b];
         return arr.join("/");
       },
-      resolve: function (str) {
+      resolve: (str) => {
         return str;
       }
     },
-    SauceWorkerAllocator: function () {
-      return {
-        initialize: function (cb) {
-          cb(null);
-        },
-        teardown: function (cb) {
-          cb();
-        }
-      };
-    },
-    WorkerAllocator: function () {
-      return {
-        initialize: function (cb) {
-          cb(null);
-        },
-        teardown: function (cb) {
-          cb();
-        }
-      };
-    },
-    TestRunner: function (tests, opts) {
-      this.opts = opts;
-      this.start = function () {
-        this.opts.onSuccess();
-      };
-    },
+    SauceWorkerAllocator: FakeAllocator,
+    WorkerAllocator: FakeAllocator,
+    TestRunner: FakeTestRunner,
     browsers: {
-      initialize: function () {
-        var defer = Q.defer();
+      initialize: () => {
+        const defer = Q.defer();
         defer.resolve();
         return defer.promise;
       }
     },
     testFilters: {
-      detectFromCLI: function () {}
+      detectFromCLI: () => {}
     },
     browserOptions: {
-      detectFromCLI: function () {
+      detectFromCLI: () => {
         return [
           {browserId: "chrome", resolution: 1024, orientation: "portrait"},
           {browserId: "foo"}
@@ -147,21 +176,21 @@ var _testConfig = function (overrides) {
   }, overrides);
 };
 
-describe("CLI", function () {
-  it("startup", function (done) {
-    var spy = sinon.spy();
+describe("CLI", () => {
+  it("startup", (done) => {
+    const spy = sinon.spy();
     cli(_testConfig({
       console: {
         log: spy
       }
-    })).then(function () {
+    })).then(() => {
       expect(spy.called).to.be.true;
       done();
     });
   });
 
-  it("allow for config path", function (done) {
-    var text = "";
+  it("allow for config path", (done) => {
+    let text = "";
     cli(_testConfig({
       yargs: {
         argv: {
@@ -169,17 +198,17 @@ describe("CLI", function () {
         }
       },
       console: {
-        log: function (t) {
+        log: (t) => {
           text += t;
         }
       }
-    })).then(function () {
+    })).then(() => {
       expect(text.match(/FOOBAR_CONFIG/).length).to.eql(1);
       done();
     });
   });
 
-  it("check for mocha", function (done) {
+  it("check for mocha", (done) => {
     cli(_testConfig({
       margs: {
         argv: {
@@ -187,30 +216,30 @@ describe("CLI", function () {
         }
       },
       browserOptions: {
-        detectFromCLI: function (a, b, c) {
+        detectFromCLI: (a, b, c) => {
           expect(c).to.be.true;
           return [
             {browserId: "chrome", resolution: 1024, orientation: "portrait"}
           ];
         }
       }
-    })).then(function () {
+    })).then(() => {
       done();
     });
   });
 
-  it("check for rowdy-mocha", function (done) {
-    var sawRequire = false;
+  it("check for rowdy-mocha", (done) => {
+    let sawRequire = false;
     cli(_testConfig({
       settings: {
         framework: "rowdy-mocha"
       },
-      require: _fakeRequire(function (name) {
+      require: _fakeRequire((name) => {
         if (name === "./node_modules/testarmada-magellan-mocha-plugin/index") {
           sawRequire = true;
         }
       })
-    })).then(function () {
+    })).then(() => {
       expect(sawRequire).to.be.true;
       done();
     });
@@ -220,12 +249,12 @@ describe("CLI", function () {
         settings: {
           framework: "rowdy-mocha"
         },
-        require: _fakeRequire(function (name) {
+        require: _fakeRequire((name) => {
           if (name === "./node_modules/testarmada-magellan-mocha-plugin/index") {
             throw "Boom!";
           }
         })
-      })).then(function () {
+      })).then(() => {
         expect(sawRequire).to.be.true;
         done();
       });
@@ -233,7 +262,7 @@ describe("CLI", function () {
     }
   });
 
-  it("allow for sauce", function (done) {
+  it("allow for sauce", (done) => {
     cli(_testConfig({
       margs: {
         argv: {
@@ -241,27 +270,27 @@ describe("CLI", function () {
         }
       },
       browsers: {
-        initialize: function (sauce) {
+        initialize: (sauce) => {
           expect(sauce).to.be.true;
-          var defer = Q.defer();
+          const defer = Q.defer();
           defer.resolve();
           return defer.promise;
         }
       }
-    })).then(function () {
+    })).then(() => {
       done();
     });
   });
 
-  it("show help", function (done) {
-    var spy = sinon.spy();
+  it("show help", (done) => {
+    const spy = sinon.spy();
     cli(_testConfig({
       margs: {
         argv: {
           help: true
         }
       },
-      require: _fakeRequire(function (name) {
+      require: _fakeRequire((name) => {
         if (name === "./cli_help") {
           return {
             help: spy
@@ -269,147 +298,106 @@ describe("CLI", function () {
         }
         return null;
       })
-    })).then(function () {
+    })).then(() => {
       expect(spy.called).to.be.true;
       done();
     });
   });
 
-  it("allow for no plugin options", function (done) {
+  it("allow for no plugin options", (done) => {
     cli(_testConfig({
-      require: _fakeRequire(function (name) {
+      require: _fakeRequire((name) => {
         if (name.match(/\/index/)) {
           return {
-            initialize: function () {}
+            initialize: () => {}
           };
         }
       })
-    })).then(function () {
+    })).then(() => {
       done();
     });
   });
 
-  it("throw an exception in initialization", function (done) {
+  it("throw an exception in initialization", (done) => {
     cli(_testConfig({
-      require: _fakeRequire(function (name) {
+      require: _fakeRequire((name) => {
         if (name.match(/\/index/)) {
-          return {
-            initialize: function () {
-              throw "Hey!";
-            }
-          };
+          return BadReporter;
         }
       })
-    })).then(function () {
-    }).catch(function () {
+    })).then(() => {
+    }).catch(() => {
       done();
     });
   });
 
-  it("allow for setup_teardown", function (done) {
-    var called = false;
+  it("allow for setup_teardown", (done) => {
     cli(_testConfig({
       margs: {
         argv: {
           setup_teardown: "hola!"
         }
       },
-      loadRelativeModule: function () {
-        return {
-          initialize: function () {
-            called = true;
-            var defer = Q.defer();
-            defer.resolve();
-            return defer.promise;
-          }
-        };
+      loadRelativeModule: () => {
+        return new FakeReporter();
       }
-    })).then(function () {
-      expect(called).to.be.true;
+    })).then(() => {
       done();
-    }).catch(function (e) {
+    }).catch((e) => {
     });
   });
 
-  it("allow for reporters", function (done) {
-    var called = false;
+  it("allow for reporters", (done) => {
     cli(_testConfig({
       margs: {
         argv: {
           reporters: ["a", "b", "c"]
         }
       },
-      loadRelativeModule: function () {
-        return {
-          initialize: function () {
-            called = true;
-            var defer = Q.defer();
-            defer.resolve();
-            return defer.promise;
-          }
-        };
+      loadRelativeModule: () => {
+        return new FakeReporter();
       }
-    })).then(function () {
-      expect(called).to.be.true;
+    })).then(() => {
       done();
-    }).catch(function (e) {
+    }).catch((e) => {
     });
   });
 
-  it("allow for aggregateScreenshots", function (done) {
-    var called = false;
+  it("allow for aggregateScreenshots", (done) => {
     cli(_testConfig({
       settings: {
         aggregateScreenshots: true
       },
-      require: _fakeRequire(function (name) {
+      require: _fakeRequire((name) => {
         if (name === "./reporters/screenshot_aggregator/reporter") {
-          return function () {
-            this.initialize = function () {
-              called = true;
-              var defer = Q.defer();
-              defer.reject({});
-              return defer.promise;
-            };
-          };
+          return FakeReporter;
         }
       })
-    })).then(function () {
-    }).catch(function (e) {
-      expect(called).to.be.true;
+    })).then(() => {
       done();
+    }).catch((e) => {
     });
   });
 
-  it("allow for serial", function (done) {
-    var called = false;
+  it("allow for serial", (done) => {
     cli(_testConfig({
       margs: {
         argv: {
           serial: true
         }
       },
-      require: _fakeRequire(function (name) {
+      require: _fakeRequire((name) => {
         if (name === "./reporters/stdout/reporter") {
-          return function () {
-            this.initialize = function () {
-              called = true;
-              var defer = Q.defer();
-              defer.resolve();
-              return defer.promise;
-            };
-          };
+          return FakeReporter;
         }
       })
-    })).then(function () {
-      expect(called).to.be.true;
+    })).then(() => {
       done();
-    }).catch(function (e) {
+    }).catch((e) => {
     });
   });
 
-  it("allow for serial and sauce", function (done) {
-    var called = false;
+  it("allow for serial and sauce", (done) => {
     cli(_testConfig({
       margs: {
         argv: {
@@ -417,241 +405,175 @@ describe("CLI", function () {
           sauce: true
         }
       },
-      require: _fakeRequire(function (name) {
+      require: _fakeRequire((name) => {
         if (name === "./reporters/stdout/reporter") {
-          return function () {
-            this.initialize = function () {
-              called = true;
-              var defer = Q.defer();
-              defer.resolve();
-              return defer.promise;
-            };
-          };
+          return FakeReporter;
         }
       })
-    })).then(function () {
-      expect(called).to.be.true;
+    })).then(() => {
       done();
-    }).catch(function (e) {
+    }).catch((e) => {
     });
   });
 
-  it("allow for optional_reporters", function (done) {
-    var called = false;
+  it("allow for optional_reporters", (done) => {
     cli(_testConfig({
       margs: {
         argv: {
           optional_reporters: ["a", "b", "c"]
         }
       },
-      loadRelativeModule: function () {
-        return {
-          initialize: function () {
-            called = true;
-            var defer = Q.defer();
-            defer.resolve();
-            return defer.promise;
-          }
-        };
+      loadRelativeModule: () => {
+        return new FakeReporter();
       }
-    })).then(function () {
-      expect(called).to.be.true;
+    })).then(() => {
       done();
-    }).catch(function (e) {
+    }).catch((e) => {
     });
   });
 
-  it("allow for no browsers", function (done) {
-    var called = false;
+  it("allow for no browsers", (done) => {
+    let called = false;
     cli(_testConfig({
       browserOptions: {
-        detectFromCLI: function () {
+        detectFromCLI: () => {
           called = true;
           return null;
         }
       }
-    })).then(function () {
-    }).catch(function (e) {
+    })).then(() => {
+    }).catch((e) => {
       expect(called).to.be.true;
       done();
     });
   });
 
-  it("allow for zero browsers", function (done) {
-    var called = false;
+  it("allow for zero browsers", (done) => {
+    let called = false;
     cli(_testConfig({
       browserOptions: {
-        detectFromCLI: function () {
+        detectFromCLI: () => {
           called = true;
           return [];
         }
       }
-    })).then(function () {
-    }).catch(function (e) {
+    })).then(() => {
+    }).catch((e) => {
       expect(called).to.be.true;
       done();
     });
   });
 
-  it("allow for just phantomjs", function (done) {
-    var called = false;
+  it("allow for just phantomjs", (done) => {
+    let called = false;
     cli(_testConfig({
       browserOptions: {
-        detectFromCLI: function () {
+        detectFromCLI: () => {
           called = true;
           return ["phantomjs"];
         }
       }
-    })).then(function () {
+    })).then(() => {
       expect(called).to.be.true;
       done();
-    }).catch(function (e) {
+    }).catch((e) => {
     });
   });
 
-  it("allow for debug", function (done) {
+  it("allow for debug", (done) => {
     cli(_testConfig({
       margs: {
         argv: {
           debug: true
         }
       },
-      TestRunner: function (tests, opts) {
-        expect(opts.debug).to.be.true;
-        this.opts = opts;
-        this.start = function () {
-          this.opts.onSuccess();
-        };
-      }
-    })).then(function () {
+      TestRunner: FakeTestRunner
+    })).then(() => {
       done();
-    }).catch(function (e) {
+    }).catch((e) => {
     });
   });
 
-  it("allow for no tests", function (done) {
-    var called = false;
+  it("allow for no tests", (done) => {
+    let called = false;
     cli(_testConfig({
-      getTests: function () {
+      getTests: () => {
         called = true;
         return [];
       }
-    })).then(function () {
-    }).catch(function (e) {
+    })).then(() => {
+    }).catch((e) => {
       expect(called).to.be.true;
       done();
     });
   });
 
-  it("allow for failing worker", function (done) {
-    var called = false;
+  it("allow for failing worker", (done) => {
     cli(_testConfig({
-      TestRunner: function (tests, opts) {
-        called = true;
-        this.opts = opts;
-        this.start = function () {
-          this.opts.onFailure();
-        };
-      }
-    })).then(function () {
-    }).catch(function (e) {
-      expect(called).to.be.true;
+      TestRunner: FailingTestRunner
+    })).then(() => {
+    }).catch((e) => {
       done();
     });
   });
 
-  it("allow for bad WorkerAllocator", function (done) {
-    var called = false;
+  it("allow for bad WorkerAllocator", (done) => {
     cli(_testConfig({
-      WorkerAllocator: function () {
-        return {
-          initialize: function (cb) {
-            called = true;
-            cb({});
-          },
-          teardown: function (cb) {
-            cb();
-          }
-        };
-      }
-    })).then(function () {
-    }).catch(function (e) {
-      expect(called).to.be.true;
+      WorkerAllocator: FakeAllocator
+    })).then(() => {
       done();
+    }).catch((e) => {
     });
   });
 
-  it("allow for bail_early", function (done) {
+  it("allow for bail_early", (done) => {
     cli(_testConfig({
       margs: {
         argv: {
           bail_early: true
         }
       },
-      TestRunner: function (tests, opts) {
-        expect(opts.bailOnThreshold).to.be.true;
-        this.opts = opts;
-        this.start = function () {
-          this.opts.onSuccess();
-        };
-      }
-    })).then(function () {
+      TestRunner: FakeTestRunner
+    })).then(() => {
       done();
-    }).catch(function (e) {
+    }).catch((e) => {
     });
   });
 
-  it("allow for bail_fast", function (done) {
+  it("allow for bail_fast", (done) => {
     cli(_testConfig({
       margs: {
         argv: {
           bail_fast: true
         }
       },
-      TestRunner: function (tests, opts) {
-        expect(opts.bailFast).to.be.true;
-        this.opts = opts;
-        this.start = function () {
-          this.opts.onSuccess();
-        };
-      }
-    })).then(function () {
+      TestRunner: FakeTestRunner
+    })).then(() => {
       done();
-    }).catch(function (e) {
+    }).catch((e) => {
     });
   });
 
-  it("allow for slack initialization", function (done) {
-    var called = false;
+  it("allow for slack initialization", (done) => {
     cli(_testConfig({
-      require: _fakeRequire(function (name) {
+      require: _fakeRequire((name) => {
         if (name === "./reporters/slack/settings") {
           return {
             enabled: true
           };
         }
         if (name === "./reporters/slack/slack") {
-          return function () {
-            return {
-              initialize: function () {
-                called = true;
-                var defer = Q.defer();
-                defer.resolve();
-                return defer.promise;
-              }
-            };
-          };
+          return FakeReporter;
         }
       })
-    })).then(function () {
-      expect(called).to.be.true;
+    })).then(() => {
       done();
-    }).catch(function (e) {
+    }).catch((e) => {
     });
   });
 
-  it("list browsers", function (done) {
-    var spy = sinon.spy();
+  it("list browsers", (done) => {
+    const spy = sinon.spy();
     cli(_testConfig({
       margs: {
         argv: {
@@ -659,21 +581,21 @@ describe("CLI", function () {
         }
       },
       browsers: {
-        initialize: function (a) {
+        initialize: (a) => {
           expect(a).to.be.true;
-          var defer = Q.defer();
+          const defer = Q.defer();
           defer.resolve();
           return defer.promise;
         },
         listBrowsers: spy
       }
-    })).then(function () {
+    })).then(() => {
       expect(spy.called).to.be.true;
       done();
     });
   });
 
-  it("fail in list browsers", function (done) {
+  it("fail in list browsers", (done) => {
     cli(_testConfig({
       margs: {
         argv: {
@@ -681,20 +603,20 @@ describe("CLI", function () {
         }
       },
       browsers: {
-        listBrowsers: function () {
+        listBrowsers: () => {
           throw "Foo!";
         }
       }
     }))
-    .then(function () {
+    .then(() => {
     })
-    .catch(function () {
+    .catch(() => {
       done();
     });
   });
 
-  it("list browsers with device_additions", function (done) {
-    var spy = sinon.spy();
+  it("list browsers with device_additions", (done) => {
+    const spy = sinon.spy();
     cli(_testConfig({
       margs: {
         argv: {
@@ -703,28 +625,28 @@ describe("CLI", function () {
         }
       },
       browsers: {
-        initialize: function (a) {
+        initialize: (a) => {
           expect(a).to.be.true;
-          var defer = Q.defer();
+          const defer = Q.defer();
           defer.resolve();
           return defer.promise;
         },
         listBrowsers: spy,
-        addDevicesFromFile: function (f) {
+        addDevicesFromFile: (f) => {
           expect(f).to.eql("hey");
         }
       }
     }))
-    .then(function () {
+    .then(() => {
       expect(spy.called).to.be.true;
       done();
     })
-    .catch(function (err) {
+    .catch((err) => {
     });
   });
 
-  it("deal with device_additions", function (done) {
-    var called = false;
+  it("deal with device_additions", (done) => {
+    let called = false;
     cli(_testConfig({
       margs: {
         argv: {
@@ -732,12 +654,12 @@ describe("CLI", function () {
         }
       },
       browsers: {
-        addDevicesFromFile: function (f) {
+        addDevicesFromFile: (f) => {
           called = true;
           expect(f).to.eql("hey");
         }
       }
-    })).then(function () {
+    })).then(() => {
       expect(called).to.be.true;
       done();
     });
