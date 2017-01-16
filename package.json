@@ -74,6 +74,6 @@
     "istanbul": "^0.4.5",
     "mocha": "^3.2.0",
     "sinon": "^1.17.6",
-    "testarmada-magellan-mocha-plugin": "^7.0.0"
+    "testarmada-magellan-mocha-plugin": "^7.0.1"
   }
 }
