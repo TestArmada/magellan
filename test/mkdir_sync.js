@@ -1,12 +1,12 @@
 /* eslint no-undef: 0, no-unused-expressions: 0 */
 "use strict";
-var expect = require("chai").expect;
-var mkdirSync = require("../src/mkdir_sync");
-var sinon = require("sinon");
+const expect = require("chai").expect;
+const mkdirSync = require("../src/mkdir_sync");
+const sinon = require("sinon");
 
-describe("mkdirSync", function () {
-  it("should call mkdirSync", function () {
-    var spy = sinon.spy();
+describe("mkdirSync", () => {
+  it("should call mkdirSync", () => {
+    const spy = sinon.spy();
     mkdirSync("foo", {
       fs: {
         mkdirSync: spy
@@ -15,12 +15,12 @@ describe("mkdirSync", function () {
     expect(spy.called).to.be.true;
   });
 
-  it("should throw", function () {
-    var ex = {code: "EEXIST"};
+  it("should throw", () => {
+    const ex = {code: "EEXIST"};
     try {
       mkdirSync("foo", {
         fs: {
-          mkdirSync: function () {
+          mkdirSync: () => {
             throw ex;
           }
         }
@@ -30,12 +30,12 @@ describe("mkdirSync", function () {
     }
   });
 
-  it("should throw with odd error", function () {
-    var ex = {code: "FOO"};
+  it("should throw with odd error", () => {
+    const ex = {code: "FOO"};
     try {
       mkdirSync("foo", {
         fs: {
-          mkdirSync: function () {
+          mkdirSync: () => {
             throw ex;
           }
         }

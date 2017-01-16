@@ -1,42 +1,41 @@
 /* eslint no-undef: 0, no-unused-expressions: 0, no-throw-literal: 0 */
 "use strict";
-var expect = require("chai").expect;
-var loadRelativeModule = require("../../src/util/load_relative_module");
+const expect = require("chai").expect;
+const loadRelativeModule = require("../../src/util/load_relative_module");
 
-describe("loadRelativeModule", function () {
-  it("should load by name", function () {
-    var mod = loadRelativeModule("foo", false, {
-      require: function () {
-        return function () {
-          return "foo!";
-        };
+class TestClass {
+}
+
+describe("loadRelativeModule", () => {
+  it("should load by name", () => {
+    const mod = loadRelativeModule("foo", false, {
+      require: () => {
+        return TestClass;
       }
     });
     expect(mod).not.to.be.null;
     expect(mod).not.to.eql("foo!");
   });
 
-  it("should load relatively", function () {
-    var mod = loadRelativeModule("./foo.js", false, {
-      require: function () {
-        return function () {
-          return "foo!";
-        };
+  it("should load relatively", () => {
+    const mod = loadRelativeModule("./foo.js", false, {
+      require: () => {
+        return TestClass;
       }
     });
     expect(mod).not.to.be.null;
     expect(mod).not.to.eql("foo!");
   });
 
-  it("should fail with non-optional module not found", function () {
-    var thrown = false;
+  it("should fail with non-optional module not found", () => {
+    let thrown = false;
     try {
       loadRelativeModule("foo.js", false, {
-        require: function () {
+        require: () => {
           throw {code: "MODULE_NOT_FOUND"};
         },
         console: {
-          error: function () {}
+          error: () => {}
         }
       });
     } catch (e) {
@@ -45,15 +44,15 @@ describe("loadRelativeModule", function () {
     expect(thrown).to.not.be.null;
   });
 
-  it("should fail with undefined error code", function () {
-    var thrown = false;
+  it("should fail with undefined error code", () => {
+    let thrown = false;
     try {
       loadRelativeModule("foo.js", true, {
-        require: function () {
+        require: () => {
           throw {code: undefined};
         },
         console: {
-          error: function () {}
+          error: () => {}
         }
       });
     } catch (e) {
@@ -62,27 +61,27 @@ describe("loadRelativeModule", function () {
     expect(thrown).to.not.be.null;
   });
 
-  it("should fail with optional", function () {
-    var mod = loadRelativeModule("foo.js", true, {
-      require: function () {
+  it("should fail with optional", () => {
+    const mod = loadRelativeModule("foo.js", true, {
+      require: () => {
         throw {code: "MODULE_NOT_FOUND"};
       },
       console: {
-        error: function () {}
+        error: () => {}
       }
     });
     expect(mod).to.be.null;
   });
 
-  it("should not throw error with optional module not found", function () {
-    var thrown = false;
+  it("should not throw error with optional module not found", () => {
+    let thrown = false;
     try {
       loadRelativeModule("foo.js", true, {
-        require: function () {
+        require: () => {
           throw {code: "MODULE_NOT_FOUND"};
         },
         console: {
-          error: function () {}
+          error: () => {}
         }
       });
     } catch (e) {

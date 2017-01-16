@@ -1,16 +1,16 @@
 /* eslint no-undef: 0, no-unused-expressions: 0 */
 "use strict";
-var expect = require("chai").expect;
-var Reporter = require("../../../src/reporters/stdout/reporter");
-var sinon = require("sinon");
+const expect = require("chai").expect;
+const Reporter = require("../../../src/reporters/stdout/reporter");
+const sinon = require("sinon");
 
-describe("STDOUT Reporter", function () {
-  it("should be a listener", function () {
-    var r = new Reporter();
+describe("STDOUT Reporter", () => {
+  it("should be a listener", () => {
+    const r = new Reporter();
     expect(r.initialize).to.not.be.null;
     expect(r.listenTo).to.not.be.null;
     expect(r.flush).to.not.be.null;
-    var spy = sinon.spy();
+    const spy = sinon.spy();
     r.listenTo(null, null, {
       stdout: {
         pipe: spy

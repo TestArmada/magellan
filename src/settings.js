@@ -2,20 +2,20 @@
 
 /*eslint-disable no-magic-numbers, no-bitwise, no-console */
 
-var guid = require("./util/guid");
-var argv = require("marge").argv;
-var env = process.env;
-var fs = require("fs");
-var path = require("path");
+const guid = require("./util/guid");
+const argv = require("marge").argv;
+const env = process.env;
+const fs = require("fs");
+const path = require("path");
 
 // Allow an external build id (eg: from CI system, for example) to be used. If we're not given one,
 // we generate a random build id instead. NOTE: This build id must work as a part of a filename.
 // NOTE: The result of this line is that buildId is truthy so toString() should work
-var buildId = (argv.external_build_id || "magellan-" + guid()).toString();
+const buildId = (argv.external_build_id || "magellan-" + guid()).toString();
 
 // Create a temporary directory for child build assets like configuration, screenshots, etc.
-var mkdirSync = require("./mkdir_sync");
-var TEMP_DIR = path.resolve(argv.temp_dir || "./temp");
+const mkdirSync = require("./mkdir_sync");
+const TEMP_DIR = path.resolve(argv.temp_dir || "./temp");
 
 try {
   // Check if TEMP_DIR already exists.
@@ -83,7 +83,7 @@ module.exports = {
   bailThreshold: parseFloat(argv.early_bail_threshold) || 0.1,
   bailMinAttempts: parseInt(argv.early_bail_min_attempts) || 10,
 
-  buildId: buildId,
+  buildId,
 
   framework: argv.framework || "nightwatch",
 

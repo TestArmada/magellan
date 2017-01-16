@@ -1,25 +1,25 @@
 /* eslint no-undef: 0, no-unused-expressions: 0, no-magic-numbers: 0 */
 "use strict";
-var expect = require("chai").expect;
-var Reporter = require("../../../src/reporters/screenshot_aggregator/reporter");
+const expect = require("chai").expect;
+const Reporter = require("../../../src/reporters/screenshot_aggregator/reporter");
 
-describe("ScreenshotAggregator Reporter", function () {
-  it("should initialize incorrectly", function (done) {
-    var r = new Reporter({
-      console: {log: function () {}},
+describe("ScreenshotAggregator Reporter", () => {
+  it("should initialize incorrectly", (done) => {
+    const r = new Reporter({
+      console: {log: () => {}},
       settings: {
       }
     });
-    r.initialize().catch(function () {
+    r.initialize().catch(() => {
       done();
     });
   });
 
-  it("should initialize correctly", function (done) {
-    var r = new Reporter({
-      console: {log: function () {}},
+  it("should initialize correctly", (done) => {
+    const r = new Reporter({
+      console: {log: () => {}},
       request: {
-        post: function (url, cb) {
+        post: (url, cb) => {
           expect(url).to.not.be.null;
           cb(null, null, JSON.stringify({
             status: "success",
@@ -31,19 +31,19 @@ describe("ScreenshotAggregator Reporter", function () {
         aggregatorURL: "http://foo/"
       }
     });
-    r.initialize().then(function () {
+    r.initialize().then(() => {
       r.listenTo("foo", "bar", {
-        addListener: function () {}
+        addListener: () => {}
       });
       done();
     });
   });
 
-  it("should handle random messages", function (done) {
-    var r = new Reporter({
-      console: {log: function () {}},
+  it("should handle random messages", (done) => {
+    const r = new Reporter({
+      console: {log: () => {}},
       request: {
-        post: function (url, cb) {
+        post: (url, cb) => {
           expect(url).to.not.be.null;
           cb(null, null, JSON.stringify({
             status: "success",
@@ -55,7 +55,7 @@ describe("ScreenshotAggregator Reporter", function () {
         aggregatorURL: "http://foo/"
       }
     });
-    r.initialize().then(function () {
+    r.initialize().then(() => {
       r._handleMessage("foo", "bar", {
       });
       r._handleMessage("foo", "bar", {
@@ -69,11 +69,11 @@ describe("ScreenshotAggregator Reporter", function () {
     });
   });
 
-  it("should handle run end messages", function (done) {
-    var r = new Reporter({
-      console: {log: function () {}},
+  it("should handle run end messages", (done) => {
+    const r = new Reporter({
+      console: {log: () => {}},
       request: {
-        post: function (url, cb) {
+        post: (url, cb) => {
           expect(url).to.not.be.null;
           cb(null, null, JSON.stringify({
             status: "success",
@@ -85,21 +85,21 @@ describe("ScreenshotAggregator Reporter", function () {
         aggregatorURL: "http://foo/"
       },
       glob: {
-        sync: function (pattern) {
+        sync: (pattern) => {
           return pattern.indexOf("png") > -1 ? ["a"] : [];
         }
       },
       path: {
-        resolve: function () {
+        resolve: () => {
           return "b";
         }
       },
       fs: {
-        unlinkSync: function () {},
-        createReadStream: function () {}
+        unlinkSync: () => {},
+        createReadStream: () => {}
       }
     });
-    r.initialize().then(function () {
+    r.initialize().then(() => {
       r._handleMessage({
         tempAssetPath: "./foo"
       }, {
@@ -119,7 +119,7 @@ describe("ScreenshotAggregator Reporter", function () {
         attempts: 2,
         maxAttempts: 3,
         browser: {
-          slug: function () { return "foo"; }
+          slug: () => { return "foo"; }
         }
       }, {
         type: "worker-status",
@@ -133,11 +133,11 @@ describe("ScreenshotAggregator Reporter", function () {
     });
   });
 
-  it("should handle run end messages with single shots", function (done) {
-    var r = new Reporter({
-      console: {log: function () {}},
+  it("should handle run end messages with single shots", (done) => {
+    const r = new Reporter({
+      console: {log: () => {}},
       request: {
-        post: function (url, cb) {
+        post: (url, cb) => {
           expect(url).to.not.be.null;
           cb(null, null, JSON.stringify({
             status: "success",
@@ -149,21 +149,21 @@ describe("ScreenshotAggregator Reporter", function () {
         aggregatorURL: "http://foo/"
       },
       glob: {
-        sync: function (pattern) {
+        sync: (pattern) => {
           return pattern.indexOf("png") > -1 ? ["a"] : [];
         }
       },
       path: {
-        resolve: function () {
+        resolve: () => {
           return "b";
         }
       },
       fs: {
-        unlinkSync: function () {},
-        createReadStream: function () {}
+        unlinkSync: () => {},
+        createReadStream: () => {}
       }
     });
-    r.initialize().then(function () {
+    r.initialize().then(() => {
       r._handleMessage({
         tempAssetPath: "./foo",
         buildId: "asdfasdfadf"
@@ -171,7 +171,7 @@ describe("ScreenshotAggregator Reporter", function () {
         attempts: 2,
         maxAttempts: 3,
         browser: {
-          slug: function () { return "foo"; }
+          slug: () => { return "foo"; }
         }
       }, {
         type: "worker-status",
@@ -185,11 +185,11 @@ describe("ScreenshotAggregator Reporter", function () {
     });
   });
 
-  it("should handle bad server response", function (done) {
-    var r = new Reporter({
-      console: {log: function () {}},
+  it("should handle bad server response", (done) => {
+    const r = new Reporter({
+      console: {log: () => {}},
       request: {
-        post: function (url, cb) {
+        post: (url, cb) => {
           expect(url).to.not.be.null;
           cb(null, null, "foo");
         }
@@ -198,16 +198,16 @@ describe("ScreenshotAggregator Reporter", function () {
         aggregatorURL: "http://foo/"
       },
       glob: {
-        sync: function () {
+        sync: () => {
           return ["a", "b/a", "c"];
         }
       },
       fs: {
-        unlinkSync: function () {},
-        createReadStream: function () {}
+        unlinkSync: () => {},
+        createReadStream: () => {}
       }
     });
-    r.initialize().then(function () {
+    r.initialize().then(() => {
       r._handleMessage({
         tempAssetPath: "./foo",
         buildId: "asdfasdfadf"
@@ -215,7 +215,7 @@ describe("ScreenshotAggregator Reporter", function () {
         attempts: 2,
         maxAttempts: 3,
         browser: {
-          slug: function () { return "foo"; }
+          slug: () => { return "foo"; }
         }
       }, {
         type: "worker-status",

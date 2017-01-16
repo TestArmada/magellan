@@ -1,17 +1,17 @@
 "use strict";
 
-var _ = require("lodash");
+const _ = require("lodash");
 
-var project = require("../package.json");
-var settings = require("./settings");
+const project = require("../package.json");
+const settings = require("./settings");
 
 /*eslint max-len: 0*/
 /*eslint max-statements: 0*/
 module.exports = {
-  help: function (opts) {
-    var runOpts = _.assign({
-      console: console,
-      settings: settings
+  help: (opts) => {
+    const runOpts = _.assign({
+      console,
+      settings
     }, opts);
 
     runOpts.console.log("Usage: magellan [options]");
@@ -50,7 +50,7 @@ module.exports = {
     runOpts.console.log("  --profile=p1,p2,..             Specify lists of browsers to use defined in profiles in magellan.json config.");
     runOpts.console.log("  --profile=http://abc/p#p1,p2   Use profiles p1 and p2 hosted at JSON file http://abc/p (see README for details).");
 
-    var help;
+    let help;
 
     if (runOpts.settings.testFramework && runOpts.settings.testFramework.help) {
       help = runOpts.settings.testFramework.help;
@@ -59,10 +59,10 @@ module.exports = {
     if (help) {
       runOpts.console.log("");
       runOpts.console.log(" Framework-specific (" + runOpts.settings.framework + "):");
-      var maxWidth = 31;
+      const maxWidth = 31;
 
-      Object.keys(help).forEach(function (key) {
-        var str = "  --" + key;
+      Object.keys(help).forEach((key) => {
+        let str = "  --" + key;
         if (help[key].example) {
           str += "=" + help[key].example;
         }

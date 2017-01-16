@@ -1,15 +1,14 @@
 "use strict";
 
-var syncRequest = require("sync-request");
-var URL = require("url");
-var _ = require("lodash");
+const syncRequest = require("sync-request");
+const URL = require("url");
+const _ = require("lodash");
 
 module.exports = {
-
   // Return a profile name from an URL if one is referenced with a #fragment.
   // If not, just return nothing. Silently eat errors if there is no fragment
   // or if the URL isn't valid.
-  getProfileNameFromURL: function (url) {
+  getProfileNameFromURL: (url) => {
     try {
       url = URL.parse(url);
     } catch (e) {
@@ -20,13 +19,13 @@ module.exports = {
     }
   },
 
-  getProfilesAtURL: function (url, opts) {
-    var runOpts = _.assign({
-      syncRequest: syncRequest
+  getProfilesAtURL: (url, opts) => {
+    const runOpts = _.assign({
+      syncRequest
     }, opts);
 
-    var res = runOpts.syncRequest("GET", url);
-    var data;
+    const res = runOpts.syncRequest("GET", url);
+    let data;
 
     try {
       data = JSON.parse(res.getBody("utf8"));
@@ -42,5 +41,4 @@ module.exports = {
     // is not polluted with any other properties.
     return { profiles: data.profiles };
   }
-
 };

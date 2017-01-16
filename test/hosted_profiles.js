@@ -1,26 +1,26 @@
 /* eslint no-undef: 0, no-unused-expressions: 0 */
 "use strict";
-var expect = require("chai").expect;
-var hostedProfile = require("../src/hosted_profiles");
+const expect = require("chai").expect;
+const hostedProfile = require("../src/hosted_profiles");
 
-describe("hostedProfiles", function () {
-  it("should return the #fragment from a URL", function () {
+describe("hostedProfiles", () => {
+  it("should return the #fragment from a URL", () => {
     expect(hostedProfile.getProfileNameFromURL("http://example.com/#boo")).to.eql("boo");
   });
 
-  it("should return undefined for a URL wihtout fragments", function () {
+  it("should return undefined for a URL wihtout fragments", () => {
     expect(hostedProfile.getProfileNameFromURL("http://example.com/")).to.be.undefined;
   });
 
-  it("should return undefined for an invalid URL", function () {
+  it("should return undefined for an invalid URL", () => {
     expect(hostedProfile.getProfileNameFromURL("👍")).to.be.undefined;
   });
 
-  it("should hit URLs", function () {
+  it("should hit URLs", () => {
     expect(hostedProfile.getProfilesAtURL("http://foozbaz.com", {
-      syncRequest: function () {
+      syncRequest: () => {
         return {
-          getBody: function () {
+          getBody: () => {
             return JSON.stringify({
               profiles: "foo"
             });
@@ -30,12 +30,12 @@ describe("hostedProfiles", function () {
     })).to.eql({profiles: "foo"});
   });
 
-  it("should check for malformed responses", function () {
+  it("should check for malformed responses", () => {
     try {
       hostedProfile.getProfilesAtURL("http://foozbaz.com", {
-        syncRequest: function () {
+        syncRequest: () => {
           return {
-            getBody: function () {
+            getBody: () => {
               return JSON.stringify({});
             }
           };
@@ -46,12 +46,12 @@ describe("hostedProfiles", function () {
     }
   });
 
-  it("should check for malformed responses", function () {
+  it("should check for malformed responses", () => {
     try {
       hostedProfile.getProfilesAtURL("http://foozbaz.com", {
-        syncRequest: function () {
+        syncRequest: () => {
           return {
-            getBody: function () {
+            getBody: () => {
               return {};
             }
           };

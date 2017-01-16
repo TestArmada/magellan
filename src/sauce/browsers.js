@@ -1,22 +1,22 @@
 "use strict";
 
-var Q = require("q");
-var _ = require("lodash");
-var SauceBrowsers = require("guacamole");
-var listSauceCliBrowsers = require("guacamole/src/cli_list");
+const Q = require("q");
+const _ = require("lodash");
+const SauceBrowsers = require("guacamole");
+const listSauceCliBrowsers = require("guacamole/src/cli_list");
 
 module.exports = {
 
   //
   // TODO: the actual listing of browsers should be provided by guacamole
   //
-  listBrowsers: function (opts) {
-    var runOpts = _.assign({}, {
-      console: console,
-      listSauceCliBrowsers: listSauceCliBrowsers
+  listBrowsers: (opts) => {
+    const runOpts = _.assign({}, {
+      console,
+      listSauceCliBrowsers
     }, opts);
 
-    runOpts.listSauceCliBrowsers(function (browserTable) {
+    runOpts.listSauceCliBrowsers((browserTable) => {
       // convert table heading
       browserTable.options.head[1] = "Copy-Paste Command-Line Option";
       runOpts.console.log(browserTable.toString());
@@ -32,18 +32,18 @@ module.exports = {
 
   // Return a browser by id if it exists in our browser list. Optionally return that browser
   // only if a resolution is supported by that browser environment
-  browser: function (id, resolution, orientation) {
-    var results = SauceBrowsers.get({
-      id: id,
+  browser: (id, resolution, orientation) => {
+    const results = SauceBrowsers.get({
+      id,
       screenResolution: resolution,
       deviceOrientation: orientation
     }, true);
 
-    var result;
+    let result;
     if (results.length > 0) {
-      var browser = results[0];
+      const browser = results[0];
       result = _.extend({
-        id: id,
+        id,
         resolutions: browser.resolutions
       }, browser.desiredCapabilities);
     }
@@ -51,15 +51,15 @@ module.exports = {
     return result;
   },
 
-  addDevicesFromFile: function (filePath) {
+  addDevicesFromFile: (filePath) => {
     SauceBrowsers.addNormalizedBrowsersFromFile(filePath);
   },
 
-  initialize: function (fetchSauceBrowsers) {
+  initialize: (fetchSauceBrowsers) => {
     if (fetchSauceBrowsers) {
       return SauceBrowsers.initialize();
     } else {
-      var d = Q.defer();
+      const d = Q.defer();
       d.resolve();
       return d.promise;
     }

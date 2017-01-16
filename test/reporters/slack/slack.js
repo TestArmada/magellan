@@ -1,10 +1,17 @@
 /* eslint no-undef: 0 */
 "use strict";
-var Reporter = require("../../../src/reporters/slack/slack");
+const Reporter = require("../../../src/reporters/slack/slack");
 
-describe("Slack Reporter", function () {
-  it("should initialize correctly", function (done) {
-    var r = new Reporter({
+class TestSlack {
+  constructor() {
+  }
+  notify() {
+  }
+}
+
+describe("Slack Reporter", () => {
+  it("should initialize correctly", (done) => {
+    const r = new Reporter({
       account: "a",
       key: "a",
       channel: "a",
@@ -15,27 +22,25 @@ describe("Slack Reporter", function () {
       buildURL: "a"
     }, {
       console: {
-        log: function () {},
-        error: function () {}
+        log: () => {},
+        error: () => {}
       },
-      Slack: function () {
-        this.notify = function () {};
-      }
+      Slack: TestSlack
     });
-    r.initialize().then(function () {
+    r.initialize().then(() => {
       r.flush();
       r._addFailure("a", "b", "c");
       r._addFailure("a");
       r.listenTo("a", "b", {
-        addListener: function () {}
+        addListener: () => {}
       });
       r.flush();
       done();
     });
   });
 
-  it("should have issues with lack of config", function (done) {
-    var r = new Reporter({
+  it("should have issues with lack of config", (done) => {
+    const r = new Reporter({
       account: "a",
       key: "a",
       username: "a",
@@ -45,18 +50,18 @@ describe("Slack Reporter", function () {
       buildURL: "a"
     }, {
       console: {
-        log: function () {},
-        error: function () {}
+        log: () => {},
+        error: () => {}
       },
-      Slack: function () {}
+      Slack: TestSlack
     });
-    r.initialize().catch(function () {
+    r.initialize().catch(() => {
       done();
     });
   });
 
-  it("should handle messages", function (done) {
-    var r = new Reporter({
+  it("should handle messages", (done) => {
+    const r = new Reporter({
       account: "a",
       key: "a",
       channel: "a",
@@ -67,14 +72,12 @@ describe("Slack Reporter", function () {
       buildURL: "a"
     }, {
       console: {
-        log: function () {},
-        error: function () {}
+        log: () => {},
+        error: () => {}
       },
-      Slack: function () {
-        this.notify = function () {};
-      }
+      Slack: TestSlack
     });
-    r.initialize().then(function () {
+    r.initialize().then(() => {
       r._handleMessage("a", "b", {
         type: "worker-status",
         status: "finished",

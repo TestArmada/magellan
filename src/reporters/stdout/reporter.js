@@ -7,23 +7,23 @@
 * for easier live debugging at the console.
 */
 
-var util = require("util");
-var BaseReporter = require("../reporter");
+const BaseReporter = require("../reporter");
 
-var Reporter = function () {
-};
-
-util.inherits(Reporter, BaseReporter);
-
-Reporter.prototype.listenTo = function (testRun, test, source) {
-  // Stream stdout and stderr directly to stdout, assuming this source is
-  // a process that has those properties.
-  if (source.stdout) {
-    source.stdout.pipe(process.stdout);
+class Reporter extends BaseReporter {
+  constructor() {
+    super();
   }
-  if (source.stderr) {
-    source.stderr.pipe(process.stderr);
+
+  listenTo(testRun, test, source) {
+    // Stream stdout and stderr directly to stdout, assuming this source is
+    // a process that has those properties.
+    if (source.stdout) {
+      source.stdout.pipe(process.stdout);
+    }
+    if (source.stderr) {
+      source.stderr.pipe(process.stderr);
+    }
   }
-};
+}
 
 module.exports = Reporter;

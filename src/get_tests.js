@@ -1,17 +1,17 @@
 "use strict";
 
-var _ = require("lodash");
+const _ = require("lodash");
 
-var testFilter = require("./test_filter");
-var settings = require("./settings");
+const testFilter = require("./test_filter");
+const settings = require("./settings");
 
-module.exports = function (filters, opts) {
-  var runOpts = _.assign({
-    settings: settings
+module.exports = (filters, opts) => {
+  const runOpts = _.assign({
+    settings
   }, opts);
 
-  var getTests = runOpts.settings.testFramework.iterator;
-  var allFiles = getTests(runOpts.settings);
+  const getTests = runOpts.settings.testFramework.iterator;
+  const allFiles = getTests(runOpts.settings);
 
   return testFilter.filter(allFiles, filters, opts);
 };

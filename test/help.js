@@ -1,13 +1,13 @@
 /* eslint no-undef: 0, no-unused-expressions: 0 */
 "use strict";
-var expect = require("chai").expect;
-var cliHelp = require("../src/cli_help");
+const expect = require("chai").expect;
+const cliHelp = require("../src/cli_help");
 
-describe("cliHelp", function () {
-  it("should return default help", function () {
+describe("cliHelp", () => {
+  it("should return default help", () => {
     cliHelp.help({
       console: {
-        log: function () {}
+        log: () => {}
       },
       settings: {
         testFramework: {
@@ -23,10 +23,10 @@ describe("cliHelp", function () {
     expect(cliHelp.help).to.exist;
   });
 
-  it("should return default help without example", function () {
+  it("should return default help without example", () => {
     cliHelp.help({
       console: {
-        log: function () {}
+        log: () => {}
       },
       settings: {
         testFramework: {
@@ -41,10 +41,10 @@ describe("cliHelp", function () {
     expect(cliHelp.help).to.exist;
   });
 
-  it("should return default help with no help key", function () {
+  it("should return default help with no help key", () => {
     cliHelp.help({
       console: {
-        log: function () {}
+        log: () => {}
       },
       settings: {
         testFramework: {
@@ -54,10 +54,10 @@ describe("cliHelp", function () {
     expect(cliHelp.help).to.exist;
   });
 
-  it("should return default help with no help keys", function () {
+  it("should return default help with no help keys", () => {
     cliHelp.help({
       console: {
-        log: function () {}
+        log: () => {}
       },
       settings: {
       }

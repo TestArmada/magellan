@@ -1,23 +1,23 @@
 "use strict";
 
-var _ = require("lodash");
-var request = require("request");
-var portscanner = require("portscanner");
+const _ = require("lodash");
+const request = require("request");
+const portscanner = require("portscanner");
 
-var PORT_STATUS_IN_USE = 0;
-var PORT_STATUS_AVAILABLE = 1;
+const PORT_STATUS_IN_USE = 0;
+const PORT_STATUS_AVAILABLE = 1;
 
-var checkPortStatus = function (desiredPort, callback, opts) {
-  var runOpts = _.assign({
-    request: request,
-    portscanner: portscanner,
-    console: console
+const checkPortStatus = (desiredPort, callback, opts) => {
+  const runOpts = _.assign({
+    request,
+    portscanner,
+    console
   }, opts);
 
   runOpts.request("http://127.0.0.1:" + desiredPort +
-    "/wd/hub/static/resource/hub.html", function (seleniumErr) {
+    "/wd/hub/static/resource/hub.html", (seleniumErr) => {
     if (seleniumErr && seleniumErr.code === "ECONNREFUSED") {
-      runOpts.portscanner.checkPortStatus(desiredPort, "127.0.0.1", function (error, portStatus) {
+      runOpts.portscanner.checkPortStatus(desiredPort, "127.0.0.1", (error, portStatus) => {
         if (portStatus === "open") {
           return callback(PORT_STATUS_IN_USE);
         } else {
@@ -41,15 +41,15 @@ var checkPortStatus = function (desiredPort, callback, opts) {
 //
 // [{ port: number, available: boolean }]
 //
-var checkPortRange = function (portNumbers, callback, opts) {
+const checkPortRange = (portNumbers, callback, opts) => {
   portNumbers = _.cloneDeep(portNumbers);
-  var statuses = [];
+  const statuses = [];
 
-  var checkNextPort = function () {
+  const checkNextPort = () => {
     if (portNumbers.length > 0) {
-      var portToCheck = portNumbers.shift();
+      const portToCheck = portNumbers.shift();
 
-      checkPortStatus(portToCheck, function (portStatus) {
+      checkPortStatus(portToCheck, (portStatus) => {
         statuses.push({
           port: portToCheck,
           available: portStatus === PORT_STATUS_AVAILABLE
