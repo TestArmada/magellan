@@ -27,8 +27,8 @@ describe("browsers", () => {
   });
 
   it("should get a browser", () => {
-    const b = browsers.browser("iphone_9_3_OS_X_10_11_iPhone_5");
-    expect(b.browserName).to.eql("iphone");
+    const b = browsers.browser("chrome_55_Windows_10_Desktop");
+    expect(b.browserName).to.eql("chrome");
   });
 
   it("should get no browser", () => {
