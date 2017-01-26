@@ -39,41 +39,54 @@ module.exports = {
     runOpts.console.log("  --external_build_id            Use an external build id, i.e. from CI. Must be filename and URL-safe.");
     runOpts.console.log("");
     runOpts.console.log(" Browser and SauceLabs Support:");
-    runOpts.console.log("  --sauce                        Run tests on SauceLabs cloud.");
-    runOpts.console.log("  --list_browsers                List the available browsers configured.");
-    runOpts.console.log("  --browser=browsername          Run tests in chrome, firefox, etc (default: phantomjs).");
-    runOpts.console.log("  --browsers=b1,b2,..            Run multiple browsers in parallel.");
-    runOpts.console.log("  --browsers=all                 Run all available browsers (sauce only).");
-    runOpts.console.log("  --create_tunnels               Create secure tunnels in sauce mode (for use with --sauce only)");
-    runOpts.console.log("  --sauce_tunnel_id              Use an existing secure tunnel (for use with --sauce only, exclusive with --create_tunnels)");
-    runOpts.console.log("  --shared_sauce_parent_account  Specify parent account name if existing shared secure tunnel is in use (for use with --sauce only, exclusive with --create_tunnels)");
+    // runOpts.console.log("  --sauce                        Run tests on SauceLabs cloud.");
+    // runOpts.console.log("  --list_browsers                List the available browsers configured.");
+    // runOpts.console.log("  --browser=browsername          Run tests in chrome, firefox, etc (default: phantomjs).");
+    // runOpts.console.log("  --browsers=b1,b2,..            Run multiple browsers in parallel.");
+    // runOpts.console.log("  --browsers=all                 Run all available browsers (sauce only).");
+    // runOpts.console.log("  --create_tunnels               Create secure tunnels in sauce mode (for use with --sauce only)");
+    // runOpts.console.log("  --sauce_tunnel_id              Use an existing secure tunnel (for use with --sauce only, exclusive with --create_tunnels)");
+    // runOpts.console.log("  --shared_sauce_parent_account  Specify parent account name if existing shared secure tunnel is in use (for use with --sauce only, exclusive with --create_tunnels)");
     runOpts.console.log("  --profile=p1,p2,..             Specify lists of browsers to use defined in profiles in magellan.json config.");
     runOpts.console.log("  --profile=http://abc/p#p1,p2   Use profiles p1 and p2 hosted at JSON file http://abc/p (see README for details).");
+    runOpts.console.log("");
 
-    let help;
+    let help = {};
 
     if (runOpts.settings.testFramework && runOpts.settings.testFramework.help) {
-      help = runOpts.settings.testFramework.help;
+      help[" Framework-specific (" + runOpts.settings.framework + ")"] = runOpts.settings.testFramework.help;
+    }
+
+    if (runOpts.settings.testExecutors) {
+      _.forEach(runOpts.settings.testExecutors, (v, k) => {
+        if (v.help) {
+          help[" Executor-specific (" + v.name + ")"] = v.help;
+        }
+      });
     }
 
     if (help) {
-      runOpts.console.log("");
-      runOpts.console.log(" Framework-specific (" + runOpts.settings.framework + "):");
-      const maxWidth = 31;
+      const maxWidth = 40;
 
-      Object.keys(help).forEach((key) => {
-        let str = "  --" + key;
-        if (help[key].example) {
-          str += "=" + help[key].example;
-        }
-        // pad
-        while (str.length < maxWidth) {
-          str += " ";
-        }
-        // truncate just in case the example was too long to begin with
-        str = str.substr(0, maxWidth);
-        str += help[key].description;
-        runOpts.console.log(str);
+      _.forEach(help, (helpValue, helpKey) => {
+        runOpts.console.log(helpKey);
+
+        _.forEach(helpValue, (itemValue, itemKey) => {
+          let str = "  --" + itemKey;
+          if (itemValue.example) {
+            str += "=" + itemValue.example;
+          }
+
+          while (str.length < maxWidth) {
+            str += " ";
+          }
+
+          // truncate just in case the example was too long to begin with
+          str = str.substr(0, maxWidth);
+          str += itemValue.description;
+          runOpts.console.log(str);
+        });
+        runOpts.console.log("");
       });
     }
 

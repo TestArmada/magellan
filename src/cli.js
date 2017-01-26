@@ -139,6 +139,39 @@ module.exports = (opts) => {
     frameworkInitializationException = e;
   }
 
+  // examine executor 
+  // let formalExecutor = ["local"];
+  let formalExecutors = ["./node_modules/testarmada-magellan/src/executor/local"];
+
+  // executors is as array from magellan.json by default
+  if (runOpts.margs.argv.executors) {
+    if (_.isArray(runOpts.margs.argv.executors)) {
+      formalExecutors = runOpts.margs.argv.executors;
+    } else if (_.isString(runOpts.margs.argv.executors)) {
+      formalExecutors = [runOpts.margs.argv.executors];
+    } else {
+      runOpts.console.error(clc.redBright("Error: executors only accepts string and array"));
+      runOpts.console.log(clc.yellowBright("Setting executor to \"local\" by default"));
+    }
+  } else {
+    runOpts.console.warn(clc.yellowBright("Warning: no executor is passed in"));
+    runOpts.console.log(clc.yellowBright("Setting executor to \"local\" by default"));
+  }
+
+  runOpts.settings.executors = formalExecutors;
+
+  // load executor
+  let executorLoadException;
+  runOpts.settings.testExecutors = {};
+
+  _.forEach(runOpts.settings.executors, (executor) => {
+    try {
+      runOpts.settings.testExecutors[executor] = runOpts.require(runOpts.path.resolve(executor));
+    } catch (e) {
+      executorLoadException = e;
+    }
+  });
+  
   // Show help and exit if it's asked for
   if (runOpts.margs.argv.help) {
     const help = runOpts.require("./cli_help");
@@ -163,8 +196,8 @@ module.exports = (opts) => {
   }
 
   if (!runOpts.settings.testFramework ||
-      frameworkLoadException ||
-      frameworkInitializationException) {
+    frameworkLoadException ||
+    frameworkInitializationException) {
     runOpts.console.error(clc.redBright("Error: Could not start Magellan."));
     if (frameworkLoadException) {
       runOpts.console.error(clc.redBright("Error: Could not load the testing framework plugin '"
@@ -177,8 +210,8 @@ module.exports = (opts) => {
     } else /* istanbul ignore else */ if (frameworkInitializationException) {
       runOpts.console.error(
         clc.redBright("Error: Could not initialize the testing framework plugin '"
-        + runOpts.settings.framework + "'."
-        + "\nThis plugin was found and loaded, but an error occurred during initialization:"));
+          + runOpts.settings.framework + "'."
+          + "\nThis plugin was found and loaded, but an error occurred during initialization:"));
       runOpts.console.log(frameworkInitializationException);
     }
 
@@ -289,7 +322,7 @@ module.exports = (opts) => {
       if (err) {
         runOpts.console.error(
           clc.redBright("Could not start Magellan. Got error while initializing"
-          + " worker allocator"));
+            + " worker allocator"));
         deferred.reject(err);
         return defer.promise;
       }
@@ -359,7 +392,7 @@ module.exports = (opts) => {
       } else if (_selectedBrowsers.length === 0) {
         runOpts.console.log(
           clc.redBright("\nError: To use --sauce mode, you need to specify a browser."
-          + "\nTo see a list of sauce browsers, use the --list_browsers option.\n"));
+            + "\nTo see a list of sauce browsers, use the --list_browsers option.\n"));
         throw new Error("No browser specified for Sauce support");
       } else if (debug) {
         runOpts.console.log("Selected browsers: ");
