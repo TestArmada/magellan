@@ -21,32 +21,47 @@ module.exports = {
     runOpts.console.log("");
     runOpts.console.log("By default, magellan will run all available tests in parallel with phantomjs.");
     runOpts.console.log("");
-    
+
     let help = {};
 
     // load magellan help by default
     _.forEach(magellanHelp, (v, k) => {
-      if (!help[v.category]) {
-        help[v.category] = {};
+      if (v.visible === undefined || v.visible) {
+        if (!help[v.category]) {
+          help[v.category] = {};
+        }
+        help[v.category][k] = v;
       }
-
-      help[v.category][k] = v;
     });
 
+    // load desire framework help
     if (runOpts.settings.testFramework && runOpts.settings.testFramework.help) {
-      help[" Framework-specific (" + runOpts.settings.framework + ")"] = runOpts.settings.testFramework.help;
+      help[" Framework-specific (" + runOpts.settings.framework + ")"] = {};
+
+      _.forEach(runOpts.settings.testFramework.help, (v, k) => {
+        if (v.visible === undefined || v.visible) {
+          help[" Framework-specific (" + runOpts.settings.framework + ")"][k] = v;
+        }
+      });
     }
 
+    // load desire executor(s) help
     if (runOpts.settings.testExecutors) {
       _.forEach(runOpts.settings.testExecutors, (v, k) => {
         if (v.help) {
-          help[" Executor-specific (" + v.name + ")"] = v.help;
+          help[" Executor-specific (" + v.name + ")"] = {};
+
+          _.forEach(v.help, (itemValue, itemKey) => {
+            console.log(itemValue)
+            if (itemValue.visible === undefined || itemValue.visible) {
+              help[" Executor-specific (" + v.name + ")"][itemKey] = itemValue;
+            }
+          });
         }
       });
     }
 
     if (help) {
-      
       _.forEach(help, (helpValue, helpKey) => {
         runOpts.console.log(helpKey);
 

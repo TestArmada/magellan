@@ -30,6 +30,7 @@ const sauceSettings = require("./sauce/settings")();
 const browsers = require("./sauce/browsers");
 const loadRelativeModule = require("./util/load_relative_module");
 const processCleanup = require("./util/process_cleanup");
+const magellanArgs = require("./help").help;
 
 module.exports = (opts) => {
   const defer = Q.defer();
@@ -93,7 +94,7 @@ module.exports = (opts) => {
   //
   // Initialize Framework Plugins
   // ============================
-  //
+  // TODO: move to a function
 
   // We translate old names like "mocha" to the new module names for the
   // respective plugins that provide support for those frameworks. Officially,
@@ -140,6 +141,7 @@ module.exports = (opts) => {
   }
 
   // examine executor 
+  // TODO: move to a function
   // let formalExecutor = ["local"];
   let formalExecutors = ["./node_modules/testarmada-magellan/src/executor/local"];
 
@@ -171,7 +173,9 @@ module.exports = (opts) => {
       executorLoadException = e;
     }
   });
-  
+
+  // finish processing all params ===========================
+
   // Show help and exit if it's asked for
   if (runOpts.margs.argv.help) {
     const help = runOpts.require("./cli_help");
@@ -180,20 +184,31 @@ module.exports = (opts) => {
     return defer.promise;
   }
 
-  if (runOpts.margs.argv.list_browsers) {
-    runOpts.browsers.initialize(true).then(() => {
-      if (runOpts.margs.argv.device_additions) {
-        runOpts.browsers.addDevicesFromFile(runOpts.margs.argv.device_additions);
+  // handle executor specific params
+  const executorParams = _.omit(runOpts.margs.argv, _.keys(magellanArgs));
+
+  // ATTENTION: there should only be one executor param matched for the function call 
+  _.forEach(runOpts.settings.testExecutors, (v, k) => {
+    _.forEach(executorParams, (epValue, epKey) => {
+      if (v.help[epKey] && v.help[epKey].type === "function") {
+        // we found a match in current executor
+        // method name convention for an executor: PREFIX_string_string_string_...
+        let names = epKey.split("_");
+        names = names.slice(1, names.length);
+        let executorMethodName = _.camelCase(names.join(" "));
+
+        if (_.has(v, executorMethodName)) {
+          // method found in current executor
+          v[executorMethodName](runOpts, () => {
+            defer.resolve();
+          });
+        } else {
+          runOpts.console.error(clc.redBright("Error: executor" + k + " doesn't has method " + executorMethodName + "."));
+          defer.resolve();
+        }
       }
-      runOpts.browsers.listBrowsers();
-      defer.resolve();
-    }).catch((err) => {
-      runOpts.console.log("Couldn't fetch runOpts.browsers. Error: ", err);
-      runOpts.console.log(err.stack);
-      defer.reject(err);
     });
-    return defer.promise;
-  }
+  });
 
   if (!runOpts.settings.testFramework ||
     frameworkLoadException ||
@@ -215,7 +230,7 @@ module.exports = (opts) => {
       runOpts.console.log(frameworkInitializationException);
     }
 
-    defer.reject({error: "Couldn't start Magellan"});
+    defer.reject({ error: "Couldn't start Magellan" });
   }
 
   //
@@ -295,7 +310,7 @@ module.exports = (opts) => {
 
   if (_.isEmpty(tests)) {
     runOpts.console.log("Error: no tests found");
-    defer.reject({error: "No tests found"});
+    defer.reject({ error: "No tests found" });
     return defer.promise;
   }
 
@@ -453,7 +468,7 @@ module.exports = (opts) => {
       }
 
       // Fail the test suite or fail because of an internal crash
-      defer.reject({error: "Internal crash"});
+      defer.reject({ error: "Internal crash" });
     });
 
   return defer.promise;
