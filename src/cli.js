@@ -27,7 +27,8 @@ const SauceWorkerAllocator = require("./sauce/worker_allocator");
 const browserOptions = require("./detect_browsers");
 const settings = require("./settings");
 const sauceSettings = require("./sauce/settings")();
-const browsers = require("./sauce/browsers");
+const profiles = require("./profiles");
+// const browsers = require("./sauce/browsers");
 const loadRelativeModule = require("./util/load_relative_module");
 const processCleanup = require("./util/process_cleanup");
 const magellanArgs = require("./help").help;
@@ -41,7 +42,7 @@ module.exports = (opts) => {
     analytics,
     settings,
     sauceSettings,
-    browsers,
+    // browsers,
     yargs,
     margs,
     SauceWorkerAllocator,
@@ -52,6 +53,7 @@ module.exports = (opts) => {
     testFilters,
     browserOptions,
     processCleanup,
+    profiles,
     path,
     loadRelativeModule
   }, opts);
@@ -80,7 +82,8 @@ module.exports = (opts) => {
   const debug = runOpts.margs.argv.debug || false;
   const useSerialMode = runOpts.margs.argv.serial;
   const MAX_TEST_ATTEMPTS = parseInt(runOpts.margs.argv.max_test_attempts) || 3;
-  let selectedBrowsers;
+  // let selectedBrowsers;
+  let targetProfiles;
   let workerAllocator;
   let MAX_WORKERS;
 
@@ -168,7 +171,8 @@ module.exports = (opts) => {
 
   _.forEach(runOpts.settings.executors, (executor) => {
     try {
-      runOpts.settings.testExecutors[executor] = runOpts.require(runOpts.path.resolve(executor));
+      const targetExecutor = runOpts.require(runOpts.path.resolve(executor));
+      runOpts.settings.testExecutors[targetExecutor.shortName] = targetExecutor;
     } catch (e) {
       executorLoadException = e;
     }
@@ -349,7 +353,8 @@ module.exports = (opts) => {
 
         maxTestAttempts: MAX_TEST_ATTEMPTS,
 
-        browsers: selectedBrowsers,
+        profiles: targetProfiles,
+        // browsers: selectedBrowsers,
 
         listeners,
 
@@ -360,7 +365,7 @@ module.exports = (opts) => {
 
         allocator: workerAllocator,
 
-        sauceSettings: isSauce ? runOpts.sauceSettings : undefined,
+        // sauceSettings: isSauce ? runOpts.sauceSettings : undefined,
 
         onSuccess: () => {
           workerAllocator.teardown(() => {
@@ -388,88 +393,126 @@ module.exports = (opts) => {
     return deferred.promise;
   };
 
-  runOpts.browsers.initialize(isSauce)
-    .then(() => {
-      if (runOpts.margs.argv.device_additions) {
-        runOpts.browsers.addDevicesFromFile(runOpts.margs.argv.device_additions);
-      }
-    })
-    .then(runOpts.browserOptions.detectFromCLI.bind({}, runOpts.margs.argv, isSauce, isNodeBased))
-    .then((_selectedBrowsers) => {
-      selectedBrowsers = _selectedBrowsers;
-      if (!_selectedBrowsers) {
-        // If this list comes back completely undefined, it's because we didn't
-        // get anything back from either profile lookup or the saucelabs API, which
-        // likely means we requested a browser that doesn't exist or no longer exists.
-        runOpts.console.log(clc.redBright("\nError: No matching browsers have been found."
-          + "\nTo see a list of sauce browsers, use the --list_browsers option.\n"));
-        throw new Error("Invalid browser specified for Sauce support");
-      } else if (_selectedBrowsers.length === 0) {
-        runOpts.console.log(
-          clc.redBright("\nError: To use --sauce mode, you need to specify a browser."
-            + "\nTo see a list of sauce browsers, use the --list_browsers option.\n"));
-        throw new Error("No browser specified for Sauce support");
-      } else if (debug) {
-        runOpts.console.log("Selected browsers: ");
-        runOpts.console.log(_selectedBrowsers.map((b) => {
-          return [
-            b.browserId,
-            b.resolution ? b.resolution : "(any resolution)",
-            b.orientation ? b.orientation : "(any orientation)"
-          ].join(" ");
-        }).join("\n"));
-      }
-    })
-    .then(() => {
+  runOpts.profiles
+    .detectFromCLI(runOpts.margs.argv, runOpts.settings.testExecutors)
+    .then((_targetProfiles) => {
+      targetProfiles = _targetProfiles;
       //
       // Worker Count:
       // =============
       //
-      // Non-sauce mode:
-      //   Default to 8 workers if we're running phantomjs and *only* phantomjs,
-      //                otherwise 3 if other browsers are involved
-      //   Default to 1 worker in serial mode.
-      //
-      // Sauce mode:
       //   Default to 3 workers in parallel mode (default).
       //   Default to 1 worker in serial mode.
       //
-      /*eslint-disable no-extra-parens*/
-      if (isSauce) {
-        MAX_WORKERS = useSerialMode ? 1 : (parseInt(runOpts.margs.argv.max_workers) || 3);
-      } else {
-        const DEFAULT_MAX_WORKERS = (selectedBrowsers.length === 1
-          && selectedBrowsers[0] === "phantomjs") ? 8 : 3;
-        MAX_WORKERS = useSerialMode ?
-          1 : (parseInt(runOpts.margs.argv.max_workers) || DEFAULT_MAX_WORKERS);
-      }
+      MAX_WORKERS = useSerialMode ? 1 : (parseInt(runOpts.margs.argv.max_workers) || 3);
+      console.log(MAX_WORKERS);
 
-      if (isSauce) {
-        workerAllocator = new runOpts.SauceWorkerAllocator(MAX_WORKERS);
-      } else {
-        workerAllocator = new runOpts.WorkerAllocator(MAX_WORKERS);
-      }
+      workerAllocator = new runOpts.WorkerAllocator(MAX_WORKERS);
     })
-    .then(initializeListeners)
-    // NOTE: if we don't end up in catch() below, magellan exits with status code 0 naturally
-    .then(startSuite)
-    .then(() => {
-      defer.resolve();
-    })
-    .catch((err) => {
-      if (err) {
-        runOpts.console.error(clc.redBright("Error initializing Magellan"));
-        runOpts.console.log(clc.redBright("\nError description:"));
-        runOpts.console.error(err.toString());
-        runOpts.console.log(clc.redBright("\nError stack trace:"));
-        runOpts.console.log(err.stack);
-      } else {
-        // No err object means we didn't have an internal crash while setting up / tearing down
-      }
+  // .then(initializeListeners)
+  // // NOTE: if we don't end up in catch() below, magellan exits with status code 0 naturally
+  // .then(startSuite)
+  // .then(() => {
+  //   defer.resolve();
+  // })
+  // .catch((err) => {
+  //   if (err) {
+  //     runOpts.console.error(clc.redBright("Error initializing Magellan"));
+  //     runOpts.console.log(clc.redBright("\nError description:"));
+  //     runOpts.console.error(err.toString());
+  //     runOpts.console.log(clc.redBright("\nError stack trace:"));
+  //     runOpts.console.log(err.stack);
+  //   } else {
+  //     // No err object means we didn't have an internal crash while setting up / tearing down
+  //   }
 
-      // Fail the test suite or fail because of an internal crash
-      defer.reject({ error: "Internal crash" });
-    });
+  //   // Fail the test suite or fail because of an internal crash
+  //   defer.reject({ error: "Internal crash" });
+  // });
+
+
+  // runOpts.browsers.initialize(isSauce)
+  //   .then(() => {
+  //     if (runOpts.margs.argv.device_additions) {
+  //       runOpts.browsers.addDevicesFromFile(runOpts.margs.argv.device_additions);
+  //     }
+  //   })
+  //   .then(runOpts.browserOptions.detectFromCLI.bind({}, runOpts.margs.argv, isSauce, isNodeBased))
+  //   .then((_selectedBrowsers) => {
+  //     selectedBrowsers = _selectedBrowsers;
+  //     if (!_selectedBrowsers) {
+  //       // If this list comes back completely undefined, it's because we didn't
+  //       // get anything back from either profile lookup or the saucelabs API, which
+  //       // likely means we requested a browser that doesn't exist or no longer exists.
+  //       runOpts.console.log(clc.redBright("\nError: No matching browsers have been found."
+  //         + "\nTo see a list of sauce browsers, use the --list_browsers option.\n"));
+  //       throw new Error("Invalid browser specified for Sauce support");
+  //     } else if (_selectedBrowsers.length === 0) {
+  //       runOpts.console.log(
+  //         clc.redBright("\nError: To use --sauce mode, you need to specify a browser."
+  //           + "\nTo see a list of sauce browsers, use the --list_browsers option.\n"));
+  //       throw new Error("No browser specified for Sauce support");
+  //     } else if (debug) {
+  //       runOpts.console.log("Selected browsers: ");
+  //       runOpts.console.log(_selectedBrowsers.map((b) => {
+  //         return [
+  //           b.browserId,
+  //           b.resolution ? b.resolution : "(any resolution)",
+  //           b.orientation ? b.orientation : "(any orientation)"
+  //         ].join(" ");
+  //       }).join("\n"));
+  //     }
+  //   })
+  //   .then(() => {
+  //     //
+  //     // Worker Count:
+  //     // =============
+  //     //
+  //     // Non-sauce mode:
+  //     //   Default to 8 workers if we're running phantomjs and *only* phantomjs,
+  //     //                otherwise 3 if other browsers are involved
+  //     //   Default to 1 worker in serial mode.
+  //     //
+  //     // Sauce mode:
+  //     //   Default to 3 workers in parallel mode (default).
+  //     //   Default to 1 worker in serial mode.
+  //     //
+  //     /*eslint-disable no-extra-parens*/
+  //     if (isSauce) {
+  //       MAX_WORKERS = useSerialMode ? 1 : (parseInt(runOpts.margs.argv.max_workers) || 3);
+  //     } else {
+  //       const DEFAULT_MAX_WORKERS = (selectedBrowsers.length === 1
+  //         && selectedBrowsers[0] === "phantomjs") ? 8 : 3;
+  //       MAX_WORKERS = useSerialMode ?
+  //         1 : (parseInt(runOpts.margs.argv.max_workers) || DEFAULT_MAX_WORKERS);
+  //     }
+
+  //     if (isSauce) {
+  //       workerAllocator = new runOpts.SauceWorkerAllocator(MAX_WORKERS);
+  //     } else {
+  //       workerAllocator = new runOpts.WorkerAllocator(MAX_WORKERS);
+  //     }
+  //   })
+  //   .then(initializeListeners)
+  //   // NOTE: if we don't end up in catch() below, magellan exits with status code 0 naturally
+  //   .then(startSuite)
+  //   .then(() => {
+  //     defer.resolve();
+  //   })
+  //   .catch((err) => {
+  //     if (err) {
+  //       runOpts.console.error(clc.redBright("Error initializing Magellan"));
+  //       runOpts.console.log(clc.redBright("\nError description:"));
+  //       runOpts.console.error(err.toString());
+  //       runOpts.console.log(clc.redBright("\nError stack trace:"));
+  //       runOpts.console.log(err.stack);
+  //     } else {
+  //       // No err object means we didn't have an internal crash while setting up / tearing down
+  //     }
+
+  //     // Fail the test suite or fail because of an internal crash
+  //     defer.reject({ error: "Internal crash" });
+  //   });
 
   return defer.promise;
 };

@@ -2,6 +2,13 @@
 
 module.exports = {
   name: "testarmada-magellan-local-executor",
+  shortName: "local",
+
+  getCapabilities: (profile) => {
+    return new Promise((resolve, reject)=>{
+      resolve();
+    });
+  },
 
   listBrowsers: (opts, callback) => {
     console.log("wtff");
