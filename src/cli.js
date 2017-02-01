@@ -84,6 +84,7 @@ module.exports = (opts) => {
   const MAX_TEST_ATTEMPTS = parseInt(runOpts.margs.argv.max_test_attempts) || 3;
   // let selectedBrowsers;
   let targetProfiles;
+  let testExecutors;
   let workerAllocator;
   let MAX_WORKERS;
 
@@ -177,6 +178,8 @@ module.exports = (opts) => {
       executorLoadException = e;
     }
   });
+
+  testExecutors = runOpts.settings.testExecutors;
 
   // finish processing all params ===========================
 
@@ -354,6 +357,7 @@ module.exports = (opts) => {
         maxTestAttempts: MAX_TEST_ATTEMPTS,
 
         profiles: targetProfiles,
+        executors: testExecutors,
         // browsers: selectedBrowsers,
 
         listeners,
@@ -405,30 +409,28 @@ module.exports = (opts) => {
       //   Default to 1 worker in serial mode.
       //
       MAX_WORKERS = useSerialMode ? 1 : (parseInt(runOpts.margs.argv.max_workers) || 3);
-      console.log(MAX_WORKERS);
-
       workerAllocator = new runOpts.WorkerAllocator(MAX_WORKERS);
     })
-  // .then(initializeListeners)
-  // // NOTE: if we don't end up in catch() below, magellan exits with status code 0 naturally
-  // .then(startSuite)
-  // .then(() => {
-  //   defer.resolve();
-  // })
-  // .catch((err) => {
-  //   if (err) {
-  //     runOpts.console.error(clc.redBright("Error initializing Magellan"));
-  //     runOpts.console.log(clc.redBright("\nError description:"));
-  //     runOpts.console.error(err.toString());
-  //     runOpts.console.log(clc.redBright("\nError stack trace:"));
-  //     runOpts.console.log(err.stack);
-  //   } else {
-  //     // No err object means we didn't have an internal crash while setting up / tearing down
-  //   }
+    .then(initializeListeners)
+    // NOTE: if we don't end up in catch() below, magellan exits with status code 0 naturally
+    .then(startSuite)
+    .then(() => {
+      defer.resolve();
+    })
+    .catch((err) => {
+      if (err) {
+        runOpts.console.error(clc.redBright("Error initializing Magellan"));
+        runOpts.console.log(clc.redBright("\nError description:"));
+        runOpts.console.error(err.toString());
+        runOpts.console.log(clc.redBright("\nError stack trace:"));
+        runOpts.console.log(err.stack);
+      } else {
+        // No err object means we didn't have an internal crash while setting up / tearing down
+      }
 
-  //   // Fail the test suite or fail because of an internal crash
-  //   defer.reject({ error: "Internal crash" });
-  // });
+      // Fail the test suite or fail because of an internal crash
+      defer.reject({ error: "Internal crash" });
+    });
 
 
   // runOpts.browsers.initialize(isSauce)

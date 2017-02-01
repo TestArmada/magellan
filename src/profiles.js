@@ -3,6 +3,25 @@
 const _ = require("lodash");
 const hostedProfiles = require("./hosted_profiles");
 
+class Profile {
+  constructor(p) {
+    _.forEach(p, (v, k) => {
+      this[k] = v;
+    });
+  }
+
+  toString() {
+    return this.browserName + "@" + this.version;
+  }
+
+  getDetails() {
+    return this.browserName
+      + " " + (this.version ? "ver:" + this.version : "")
+      + " " + (this.resolution ? "res:" + this.resolution : "")
+      + (this.orientation ? "orientation:" + this.orientation : "");
+  }
+};
+
 module.exports = {
   detectFromCLI: (argv, executors, opts) => {
     /**
@@ -69,14 +88,14 @@ module.exports = {
             }
 
             if (argv.debug) {
-              runOpts.console.log("Selected profiles: ");
+              runOpts.console.log(" Selected profiles: ");
               _.forEach(profiles, (p) => {
                 let str = [];
 
                 _.map(p, (v, k) => {
                   str.push(k + ": " + v);
                 });
-                runOpts.console.log(str.join(", "));
+                runOpts.console.log("  " + str.join(", "));
               });
             }
 
@@ -98,7 +117,14 @@ module.exports = {
             Promise
               .all(profileResolvePromises)
               .then((targetProfiles) => {
-                resolve(targetProfiles);
+                let resolvedprofiles = [];
+
+                if (targetProfiles && targetProfiles.length > 0) {
+                  _.forEach(targetProfiles, (tp) => {
+                    resolvedprofiles.push(new Profile(tp));
+                  });
+                }
+                resolve(resolvedprofiles);
               })
               .catch((err) => {
                 reject(err);

@@ -29,8 +29,10 @@ module.exports = {
       .then(() => {
         return new Promise((resolve, reject) => {
           try {
-            const capabilities = SauceBrowsers.get(p);
-            resolve(capabilities[0]);
+            let capabilities = SauceBrowsers.get(p)[0];
+            // add executor info back to capabilities
+            capabilities.executor = profile.executor;
+            resolve(capabilities);
           } catch (e) {
             reject("Executor sauce cannot resolve profile "
               + profile);
