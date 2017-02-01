@@ -1,11 +1,16 @@
 "use strict";
 
+const fork = require("child_process").fork;
 const listSauceCliBrowsers = require("guacamole/src/cli_list");
 const SauceBrowsers = require("guacamole");
 
 module.exports = {
   name: "testarmada-magellan-sauce-executor",
   shortName: "sauce",
+
+  forkAndExecute: (testRun, options) => {
+    return fork(testRun.getCommand(), testRun.getArguments(), options);
+  },
 
   getCapabilities: (profile) => {
     // profile key mapping
@@ -16,11 +21,11 @@ module.exports = {
       id: profile.browser
     };
 
-    if(profile.resolution){
+    if (profile.resolution) {
       p.screenResolution = profile.resolution;
     }
 
-    if(profile.orientation){
+    if (profile.orientation) {
       p.deviceOrientation = profile.orientation;
     }
 

@@ -4,14 +4,24 @@ module.exports = {
   name: "testarmada-magellan-local-executor",
   shortName: "local",
 
+
+  forkAndExecute: (testRun, options) => {
+    return fork(testRun.getCommand(), testRun.getArguments(), options);
+  },
+
   getCapabilities: (profile) => {
-    return new Promise((resolve, reject)=>{
+    return new Promise((resolve, reject) => {
       resolve();
     });
   },
 
   listBrowsers: (opts, callback) => {
-    console.log("wtff");
+    const nightwatchConfig = require(path.resolve(opts.settings.testFramework.settings.nightwatchConfigFilePath));
+
+    const browsers = nightwatchConfig.test_settings;
+    _.forEach(browsers, (capabilities, browser) => {
+      console.log(browser, capabilities)
+    });
     callback();
   },
 
