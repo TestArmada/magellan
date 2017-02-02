@@ -62,7 +62,7 @@ class TestRunner {
       console,
       fs,
       mkdirSync,
-      fork,
+      // fork,
       // sauceBrowsers,
       settings,
       setTimeout,
