@@ -3,6 +3,7 @@
 const fork = require("child_process").fork;
 const listSauceCliBrowsers = require("guacamole/src/cli_list");
 const SauceBrowsers = require("guacamole");
+const _ = require("lodash");
 
 module.exports = {
   name: "testarmada-magellan-sauce-executor",
@@ -10,6 +11,43 @@ module.exports = {
 
   forkAndExecute: (testRun, options) => {
     return fork(testRun.getCommand(), testRun.getArguments(), options);
+  },
+
+  getProfiles: (opts) => {
+    return SauceBrowsers
+      .initialize()
+      .then(() => {
+        return new Promise((resolve, reject) => {
+          if (opts.yargs.argv.sauce_browser) {
+            let p = SauceBrowsers.get({
+              id: opts.yargs.argv.sauce_browser
+            });
+
+            p.executor = "sauce";
+            p.nightwatchEnv = "sauce";
+            resolve(p);
+          }
+          else if (opts.yargs.argv.sauce_browsers) {
+            const tempBrowsers = opts.yargs.argv.sauce_browsers.split(",");
+            let returnBrowsers = [];
+
+            _.forEach(tempBrowsers, (browser) => {
+              let p = SauceBrowsers.get({
+                id: browser
+              });
+              p.executor = "sauce";
+              p.nightwatchEnv = "sauce";
+
+              returnBrowsers = _.concat(returnBrowsers, p);
+            });
+
+            resolve(returnBrowsers);
+          }
+          else {
+            resolve();
+          }
+        });
+      });
   },
 
   getCapabilities: (profile) => {
@@ -37,6 +75,7 @@ module.exports = {
             let capabilities = SauceBrowsers.get(p)[0];
             // add executor info back to capabilities
             capabilities.executor = profile.executor;
+            capabilities.nightwatchEnv = profile.executor;
             resolve(capabilities);
           } catch (e) {
             reject("Executor sauce cannot resolve profile "

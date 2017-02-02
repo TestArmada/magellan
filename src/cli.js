@@ -23,10 +23,10 @@ const TestRunner = require("./test_runner");
 const getTests = require("./get_tests");
 const testFilters = require("./test_filter");
 const WorkerAllocator = require("./worker_allocator");
-const SauceWorkerAllocator = require("./sauce/worker_allocator");
-const browserOptions = require("./detect_browsers");
+// const SauceWorkerAllocator = require("./sauce/worker_allocator");
+// const browserOptions = require("./detect_browsers");
 const settings = require("./settings");
-const sauceSettings = require("./sauce/settings")();
+// const sauceSettings = require("./sauce/settings")();
 const profiles = require("./profiles");
 // const browsers = require("./sauce/browsers");
 const loadRelativeModule = require("./util/load_relative_module");
@@ -41,17 +41,17 @@ module.exports = (opts) => {
     console,
     analytics,
     settings,
-    sauceSettings,
+    // sauceSettings,
     // browsers,
     yargs,
     margs,
-    SauceWorkerAllocator,
+    // SauceWorkerAllocator,
     WorkerAllocator,
     TestRunner,
     process,
     getTests,
     testFilters,
-    browserOptions,
+    // browserOptions,
     processCleanup,
     profiles,
     path,

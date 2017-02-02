@@ -23,7 +23,8 @@ class Profile {
 };
 
 module.exports = {
-  detectFromCLI: (argv, executors, opts) => {
+  detectFromCLI: (opts) => {
+    // runOpts.margs.argv, runOpts.settings.testExecutors
     /**
      * Handle following command argument
      * --profile
@@ -32,6 +33,9 @@ module.exports = {
     const runOpts = _.assign({
       console
     }, opts);
+
+    const argv = runOpts.margs.argv;
+    const testExecutors = runOpts.settings.testExecutors;
 
     return new Promise((resolve, reject) => {
       let profiles = [];
@@ -136,6 +140,32 @@ module.exports = {
         } else {
           reject("Profile " + argv.profile + " not found!");
         }
+      } else {
+        // user passes profile information from command line directly, like --local_browser or some params tighted to an executor
+        let profileResolvePromises = [];
+
+        _.forEach(testExecutors, (executor) => {
+          profileResolvePromises.push(executor.getProfiles(opts));
+        });
+        
+        Promise
+          .all(profileResolvePromises)
+          .then((targetProfiles) => {
+            let resolvedprofiles = [];
+
+            if (targetProfiles && targetProfiles.length > 0) {
+              const flattenTargetProfiles = _.flatten(targetProfiles);
+              _.forEach(flattenTargetProfiles, (tp) => {
+                if (tp) {
+                  resolvedprofiles.push(new Profile(tp));
+                }
+              });
+            }
+            resolve(resolvedprofiles);
+          })
+          .catch((err) => {
+            reject(err);
+          });
       }
     });
   }
