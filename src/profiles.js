@@ -11,14 +11,13 @@ class Profile {
   }
 
   toString() {
-    return this.browserName + "@" + this.version;
-  }
+    let cap = this.desiredCapabilities || this;
 
-  getDetails() {
-    return this.browserName
-      + " " + (this.version ? "ver:" + this.version : "")
-      + " " + (this.resolution ? "res:" + this.resolution : "")
-      + (this.orientation ? "orientation:" + this.orientation : "");
+    return cap.browserName
+      + (cap.version ? "|version:" + cap.version : "")
+      + (cap.resolution ? "|resolution:" + cap.resolution : "")
+      + (cap.orientation ? "|orientation:" + cap.orientation : "")
+      + "|executor:" + this.executor;
   }
 };
 
@@ -147,7 +146,7 @@ module.exports = {
         _.forEach(testExecutors, (executor) => {
           profileResolvePromises.push(executor.getProfiles(opts));
         });
-        
+
         Promise
           .all(profileResolvePromises)
           .then((targetProfiles) => {
@@ -155,6 +154,7 @@ module.exports = {
 
             if (targetProfiles && targetProfiles.length > 0) {
               const flattenTargetProfiles = _.flatten(targetProfiles);
+
               _.forEach(flattenTargetProfiles, (tp) => {
                 if (tp) {
                   resolvedprofiles.push(new Profile(tp));

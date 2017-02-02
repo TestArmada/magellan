@@ -173,6 +173,7 @@ module.exports = (opts) => {
   _.forEach(runOpts.settings.executors, (executor) => {
     try {
       const targetExecutor = runOpts.require(runOpts.path.resolve(executor));
+      targetExecutor.validateConfig(runOpts);
       runOpts.settings.testExecutors[targetExecutor.shortName] = targetExecutor;
     } catch (e) {
       executorLoadException = e;

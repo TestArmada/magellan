@@ -3,7 +3,31 @@
 const fork = require("child_process").fork;
 const listSauceCliBrowsers = require("guacamole/src/cli_list");
 const SauceBrowsers = require("guacamole");
+const clc = require("cli-color");
 const _ = require("lodash");
+const argv = require("marge").argv;
+
+const config = {
+  // required:
+  username: null,
+  accessKey: null,
+  sauceConnectVersion: null,
+
+  // optional:
+  sauceTunnelId: null,
+  sharedSauceParentAccount: null,
+  tunnelTimeout: null,
+  useTunnels: null,
+  maxTunnels: null,
+  fastFailRegexps: null,
+
+  locksServerLocation: null,
+
+  maxTunnels: 1,
+  locksOutageTimeout: 1000 * 60 * 5,
+  locksPollingInterval: 2500,
+  locksRequestTimeout: 2500
+};
 
 module.exports = {
   name: "testarmada-magellan-sauce-executor",
@@ -11,6 +35,92 @@ module.exports = {
 
   forkAndExecute: (testRun, options) => {
     return fork(testRun.getCommand(), testRun.getArguments(), options);
+  },
+
+  validateConfig: (opts) => {
+    const runOpts = _.assign({}, {
+      argv,
+      console,
+      env: process.env
+    }, opts);
+    // required:
+    config.username = runOpts.env.SAUCE_USERNAME;
+    config.accessKey = runOpts.env.SAUCE_ACCESS_KEY;
+    config.sauceConnectVersion = runOpts.env.SAUCE_CONNECT_VERSION;
+    // optional:
+    config.sauceTunnelId = runOpts.argv.sauce_tunnel_id;
+    config.sharedSauceParentAccount = runOpts.argv.shared_sauce_parent_account;
+    config.useTunnels = !!runOpts.argv.sauce_create_tunnels;
+    config.tunnelTimeout = runOpts.env.SAUCE_TUNNEL_CLOSE_TIMEOUT;
+    config.fastFailRegexps = runOpts.env.SAUCE_TUNNEL_FAST_FAIL_REGEXPS;
+
+    config.locksServerLocation = runOpts.env.LOCKS_SERVER;
+
+    // Remove trailing / in locks server location if it's present.
+    if (typeof config.locksServerLocation === "string" && config.locksServerLocation.length > 0) {
+      if (config.locksServerLocation.charAt(config.locksServerLocation.length - 1) === "/") {
+        config.locksServerLocation = config.locksServerLocation.substr(0,
+          config.locksServerLocation.length - 1);
+      }
+    }
+
+    const parameterWarnings = {
+      username: {
+        required: true,
+        envKey: "SAUCE_USERNAME"
+      },
+      accessKey: {
+        required: true,
+        envKey: "SAUCE_ACCESS_KEY"
+      },
+      sauceConnectVersion: {
+        required: false,
+        envKey: "SAUCE_CONNECT_VERSION"
+      }
+    };
+
+    // Validate configuration if we have --sauce
+    if (runOpts.argv.sauce) {
+      let valid = true;
+
+      _.forEach(parameterWarnings, (v, k) => {
+        if (!config[k]) {
+          if (v.required) {
+            runOpts.console.log(
+              clc.redBright("Error! Sauce requires " + k + " to be set. Check if the"
+                + " environment variable $" + v.envKey + " is defined."));
+            valid = false;
+          } else {
+            runOpts.console.log(clc.yellowBright("Warning! No " + k + " is set. This is set via the"
+              + " environment variable $" + v.envKey + " . This isn't required, but can cause "
+              + "problems with Sauce if not set"));
+          }
+        }
+      });
+
+      if (!valid) {
+        throw new Error("Missing configuration for Saucelabs connection.");
+      }
+
+      if (runOpts.argv.sauce_create_tunnels) {
+        if (runOpts.argv.sauce_tunnel_id) {
+          throw new Error("Only one Saucelabs tunnel arg is allowed, --sauce_tunnel_id " +
+            "or --create_tunnels.");
+        }
+
+        if (runOpts.argv.shared_sauce_parent_account) {
+          throw new Error("--shared_sauce_parent_account only works with --sauce_tunnel_id.");
+        }
+      }
+    }
+
+    if (runOpts.argv.debug) {
+      runOpts.console.log("Sauce configuration: ", config);
+    }
+
+    runOpts.console.log("Sauce configuration OK");
+
+    return config;
   },
 
   getProfiles: (opts) => {
@@ -34,11 +144,12 @@ module.exports = {
             _.forEach(tempBrowsers, (browser) => {
               let p = SauceBrowsers.get({
                 id: browser
-              });
+              })[0];
+
               p.executor = "sauce";
               p.nightwatchEnv = "sauce";
 
-              returnBrowsers = _.concat(returnBrowsers, p);
+              returnBrowsers.push(p);
             });
 
             resolve(returnBrowsers);
@@ -93,7 +204,7 @@ module.exports = {
       .then(() => {
         return new Promise((resolve, reject) => {
           if (opts.margs.argv.device_additions) {
-            SauceBrowsers.addDevicesFromFile(runOpts.margs.argv.device_additions);
+            SauceBrowsers.addNormalizedBrowsersFromFile(runOpts.margs.argv.device_additions);
           }
           resolve();
         });

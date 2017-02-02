@@ -13,17 +13,20 @@ module.exports = {
     return fork(testRun.getCommand(), testRun.getArguments(), options);
   },
 
+  validateConfig: (opts) => {},
+
   getProfiles: (opts) => {
     const nightwatchConfig = require(path.resolve(opts.settings.testFramework.settings.nightwatchConfigFilePath));
     const browsers = nightwatchConfig.test_settings;
 
     return new Promise((resolve, reject) => {
       if (opts.yargs.argv.local_browser) {
-        if (browsers[opts.yargs.argv.local_browser]) {
-          let b = browsers[opts.yargs.argv.local_browser];
+        const localBrowser = opts.yargs.argv.local_browser;
+        if (browsers[localBrowser]) {
+          let b = browsers[localBrowser];
 
           b.executor = "local";
-          b.nightwatchEnv = opts.yargs.argv.local_browser;
+          b.nightwatchEnv = localBrowser;
 
           resolve([b]);
         }

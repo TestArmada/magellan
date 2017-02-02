@@ -147,16 +147,15 @@ class TestRunner {
   start() {
     this.startTime = (new Date()).getTime();
 
-    let profileStatement = " with ";
-    profileStatement += this.profiles.map((b) => b.toString()).join(", ");
+    let profileStatement = this.profiles.map((b) => b.toString()).join(", ");
 
     if (this.serial) {
       this.console.log(
-        "\nRunning " + this.numTests + " tests in serial mode" + profileStatement + "\n"
+        "\nRunning " + this.numTests + " tests in serial mode with [" + profileStatement + "]\n"
       );
     } else {
       this.console.log("\nRunning " + this.numTests + " tests with " + this.MAX_WORKERS
-        + " workers" + profileStatement + "\n");
+        + " workers with [" + profileStatement + "]\n");
     }
 
     if (this.tests.length === 0) {
@@ -339,7 +338,7 @@ class TestRunner {
 
         metadata: {
           test: test.locator.toString(),
-          browser: test.browser.browserId,
+          // browser: test.browser.browserId,
           // NOTE: attempt numbers are 1-indexed
           attemptNumber: (test.attempts + 1)
         }
