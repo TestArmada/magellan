@@ -398,7 +398,7 @@ module.exports = (opts) => {
   };
 
   runOpts.profiles
-    .detectFromCLI(runOpts.margs.argv, runOpts.settings.testExecutors)
+    .detectFromCLI(runOpts)
     .then((_targetProfiles) => {
       targetProfiles = _targetProfiles;
       //
