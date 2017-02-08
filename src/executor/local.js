@@ -9,11 +9,11 @@ module.exports = {
   shortName: "local",
 
 
-  forkAndExecute: (testRun, options) => {
+  execute: (testRun, options) => {
     return fork(testRun.getCommand(), testRun.getArguments(), options);
   },
 
-  validateConfig: (opts) => {},
+  validateConfig: (opts) => { },
 
   getProfiles: (opts) => {
     const nightwatchConfig = require(path.resolve(opts.settings.testFramework.settings.nightwatchConfigFilePath));

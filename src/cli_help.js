@@ -52,7 +52,6 @@ module.exports = {
           help[" Executor-specific (" + v.name + ")"] = {};
 
           _.forEach(v.help, (itemValue, itemKey) => {
-            console.log(itemValue)
             if (itemValue.visible === undefined || itemValue.visible) {
               help[" Executor-specific (" + v.name + ")"][itemKey] = itemValue;
             }

@@ -33,7 +33,7 @@ module.exports = {
   name: "testarmada-magellan-sauce-executor",
   shortName: "sauce",
 
-  forkAndExecute: (testRun, options) => {
+  execute: (testRun, options) => {
     return fork(testRun.getCommand(), testRun.getArguments(), options);
   },
 
@@ -119,7 +119,7 @@ module.exports = {
     }
 
     runOpts.console.log("Sauce configuration OK");
-
+    
     return config;
   },
 
@@ -129,12 +129,14 @@ module.exports = {
       .then(() => {
         return new Promise((resolve, reject) => {
           if (opts.yargs.argv.sauce_browser) {
-            let p = SauceBrowsers.get({
-              id: opts.yargs.argv.sauce_browser
-            });
+            let p = {
+              desiredCapabilities: SauceBrowsers.get({
+                id: opts.yargs.argv.sauce_browser
+              })[0],
+              executor: "sauce",
+              nightwatchEnv: "sauce"
+            };
 
-            p.executor = "sauce";
-            p.nightwatchEnv = "sauce";
             resolve(p);
           }
           else if (opts.yargs.argv.sauce_browsers) {
@@ -142,12 +144,13 @@ module.exports = {
             let returnBrowsers = [];
 
             _.forEach(tempBrowsers, (browser) => {
-              let p = SauceBrowsers.get({
-                id: browser
-              })[0];
-
-              p.executor = "sauce";
-              p.nightwatchEnv = "sauce";
+              let p = {
+                desiredCapabilities: SauceBrowsers.get({
+                  id: browser
+                })[0],
+                executor: "sauce",
+                nightwatchEnv: "sauce"
+              };
 
               returnBrowsers.push(p);
             });
@@ -183,11 +186,15 @@ module.exports = {
       .then(() => {
         return new Promise((resolve, reject) => {
           try {
-            let capabilities = SauceBrowsers.get(p)[0];
+            let desiredCapabilities = SauceBrowsers.get(p)[0];
             // add executor info back to capabilities
-            capabilities.executor = profile.executor;
-            capabilities.nightwatchEnv = profile.executor;
-            resolve(capabilities);
+            let p = {
+              desiredCapabilities: desiredCapabilities,
+              executor: profile.executor,
+              nightwatchEnv: profile.executor
+            };
+
+            resolve(p);
           } catch (e) {
             reject("Executor sauce cannot resolve profile "
               + profile);

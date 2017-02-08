@@ -280,11 +280,10 @@ class TestRunner {
       stdio: ["pipe", "pipe", "pipe", "ipc"]
     };
 
-    let childProcess;
+    let handler;
     try {
       //////////////////////////////////////////////////
-      // childProcess = this.fork(testRun.getCommand(), testRun.getArguments(), options);
-      childProcess = this.executors[test.profile.executor].forkAndExecute(testRun, options);
+      handler = this.executors[test.profile.executor].execute(testRun, options);
       this.notIdle();
     } catch (e) {
       deferred.reject(e);
@@ -294,8 +293,8 @@ class TestRunner {
     // Simulate some of the aspects of a node process by adding stdout and stderr streams
     // that can be used by listeners and reporters.
     const statusEmitter = new EventEmitter();
-    statusEmitter.stdout = childProcess.stdout;
-    statusEmitter.stderr = childProcess.stderr;
+    statusEmitter.stdout = handler.stdout;
+    statusEmitter.stderr = handler.stderr;
     const statusEmitterEmit = (type, message) => {
       statusEmitter.emit(type, message);
     };
@@ -386,11 +385,11 @@ class TestRunner {
       });
 
       // Detach ALL listeners that may have been attached
-      childProcess.stdout.removeAllListeners();
-      childProcess.stderr.removeAllListeners();
-      childProcess.stdout.unpipe();
-      childProcess.stderr.unpipe();
-      childProcess.removeAllListeners();
+      handler.stdout.removeAllListeners();
+      handler.stderr.removeAllListeners();
+      handler.stdout.unpipe();
+      handler.stderr.unpipe();
+      handler.removeAllListeners();
 
       statusEmitter.stdout = null;
       statusEmitter.stderr = null;
@@ -405,7 +404,7 @@ class TestRunner {
 
     if (this.debug) {
       // For debugging purposes.
-      childProcess.on("message", (msg) => {
+      handler.on("message", (msg) => {
         this.console.log("Message from worker:", msg);
       });
     }
@@ -417,13 +416,13 @@ class TestRunner {
     //
     // FIXME: make it possible to receive this information from test frameworks not based on nodejs
     //
-    childProcess.on("message", (message) => {
+    handler.on("message", (message) => {
       if (message.type === "selenium-session-info") {
         seleniumSessionId = message.sessionId;
       }
     });
 
-    childProcess.stdout.on("data", (data) => {
+    handler.stdout.on("data", (data) => {
       let text = ("" + data);
       if (text.trim() !== "") {
         text = text
@@ -445,7 +444,7 @@ class TestRunner {
       }
     });
 
-    childProcess.stderr.on("data", (data) => {
+    handler.stderr.on("data", (data) => {
       let text = ("" + data);
       if (text.trim() !== "") {
         text = text
@@ -467,7 +466,7 @@ class TestRunner {
       }
     });
 
-    childProcess.on("close", workerClosed);
+    handler.on("close", workerClosed);
 
     // A sentry monitors how long a given worker has been working. In every
     // strictness level except BAIL_NEVER, we kill a worker process and its
@@ -491,7 +490,7 @@ class TestRunner {
         this.clearInterval(sentry);
 
         // Tell the child to shut down the running test immediately
-        childProcess.send({
+        handler.send({
           signal: "bail",
           customMessage: "Killed by magellan after " + strictness.LONG_RUNNING_TEST
           + "ms (long running test)"

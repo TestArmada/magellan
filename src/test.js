@@ -57,7 +57,7 @@ class Test {
 
   // return an unambiguous representation of this test: path, browserId, resolution, orientation
   toString() {
-    return this.locator.toString() + " @" + this.profile.getDetails();
+    return this.locator.toString() + " @" + this.profile.toString();
     
     // this.browser.browserId
     //   + " " + (this.browser.resolution ? "res:" + this.browser.resolution : "")
