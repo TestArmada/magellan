@@ -21,11 +21,6 @@ let BAILED = false;
 class Tunnel {
   constructor(options) {
     this.options = _.assign({}, options);
-
-    if (!this.options.sauceTunnelId) {
-      // auto generate tunnel id
-      this.options.sauceTunnelId = guid();
-    }
   }
 
   initialize() {
@@ -64,7 +59,7 @@ class Tunnel {
     const username = this.options.username;
     const accessKey = this.options.accessKey;
 
-    console.info("Opening Sauce Tunnel ID: " + tunnelId + " for user " + username);
+    console.info("Opening sauce tunnel [" + tunnelId + "] for user " + username);
 
     const connect = (/*runDiagnostics*/) => {
       return new Promise((resolve, reject) => {
@@ -131,9 +126,10 @@ class Tunnel {
 
   close() {
     return new Promise((resolve, reject) => {
+      const self = this;
       if (this.tunnelInfo) {
         this.tunnelInfo.process.close(() => {
-          console.log("Closed Sauce Connect process");
+          console.log("Closed sauce tunnel [" + this.options.sauceTunnelId + "]");
           resolve();
         });
       } else {
@@ -184,7 +180,8 @@ module.exports = {
             .open();
         })
         .then(() => {
-          console.log("All tunnels open!  Continuing...");
+          console.log("Sauce tunnel is opened!  Continuing...");
+          console.log("Assigned tunnel [" + config.sauceTunnelId + "] to all workers");
         })
         .catch((err) => {
           return new Promise((resolve, reject) => {
@@ -193,18 +190,23 @@ module.exports = {
         });
     } else {
       return new Promise((resolve, reject) => {
-        resolve("=====> setup sauce");
+        let tunnelAnnouncement = config.sauceTunnelId;
+        if (config.sharedSauceParentAccount) {
+          tunnelAnnouncement = config.sharedSauceParentAccount + "/" + tunnelAnnouncement;
+        }
+        console.log("Connected to sauce tunnel pool with tunnel [" + tunnelAnnouncement + "]");
+        return resolve();
       });
     }
   },
 
   teardown: () => {
     // close tunnel if needed
-    if (tunnel) {
+    if (tunnel && config.useTunnels) {
       return tunnel
         .close()
         .then(() => {
-          console.log("All tunnels closed!  Continuing...");
+          console.log("Sauce tunnel is closed!  Continuing...");
         })
     } else {
       return new Promise((resolve, reject) => {
@@ -215,6 +217,10 @@ module.exports = {
 
   execute: (testRun, options) => {
     return fork(testRun.getCommand(), testRun.getArguments(), options);
+  },
+
+  getConfig: () => {
+    return config;
   },
 
   validateConfig: (opts) => {
@@ -292,6 +298,13 @@ module.exports = {
           throw new Error("--shared_sauce_parent_account only works with --sauce_tunnel_id.");
         }
       }
+
+      // after verification we want to add sauce_tunnel_id if it's null till now
+
+      if (!config.sauceTunnelId) {
+        // auto generate tunnel id
+        config.sauceTunnelId = guid();
+      }
     }
 
     if (runOpts.argv.debug) {
@@ -299,8 +312,6 @@ module.exports = {
     }
 
     runOpts.console.log("Sauce configuration OK");
-
-    console.log("-------->", config)
 
     return config;
   },
