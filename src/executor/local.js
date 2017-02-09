@@ -8,12 +8,27 @@ module.exports = {
   name: "testarmada-magellan-local-executor",
   shortName: "local",
 
+  setup: () => {
+    return new Promise((resolve, reject) => {
+      resolve("=====> setup local");
+    });
+  },
+
+  teardown: () => {
+    return new Promise((resolve, reject) => {
+      resolve("=====> teardown local");
+    });
+  },
 
   execute: (testRun, options) => {
     return fork(testRun.getCommand(), testRun.getArguments(), options);
   },
 
   validateConfig: (opts) => { },
+
+  getConfig: () => {
+    return null;
+  },
 
   getProfiles: (opts) => {
     const nightwatchConfig = require(path.resolve(opts.settings.testFramework.settings.nightwatchConfigFilePath));

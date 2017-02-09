@@ -6,6 +6,143 @@ const SauceBrowsers = require("guacamole");
 const clc = require("cli-color");
 const _ = require("lodash");
 const argv = require("marge").argv;
+const sauceConnectLauncher = require("sauce-connect-launcher");
+const path = require("path");
+
+const guid = require("../util/guid");
+const settings = require("../settings");
+
+let connectFailures = 1;
+/*eslint-disable no-magic-numbers*/
+const MAX_CONNECT_RETRIES = process.env.SAUCE_CONNECT_NUM_RETRIES || 10;
+const BASE_SELENIUM_PORT_OFFSET = 56000;
+let BAILED = false;
+
+class Tunnel {
+  constructor(options) {
+    this.options = _.assign({}, options);
+
+    if (!this.options.sauceTunnelId) {
+      // auto generate tunnel id
+      this.options.sauceTunnelId = guid();
+    }
+  }
+
+  initialize() {
+    return new Promise((resolve, reject) => {
+      if (!this.options.username) {
+        return reject("Sauce tunnel support is missing configuration: Sauce username.");
+      }
+
+      if (!this.options.accessKey) {
+        return reject("Sauce tunnel support is missing configuration: Sauce access key.");
+      }
+
+      // runOpts.analytics.push("sauce-connect-launcher-download");
+      sauceConnectLauncher.download({
+        logger: console.log.bind(console)
+      }, (err) => {
+        if (err) {
+          // runOpts.analytics.mark("sauce-connect-launcher-download", "failed");
+          console.log(clc.redBright("Failed to download sauce connect binary:"));
+          console.log(clc.redBright(err));
+          console.log(clc.redBright("sauce-connect-launcher will attempt to re-download " +
+            "next time it is run."));
+          reject(err);
+        } else {
+          // runOpts.analytics.mark("sauce-connect-launcher-download");
+          resolve();
+        }
+      });
+    });
+
+  }
+
+  open() {
+    this.tunnelInfo = null;
+    const tunnelId = this.options.sauceTunnelId;
+    const username = this.options.username;
+    const accessKey = this.options.accessKey;
+
+    console.info("Opening Sauce Tunnel ID: " + tunnelId + " for user " + username);
+
+    const connect = (/*runDiagnostics*/) => {
+      return new Promise((resolve, reject) => {
+        const logFilePath = path.resolve(settings.tempDir) + "/build-"
+          + settings.buildId + "_sauceconnect_" + tunnelId + ".log";
+        const sauceOptions = {
+          username,
+          accessKey,
+          tunnelIdentifier: tunnelId,
+          readyFileId: tunnelId,
+          verbose: settings.debug,
+          verboseDebugging: settings.debug,
+          logfile: logFilePath,
+          port: BASE_SELENIUM_PORT_OFFSET
+        };
+
+        if (this.options.fastFailRegexps) {
+          sauceOptions.fastFailRegexps = this.options.fastFailRegexpss;
+        }
+
+        if (settings.debug) {
+          console.log("calling sauceConnectLauncher() w/ ", sauceOptions);
+        }
+
+        sauceConnectLauncher(sauceOptions, (err, sauceConnectProcess) => {
+          if (err) {
+            if (settings.debug) {
+              console.log("Error from sauceConnectLauncher():");
+            }
+            console.error(err.message);
+            if (err.message && err.message.indexOf("Could not start Sauce Connect") > -1) {
+              return reject(err.message);
+            } else if (BAILED) {
+              connectFailures++;
+              // If some other parallel tunnel construction attempt has tripped the BAILED flag
+              // Stop retrying and report back a failure.
+              return reject(new Error("Bailed due to maximum number of tunnel retries."));
+            } else {
+              connectFailures++;
+
+              if (connectFailures >= MAX_CONNECT_RETRIES) {
+                // We've met or exceeded the number of max retries, stop trying to connect.
+                // Make sure other attempts don't try to re-state this error.
+                BAILED = true;
+                return reject(new Error("Failed to create a secure sauce tunnel after "
+                  + connectFailures + " attempts."));
+              } else {
+                // Otherwise, keep retrying, and hope this is merely a blip and not an outage.
+                console.log(">>> Sauce Tunnel Connection Failed!  Retrying "
+                  + connectFailures + " of " + MAX_CONNECT_RETRIES + " attempts...");
+                return connect();
+              }
+            }
+          } else {
+            this.tunnelInfo = { process: sauceConnectProcess };
+            return resolve();
+          }
+        });
+      });
+    };
+
+    return connect();
+  }
+
+  close() {
+    return new Promise((resolve, reject) => {
+      if (this.tunnelInfo) {
+        this.tunnelInfo.process.close(() => {
+          console.log("Closed Sauce Connect process");
+          resolve();
+        });
+      } else {
+        resolve();
+      }
+    });
+
+  }
+};
 
 const config = {
   // required:
@@ -29,9 +166,52 @@ const config = {
   locksRequestTimeout: 2500
 };
 
+let tunnel = null;
+
 module.exports = {
   name: "testarmada-magellan-sauce-executor",
   shortName: "sauce",
+
+  setup: () => {
+    if (config.useTunnels) {
+      // create new tunnel if needed
+      tunnel = new Tunnel(config);
+
+      return tunnel
+        .initialize()
+        .then(() => {
+          return tunnel
+            .open();
+        })
+        .then(() => {
+          console.log("All tunnels open!  Continuing...");
+        })
+        .catch((err) => {
+          return new Promise((resolve, reject) => {
+            reject(err);
+          });
+        });
+    } else {
+      return new Promise((resolve, reject) => {
+        resolve("=====> setup sauce");
+      });
+    }
+  },
+
+  teardown: () => {
+    // close tunnel if needed
+    if (tunnel) {
+      return tunnel
+        .close()
+        .then(() => {
+          console.log("All tunnels closed!  Continuing...");
+        })
+    } else {
+      return new Promise((resolve, reject) => {
+        resolve("=====> teardown sauce");
+      });
+    }
+  },
 
   execute: (testRun, options) => {
     return fork(testRun.getCommand(), testRun.getArguments(), options);
@@ -119,7 +299,9 @@ module.exports = {
     }
 
     runOpts.console.log("Sauce configuration OK");
-    
+
+    console.log("-------->", config)
+
     return config;
   },
 

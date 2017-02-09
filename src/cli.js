@@ -341,59 +341,86 @@ module.exports = (opts) => {
   const startSuite = () => {
     const deferred = Q.defer();
 
-    workerAllocator.initialize((err) => {
-      if (err) {
-        runOpts.console.error(
-          clc.redBright("Could not start Magellan. Got error while initializing"
-            + " worker allocator"));
-        deferred.reject(err);
-        return defer.promise;
-      }
+    Promise
+      .all(_.map(testExecutors, (executor) => executor.setup()))
+      .then((things) => {
+        workerAllocator.initialize((err) => {
+          if (err) {
+            runOpts.console.error(
+              clc.redBright("Could not start Magellan. Got error while initializing"
+                + " worker allocator"));
+            deferred.reject(err);
+            return defer.promise;
+          }
 
-      const testRunner = new runOpts.TestRunner(tests, {
-        debug,
+          const testRunner = new runOpts.TestRunner(tests, {
+            debug,
 
-        maxWorkers: MAX_WORKERS,
+            maxWorkers: MAX_WORKERS,
 
-        maxTestAttempts: MAX_TEST_ATTEMPTS,
+            maxTestAttempts: MAX_TEST_ATTEMPTS,
 
-        profiles: targetProfiles,
-        executors: testExecutors,
-        // browsers: selectedBrowsers,
+            profiles: targetProfiles,
+            executors: testExecutors,
+            // browsers: selectedBrowsers,
 
-        listeners,
+            listeners,
 
-        bailFast: runOpts.margs.argv.bail_fast ? true : false,
-        bailOnThreshold: runOpts.margs.argv.bail_early ? true : false,
+            bailFast: runOpts.margs.argv.bail_fast ? true : false,
+            bailOnThreshold: runOpts.margs.argv.bail_early ? true : false,
 
-        serial: useSerialMode,
+            serial: useSerialMode,
 
-        allocator: workerAllocator,
+            allocator: workerAllocator,
 
-        // sauceSettings: isSauce ? runOpts.sauceSettings : undefined,
+            // sauceSettings: isSauce ? runOpts.sauceSettings : undefined,
 
-        onSuccess: () => {
-          workerAllocator.teardown(() => {
-            runOpts.processCleanup(() => {
-              deferred.resolve();
-            });
+            onSuccess: () => {
+              workerAllocator.teardown(() => {
+                Promise
+                  .all(_.map(testExecutors, (executor) => executor.teardown()))
+                  .then((things) => {
+                    runOpts.processCleanup(() => {
+                      deferred.resolve();
+                    });
+                  })
+                  .catch((err) => {
+                    // we eat error here
+                    runOpts.processCleanup(() => {
+                      deferred.resolve();
+                    });
+                  });
+              });
+            },
+
+            onFailure: (/*failedTests*/) => {
+              workerAllocator.teardown(() => {
+                Promise
+                  .all(_.map(testExecutors, (executor) => executor.teardown()))
+                  .then((things) => {
+                    runOpts.processCleanup(() => {
+                      // Failed tests are not a failure in Magellan itself, so we pass an empty error
+                      // here so that we don't confuse the user. Magellan already outputs a failure
+                      // report to the screen in the case of failed tests.
+                      deferred.reject(null);
+                    });
+                  })
+                  .catch((err) => {
+                    // we eat error here
+                    runOpts.processCleanup(() => {
+                      deferred.reject(null);
+                    });
+                  });
+              });
+            }
           });
-        },
 
-        onFailure: (/*failedTests*/) => {
-          workerAllocator.teardown(() => {
-            runOpts.processCleanup(() => {
-              // Failed tests are not a failure in Magellan itself, so we pass an empty error
-              // here so that we don't confuse the user. Magellan already outputs a failure
-              // report to the screen in the case of failed tests.
-              deferred.reject(null);
-            });
-          });
-        }
+          testRunner.start();
+        });
+      })
+      .catch((err) => {
+        deferred.reject(err)
       });
-
-      testRunner.start();
-    });
 
     return deferred.promise;
   };
