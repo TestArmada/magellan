@@ -264,6 +264,12 @@ class TestRunner {
   // the test. The test will resolve with a test result whether it fails or passes.
   execute(testRun, test) {
     const deferred = Q.defer();
+    
+    if (testRun.enableExecutor
+      && typeof testRun.enableExecutor === "function") {
+      // if we have addExecutor defined in test run (new in magellan 10.0.0)
+      testRun.enableExecutor(test.executor);
+    }
 
     let env;
     try {
