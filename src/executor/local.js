@@ -20,6 +20,14 @@ module.exports = {
     });
   },
 
+  stage: (callback) => {
+    callback();
+  },
+
+  destory: (worker, callback) => {
+    callback();
+  },
+
   execute: (testRun, options) => {
     return fork(testRun.getCommand(), testRun.getArguments(), options);
   },

@@ -193,66 +193,83 @@ class TestRunner {
 
     this.analytics.push("acquire-worker-" + analyticsGuid);
 
-    this.allocator.get((error, worker) => {
-      if (!error) {
-        this.analytics.mark("acquire-worker-" + analyticsGuid);
+    const failTest = (error) => {
+      this.analytics.mark("acquire-worker-" + analyticsGuid, "failed");
+      // If the allocator could not give us a worker, pass
+      // back a failed test result with the allocator's error.
+      this.console.error("Worker allocator error: " + error);
+      this.console.error(error.stack);
 
-        this.runTest(test, worker)
-          .then((runResults) => {
-            // Give this worker back to the allocator
-            this.allocator.release(worker);
+      /*eslint-disable no-magic-numbers*/
+      test.workerIndex = -1;
+      test.error = undefined;
+      test.stdout = "";
+      test.stderr = error;
 
-            test.workerIndex = worker.index;
-            test.error = runResults.error;
-            test.stdout = runResults.stdout;
-            test.stderr = runResults.stderr;
+      test.fail();
 
-            // Pass or fail the test
-            if (runResults.error) {
-              test.fail();
-            } else {
-              test.pass();
-            }
+      onTestComplete(null, test);
+    };
 
-            onTestComplete(null, test);
-          })
-          .catch((runTestError) => {
-            // Catch a testing infrastructure error unrelated to the test itself failing.
-            // This indicates something went wrong with magellan itself. We still need
-            // to drain the queue, so we fail the test, even though the test itself may
-            // have not actually failed.
-            this.console.log(clc.redBright(
-              "Fatal internal error while running a test:", runTestError
-            ));
-            this.console.log(clc.redBright(runTestError.stack));
+    this.allocator.get((getWorkerError, worker) => {
+      if (!getWorkerError) {
 
-            // Give this worker back to the allocator
-            this.allocator.release(worker);
+        test.executor.stage((stageExecutorError, token) => {
+          if (!stageExecutorError) {
+            this.analytics.mark("acquire-worker-" + analyticsGuid);
 
-            test.workerIndex = worker.index;
-            test.error = runTestError;
-            test.stdout = "";
-            test.stderr = runTestError;
+            this.runTest(test, worker)
+              .then((runResults) => {
+                // Give this worker back to the allocator
+                test.executor.destory(token, () => {
+                  this.allocator.release(worker);
+                });
 
-            test.fail();
-            onTestComplete(runTestError, test);
-          });
+                test.workerIndex = worker.index;
+                test.error = runResults.error;
+                test.stdout = runResults.stdout;
+                test.stderr = runResults.stderr;
+
+                // Pass or fail the test
+                if (runResults.error) {
+                  test.fail();
+                } else {
+                  test.pass();
+                }
+
+                onTestComplete(null, test);
+              })
+              .catch((runTestError) => {
+                // Catch a testing infrastructure error unrelated to the test itself failing.
+                // This indicates something went wrong with magellan itself. We still need
+                // to drain the queue, so we fail the test, even though the test itself may
+                // have not actually failed.
+                this.console.log(clc.redBright(
+                  "Fatal internal error while running a test:", runTestError
+                ));
+                this.console.log(clc.redBright(runTestError.stack));
+
+                // Give this worker back to the allocator
+                test.executor.destory(() => {
+                  this.allocator.release(worker);
+                });
+
+                test.workerIndex = worker.index;
+                test.error = runTestError;
+                test.stdout = "";
+                test.stderr = runTestError;
+
+                test.fail();
+                onTestComplete(runTestError, test);
+              });
+          } else {
+            // fail test due to failure of allocator.get()
+            failTest(stageExecutorError);
+          }
+        });
       } else {
-        this.analytics.mark("acquire-worker-" + analyticsGuid, "failed");
-        // If the allocator could not give us a worker, pass
-        // back a failed test result with the allocator's error.
-        this.console.error("Worker allocator error: " + error);
-        this.console.error(error.stack);
-
-        /*eslint-disable no-magic-numbers*/
-        test.workerIndex = -1;
-        test.error = undefined;
-        test.stdout = "";
-        test.stderr = error;
-
-        test.fail();
-
-        onTestComplete(null, test);
+        // fail test due to failure of test.executor.stage()
+        failTest(getWorkerError);
       }
     });
   }
@@ -264,7 +281,7 @@ class TestRunner {
   // the test. The test will resolve with a test result whether it fails or passes.
   execute(testRun, test) {
     const deferred = Q.defer();
-    
+
     if (testRun.enableExecutor
       && typeof testRun.enableExecutor === "function") {
       // if we have addExecutor defined in test run (new in magellan 10.0.0)
