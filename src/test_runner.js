@@ -211,11 +211,12 @@ class TestRunner {
       onTestComplete(null, test);
     };
 
-    this.allocator.get((getWorkerError, worker) => {
-      if (!getWorkerError) {
+    test.executor.stage((stageExecutorError, token) => {
+      if (!stageExecutorError) {
 
-        test.executor.stage((stageExecutorError, token) => {
-          if (!stageExecutorError) {
+        this.allocator.get((getWorkerError, worker) => {
+          if (!getWorkerError) {
+            
             this.analytics.mark("acquire-worker-" + analyticsGuid);
 
             this.runTest(test, worker)
@@ -264,12 +265,12 @@ class TestRunner {
               });
           } else {
             // fail test due to failure of allocator.get()
-            failTest(stageExecutorError);
+            failTest(getWorkerError);
           }
         });
       } else {
         // fail test due to failure of test.executor.stage()
-        failTest(getWorkerError);
+        failTest(stageExecutorError);
       }
     });
   }
