@@ -14,20 +14,20 @@ module.exports = {
   debug(msg) {
     if (debug) {
       var deb = clc.blueBright("[DEBUG]");
-      this.output.log(util.format("[%s] %s %s", PREFIX, deb, msg));
+      this.output.log(util.format("%s [%s] %s", deb, PREFIX, msg));
     }
   },
   log(msg) {
     var info = clc.greenBright("[INFO]");
-    this.output.log(util.format("[%s] %s %s", PREFIX, info, msg));
+    this.output.log(util.format("%s [%s] %s", info, PREFIX, msg));
   },
   warn(msg) {
     var warn = clc.yellowBright("[WARN]");
-    this.output.warn(util.format("[%s] %s %s", PREFIX, warn, msg));
+    this.output.warn(util.format("%s [%s] %s", warn, PREFIX, msg));
   },
   err(msg) {
     var err = clc.redBright("[ERROR]");
-    this.output.error(util.format("[%s] %s %s", PREFIX, err, msg));
+    this.output.error(util.format("%s [%s] %s", err, PREFIX, msg));
   },
   loghelp(msg) {
     this.output.log(msg);
