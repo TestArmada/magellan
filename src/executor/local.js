@@ -10,13 +10,13 @@ module.exports = {
 
   setup: () => {
     return new Promise((resolve, reject) => {
-      resolve("=====> setup local");
+      resolve();
     });
   },
 
   teardown: () => {
     return new Promise((resolve, reject) => {
-      resolve("=====> teardown local");
+      resolve();
     });
   },
 

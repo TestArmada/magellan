@@ -12,6 +12,7 @@ const path = require("path");
 
 const guid = require("../util/guid");
 const settings = require("../settings");
+const analytics = require("./global_analytics");
 
 let connectFailures = 1;
 /*eslint-disable no-magic-numbers*/
@@ -149,19 +150,19 @@ class Tunnel {
         return reject("Sauce tunnel support is missing configuration: Sauce access key.");
       }
 
-      // runOpts.analytics.push("sauce-connect-launcher-download");
+      analytics.push("sauce-connect-launcher-download");
       sauceConnectLauncher.download({
         logger: console.log.bind(console)
       }, (err) => {
         if (err) {
-          // runOpts.analytics.mark("sauce-connect-launcher-download", "failed");
+          analytics.mark("sauce-connect-launcher-download", "failed");
           console.log(clc.redBright("Failed to download sauce connect binary:"));
           console.log(clc.redBright(err));
           console.log(clc.redBright("sauce-connect-launcher will attempt to re-download " +
             "next time it is run."));
           reject(err);
         } else {
-          // runOpts.analytics.mark("sauce-connect-launcher-download");
+          analytics.mark("sauce-connect-launcher-download");
           resolve();
         }
       });
@@ -295,14 +296,16 @@ module.exports = {
       return tunnel
         .initialize()
         .then(() => {
-          return tunnel
-            .open();
+          analytics.push("sauce-open-tunnels");
+          return tunnel.open();
         })
         .then(() => {
+          analytics.mark("sauce-open-tunnels");
           console.log("Sauce tunnel is opened!  Continuing...");
           console.log("Assigned tunnel [" + config.sauceTunnelId + "] to all workers");
         })
         .catch((err) => {
+          analytics.mark("sauce-open-tunnels", "failed");
           return new Promise((resolve, reject) => {
             reject(err);
           });

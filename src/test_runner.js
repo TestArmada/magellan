@@ -17,7 +17,6 @@ const mkdirSync = require("./mkdir_sync");
 const guid = require("./util/guid");
 const logStamp = require("./util/logstamp");
 const sanitizeFilename = require("sanitize-filename");
-// const sauceBrowsers = require("./sauce/browsers");
 const analytics = require("./global_analytics");
 
 const settings = require("./settings");
@@ -62,8 +61,6 @@ class TestRunner {
       console,
       fs,
       mkdirSync,
-      // fork,
-      // sauceBrowsers,
       settings,
       setTimeout,
       clearInterval,
@@ -103,14 +100,11 @@ class TestRunner {
 
     this.hasBailed = false;
 
-    // this.browsers = options.browsers;
     this.profiles = options.profiles;
     this.executors = options.executors;
     this.debug = options.debug;
 
     this.serial = options.serial || false;
-
-    // this.sauceSettings = options.sauceSettings;
 
     this.listeners = options.listeners || [];
 
@@ -542,10 +536,6 @@ class TestRunner {
       msg.push("-->");
       msg.push((this.serial ? "Serial mode" : "Worker " + worker.index) + ",");
 
-      // if (this.sauceSettings && worker.tunnelId) {
-      //   msg.push("tunnel id: " + worker.tunnelId + ",");
-      // }
-
       msg.push("mock port:" + worker.portOffset + ",");
 
       if (worker.token) {
@@ -593,11 +583,7 @@ class TestRunner {
         locator: test.locator,
 
         seleniumPort: worker.portOffset + 1,
-        mockingPort: worker.portOffset,
-
-        // tunnelId: worker.tunnelId,
-        // sauceSettings: this.sauceSettings,
-        // sauceBrowserSettings: test.sauceBrowserSettings
+        mockingPort: worker.portOffset
       });
     } catch (e) {
       deferred.reject(e);
@@ -605,9 +591,6 @@ class TestRunner {
 
     if (testRun) {
       this.setTimeout(() => {
-        // this.spawnTestProcess(testRun, test)
-        //   .then(deferred.resolve)
-        //   .catch(deferred.reject);
         this.execute(testRun, test)
           .then(deferred.resolve)
           .catch(deferred.reject);

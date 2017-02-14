@@ -55,13 +55,9 @@ class Test {
     this.runningTime = (new Date()).getTime() - this.startTime;
   }
 
-  // return an unambiguous representation of this test: path, browserId, resolution, orientation
+  // return an unambiguous representation of this test: path, profile information
   toString() {
     return this.locator.toString() + " @" + this.profile.toString();
-    
-    // this.browser.browserId
-    //   + " " + (this.browser.resolution ? "res:" + this.browser.resolution : "")
-    //   + (this.browser.orientation ? "orientation:" + this.browser.orientation : "");
   }
 
   getRuntime() {
