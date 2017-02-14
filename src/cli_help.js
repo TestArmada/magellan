@@ -5,6 +5,7 @@ const _ = require("lodash");
 const project = require("../package.json");
 const settings = require("./settings");
 const magellanHelp = require("./help").help;
+const logger = require("./logger");
 
 const MAX_HELP_KEY_WIDTH = 40;
 
@@ -13,14 +14,16 @@ const MAX_HELP_KEY_WIDTH = 40;
 module.exports = {
   help: (opts) => {
     const runOpts = _.assign({
-      console,
       settings
     }, opts);
 
-    runOpts.console.log("Usage: magellan [options]");
-    runOpts.console.log("");
-    runOpts.console.log("By default, magellan will run all available tests in parallel with phantomjs.");
-    runOpts.console.log("");
+    logger.loghelp("");
+    logger.loghelp("Usage: magellan [options]");
+    logger.loghelp("");
+    logger.loghelp("By default, magellan will run all available tests in parallel with phantomjs.");
+    logger.loghelp("");
+    logger.loghelp("Available options:");
+    logger.loghelp("");
 
     let help = {};
 
@@ -62,10 +65,10 @@ module.exports = {
 
     if (help) {
       _.forEach(help, (helpValue, helpKey) => {
-        runOpts.console.log(helpKey);
+        logger.loghelp(" " + helpKey);
 
         _.forEach(helpValue, (itemValue, itemKey) => {
-          let str = "  --" + itemKey;
+          let str = "   --" + itemKey;
           if (itemValue.example) {
             str += "=" + itemValue.example;
           }
@@ -77,13 +80,12 @@ module.exports = {
           // truncate just in case the example was too long to begin with
           str = str.substr(0, MAX_HELP_KEY_WIDTH);
           str += itemValue.description;
-          runOpts.console.log(str);
+          logger.loghelp(str);
         });
-        runOpts.console.log("");
+        logger.loghelp("");
       });
     }
 
-    runOpts.console.log("");
-    runOpts.console.log("magellan v" + project.version);
+    logger.log("magellan v" + project.version);
   }
 };

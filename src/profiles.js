@@ -2,6 +2,7 @@
 
 const _ = require("lodash");
 const hostedProfiles = require("./hosted_profiles");
+const logger = require("./logger");
 
 class Profile {
   constructor(p) {
@@ -29,9 +30,7 @@ module.exports = {
      * --profile
      * 
      */
-    const runOpts = _.assign({
-      console
-    }, opts);
+    const runOpts = _.assign({}, opts);
 
     const argv = runOpts.margs.argv;
     const testExecutors = runOpts.settings.testExecutors;
@@ -53,13 +52,13 @@ module.exports = {
           if (fetchedProfiles && fetchedProfiles.profiles) {
             argv.profiles = _.extend({}, argv.profiles, fetchedProfiles.profiles);
 
-            runOpts.console.log("Loaded hosted profiles from " + remoteProfileURL);
+            logger.log("Loaded hosted profiles from " + remoteProfileURL);
           }
 
           argv.profile = hostedProfiles.getProfileNameFromURL(argv.profile);
         }
 
-        runOpts.console.log("Requested profile(s): ", argv.profile);
+        logger.log("Requested profile(s): " + argv.profile);
 
         // NOTE: We check "profiles" (plural) here because that's what has
         // the actual profile definition. "profile" is the argument from the
@@ -91,14 +90,14 @@ module.exports = {
             }
 
             if (argv.debug) {
-              runOpts.console.log(" Selected profiles: ");
+              logger.debug(" Selected profiles: ");
               _.forEach(profiles, (p) => {
                 let str = [];
 
                 _.map(p, (v, k) => {
                   str.push(k + ": " + v);
                 });
-                runOpts.console.log("  " + str.join(", "));
+                logger.debug("  " + str.join(", "));
               });
             }
 
@@ -106,8 +105,10 @@ module.exports = {
             let profileResolvePromises = [];
 
             _.forEach(profiles, (profile) => {
-              // we treat all profiles with sauce executor by default
-              profile.executor = "sauce";
+              // we treat all missing profile.executor with sauce executor by default
+              if (!profile.executor) {
+                profile.executor = "sauce";
+              }
 
               if (executors[profile.executor]) {
                 profileResolvePromises.push(executors[profile.executor].getCapabilities(profile));

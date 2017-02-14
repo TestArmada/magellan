@@ -21,6 +21,7 @@ const analytics = require("./global_analytics");
 
 const settings = require("./settings");
 const Test = require("./test");
+const logger = require("./logger");
 
 const WORKER_START_DELAY = 1000;
 const WORKER_STOP_DELAY = 1500;
@@ -58,7 +59,6 @@ const strictness = {
 class TestRunner {
   constructor(tests, options, opts) {
     _.assign(this, {
-      console,
       fs,
       mkdirSync,
       settings,
@@ -124,7 +124,7 @@ class TestRunner {
       this.trends = {
         failures: {}
       };
-      this.console.log("Gathering trends to ./trends.json");
+      logger.log("Gathering trends to ./trends.json");
     }
 
     this.numTests = this.tests.length;
@@ -144,12 +144,10 @@ class TestRunner {
     let profileStatement = this.profiles.map((b) => b.toString()).join(", ");
 
     if (this.serial) {
-      this.console.log(
-        "\nRunning " + this.numTests + " tests in serial mode with [" + profileStatement + "]\n"
-      );
+      logger.log("Running " + this.numTests + " tests in serial mode with [" + profileStatement + "]");
     } else {
-      this.console.log("\nRunning " + this.numTests + " tests with " + this.MAX_WORKERS
-        + " workers with [" + profileStatement + "]\n");
+      logger.log("Running " + this.numTests + " tests with " + this.MAX_WORKERS
+        + " workers with [" + profileStatement + "]");
     }
 
     if (this.tests.length === 0) {
@@ -191,8 +189,8 @@ class TestRunner {
       this.analytics.mark("acquire-worker-" + analyticsGuid, "failed");
       // If the allocator could not give us a worker, pass
       // back a failed test result with the allocator's error.
-      this.console.error("Worker allocator error: " + error);
-      this.console.error(error.stack);
+      logger.err("Worker allocator error: " + error);
+      logger.err(error.stack);
 
       /*eslint-disable no-magic-numbers*/
       test.workerIndex = -1;
@@ -210,7 +208,7 @@ class TestRunner {
 
         this.allocator.get((getWorkerError, worker) => {
           if (!getWorkerError) {
-            
+
             this.analytics.mark("acquire-worker-" + analyticsGuid);
 
             this.runTest(test, worker)
@@ -239,10 +237,8 @@ class TestRunner {
                 // This indicates something went wrong with magellan itself. We still need
                 // to drain the queue, so we fail the test, even though the test itself may
                 // have not actually failed.
-                this.console.log(clc.redBright(
-                  "Fatal internal error while running a test:", runTestError
-                ));
-                this.console.log(clc.redBright(runTestError.stack));
+                logger.err("Fatal internal error while running a test:" + runTestError);
+                logger.err(runTestError.stack);
 
                 // Give this worker back to the allocator
                 test.executor.destory(() => {
@@ -319,7 +315,7 @@ class TestRunner {
 
     let sentry;
 
-    let seleniumSessionId;
+    let testMetadata;
     let stdout = clc.greenBright(logStamp()) + " Magellan child process start\n\n";
     let stderr = "";
 
@@ -355,7 +351,7 @@ class TestRunner {
 
         metadata: {
           test: test.locator.toString(),
-          // browser: test.browser.browserId,
+          profile: test.profile.id,
           // NOTE: attempt numbers are 1-indexed
           attemptNumber: (test.attempts + 1)
         }
@@ -390,16 +386,7 @@ class TestRunner {
         status: "finished",
         name: test.locator.toString(),
         passed: code === 0,
-        metadata: {
-          //
-          // TODO: move the generation of this resultURL to sauce support modules
-          // TODO: leave it open to have result URLs for anything including non-sauce tests
-          //       right now this is directly tied to sauce since sauce is the only thing that
-          //       generates a resultURL, but in the future, we may have resultURLs that
-          //       originate from somewhere else.
-          //
-          resultURL: "https://saucelabs.com/tests/" + seleniumSessionId
-        }
+        metadata: testMetadata
       });
 
       // Detach ALL listeners that may have been attached
@@ -423,7 +410,7 @@ class TestRunner {
     if (this.debug) {
       // For debugging purposes.
       handler.on("message", (msg) => {
-        this.console.log("Message from worker:", msg);
+        logger.debug("Message from worker:" + JSON.stringify(msg));
       });
     }
 
@@ -435,8 +422,8 @@ class TestRunner {
     // FIXME: make it possible to receive this information from test frameworks not based on nodejs
     //
     handler.on("message", (message) => {
-      if (message.type === "selenium-session-info") {
-        seleniumSessionId = message.sessionId;
+      if (message.type === "test-meta-data") {
+        testMetadata = message.metadata;
       }
     });
 
@@ -544,7 +531,7 @@ class TestRunner {
 
       msg.push("running test: " + test.toString());
 
-      this.console.log(msg.join(" "));
+      logger.log(msg.join(" "));
     }
 
     let testRun;
@@ -602,7 +589,7 @@ class TestRunner {
 
   gatherTrends() {
     if (this.settings.gatherTrends) {
-      this.console.log("Updating trends ...");
+      logger.log("Updating trends ...");
 
       let existingTrends;
 
@@ -621,21 +608,20 @@ class TestRunner {
 
       this.fs.writeFileSync("./trends.json", JSON.stringify(existingTrends, null, 2));
 
-      this.console.log("Updated trends at ./trends.json");
+      logger.log("Updated trends at ./trends.json");
     }
   }
 
   logFailedTests() {
-    this.console.log(clc.redBright("\n============= Failed Tests:  =============\n"));
+    logger.log(clc.redBright("============= Failed Tests:  ============="));
 
     this.failedTests.forEach((failedTest) => {
-      this.console.log("\n- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -"
-        + " - - - - - - - - - - - - - - - ");
-      this.console.log("Failed Test: " + failedTest.toString());
-      this.console.log(" # attempts: " + failedTest.attempts);
-      this.console.log("     output: ");
-      this.console.log(failedTest.stdout);
-      this.console.log(failedTest.stderr);
+      logger.log("- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -");
+      logger.log("Failed Test: " + failedTest.toString());
+      logger.log(" # attempts: " + failedTest.attempts);
+      logger.log("     output: ");
+      logger.log(failedTest.stdout);
+      logger.log(failedTest.stderr);
     });
   }
 
@@ -676,23 +662,23 @@ class TestRunner {
       }
     });
 
-    this.console.log(clc.greenBright("\n============= Suite Complete =============\n"));
-    this.console.log("     Status: " + status);
-    this.console.log("    Runtime: " + this.prettyMs((new Date()).getTime() - this.startTime));
-    this.console.log("Total tests: " + this.numTests);
-    this.console.log(" Successful: " + this.passedTests.length + " / " + this.numTests);
+    logger.log(clc.greenBright("============= Suite Complete ============="));
+    logger.log("     Status: " + status);
+    logger.log("    Runtime: " + this.prettyMs((new Date()).getTime() - this.startTime));
+    logger.log("Total tests: " + this.numTests);
+    logger.log(" Successful: " + this.passedTests.length + " / " + this.numTests);
 
     _.forOwn(retryMetrics, (testCount, numRetries) => {
-      this.console.log(testCount + " test(s) have retried: " + numRetries + " time(s)");
+      logger.log(testCount + " test(s) have retried: " + numRetries + " time(s)");
     });
 
     if (this.failedTests.length > 0) {
-      this.console.log("     Failed: " + this.failedTests.length + " / " + this.numTests);
+      logger.log("     Failed: " + this.failedTests.length + " / " + this.numTests);
     }
 
     const skipped = this.numTests - (this.passedTests.length + this.failedTests.length);
     if (this.hasBailed && skipped > 0) {
-      this.console.log("    Skipped: " + skipped);
+      logger.log("    Skipped: " + skipped);
     }
 
     const flushNextListener = () => {
@@ -711,7 +697,7 @@ class TestRunner {
             promise
               .then(flushNextListener)
               .catch((error) => {
-                this.console.log("Error when flushing listener output: ", error);
+                logger.log("Error when flushing listener output: ", error);
                 flushNextListener();
               });
           } else {
@@ -749,7 +735,7 @@ class TestRunner {
     if (this.hasBailed) {
       // Ignore results from this test if we've bailed. This is likely a test that
       // was killed when the build went into bail mode.
-      this.console.log("\u2716 " + clc.redBright("KILLED ") + " " + test.toString()
+      logger.log("\u2716 " + clc.redBright("KILLED ") + " " + test.toString()
         + (this.serial ? "\n" : ""));
       return;
     }
@@ -789,9 +775,9 @@ class TestRunner {
     let suffix;
 
     if (this.serial) {
-      prefix = "\n(" + (this.passedTests.length + this.failedTests.length) + " / "
+      prefix = "(" + (this.passedTests.length + this.failedTests.length) + " / "
         + this.numTests + ")";
-      suffix = "\n";
+      suffix = "";
     } else {
       prefix = "(" + (this.passedTests.length + this.failedTests.length) + " / "
         + this.numTests + ") <-- Worker " + test.workerIndex;
@@ -800,7 +786,7 @@ class TestRunner {
 
     const requeueNote = testRequeued ? clc.cyanBright("(will retry).  Spent "
       + test.getRuntime() + " msec") : "";
-    this.console.log(prefix + " "
+    logger.log(prefix + " "
       + (successful ? clc.greenBright("PASS ") : clc.redBright("FAIL ")) + requeueNote + " "
       + test.toString() + " " + suffix);
 
@@ -851,7 +837,7 @@ class TestRunner {
 
       if (totalAttempts > strictness.THRESHOLD_MIN_ATTEMPTS) {
         if (ratio > strictness.THRESHOLD) {
-          this.console.log("Magellan has seen at least " + (strictness.THRESHOLD * 100) + "% of "
+          logger.log("Magellan has seen at least " + (strictness.THRESHOLD * 100) + "% of "
             + " tests fail after seeing at least " + strictness.THRESHOLD_MIN_ATTEMPTS
             + " tests run. Bailing early.");
           return true;

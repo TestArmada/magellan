@@ -3,6 +3,7 @@
 const fork = require("child_process").fork;
 const path = require("path");
 const _ = require("lodash");
+const logger = require("../logger");
 
 module.exports = {
   name: "testarmada-magellan-local-executor",
@@ -50,6 +51,7 @@ module.exports = {
 
           b.executor = "local";
           b.nightwatchEnv = localBrowser;
+          b.id = localBrowser;
 
           resolve([b]);
         }
@@ -63,6 +65,7 @@ module.exports = {
 
             b.executor = "local";
             b.nightwatchEnv = browser;
+            b.id = browser;
 
             returnBrowsers.push(b);
           }
@@ -90,7 +93,7 @@ module.exports = {
     const browsers = nightwatchConfig.test_settings;
 
     _.forEach(browsers, (capabilities, browser) => {
-      console.log(browser, capabilities)
+      logger.log(browser, capabilities)
     });
     callback();
   },

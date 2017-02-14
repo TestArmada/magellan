@@ -7,6 +7,7 @@ const argv = require("marge").argv;
 const env = process.env;
 const fs = require("fs");
 const path = require("path");
+const logger = require("./logger");
 
 // Allow an external build id (eg: from CI system, for example) to be used. If we're not given one,
 // we generate a random build id instead. NOTE: This build id must work as a part of a filename.
@@ -40,7 +41,7 @@ try {
   if (fs.accessSync) {
     fs.accessSync(TEMP_DIR, fs.R_OK | fs.W_OK);
   }
-  console.log("Magellan is creating temporary files at: " + TEMP_DIR);
+  logger.log("Magellan is creating temporary files at: " + TEMP_DIR);
 } catch (e) {
   /* istanbul ignore next */
   throw new Error("Magellan cannot write to or create the temporary directory: " + TEMP_DIR);

@@ -3,14 +3,14 @@
 const path = require("path");
 const clc = require("cli-color");
 const _ = require("lodash");
+const logger = require("../logger");
 
 module.exports = (mPath, moduleIsOptional, opts) => {
   let resolvedRequire;
   mPath = mPath.trim();
 
   const runOpts = _.assign({
-    require,
-    console
+    require
   }, opts);
 
   if (mPath.charAt(0) === ".") {
@@ -25,8 +25,8 @@ module.exports = (mPath, moduleIsOptional, opts) => {
     RequiredModule = runOpts.require(resolvedRequire);
   } catch (e) {
     if (e.code === "MODULE_NOT_FOUND" && moduleIsOptional !== true) {
-      runOpts.console.error(clc.redBright("Error loading a module from user configuration."));
-      runOpts.console.error(clc.redBright("Cannot find module: " + resolvedRequire));
+      logger.err("Error loading a module from user configuration.");
+      logger.err("Cannot find module: " + resolvedRequire);
       throw new Error(e);
     } else if (e.code === "MODULE_NOT_FOUND" && moduleIsOptional === true) {
       // Do nothing

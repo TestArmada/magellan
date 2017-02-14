@@ -12,7 +12,8 @@ const path = require("path");
 
 const guid = require("../util/guid");
 const settings = require("../settings");
-const analytics = require("./global_analytics");
+const analytics = require("../global_analytics");
+const logger = require("../logger");
 
 let connectFailures = 1;
 /*eslint-disable no-magic-numbers*/
@@ -25,7 +26,7 @@ class Locks {
     this.options = _.assign({}, options);
 
     if (this.options.locksServerLocation) {
-      console.log("Using locks server at " + this.options.locksServerLocation
+      logger.log("Using locks server at " + this.options.locksServerLocation
         + " for VM traffic control.");
     }
   }
@@ -43,9 +44,8 @@ class Locks {
 
       // Poll the worker allocator until we have a known-good port, then run this test
       const poll = () => {
-        if (settings.debug) {
-          console.log("asking for VM..");
-        }
+        logger.debug("asking for VM..");
+
         request.post({
           url: this.options.locksServerLocation + "/claim",
           timeout: this.options.locksRequestTimeout,
@@ -59,20 +59,11 @@ class Locks {
             const result = JSON.parse(body);
             if (result) {
               if (result.accepted) {
-                if (settings.debug) {
-                  console.log("VM claim accepted, token: " + result.token);
-                }
-                // super.get.call(this, (getWorkerError, worker) => {
-                //   if (worker) {
-                //     worker.token = result.token;
-                //   }
-                //   callback(getWorkerError, worker);
-                // });
+                logger.debug("VM claim accepted, token: " + result.token);
+
                 callback(null, { token: result.token });
               } else {
-                if (settings.debug) {
-                  console.log("VM claim not accepted, waiting to try again ..");
-                }
+                logger.debug("VM claim not accepted, waiting to try again ..");
                 // If we didn't get a worker, try again
                 throw new Error("Request not accepted");
               }
@@ -96,11 +87,9 @@ class Locks {
               return callback(new Error("Gave up trying to get "
                 + "a saucelabs VM from locks server. " + e));
             } else {
-              if (settings.debug) {
-                console.log("Error from locks server, tolerating error and" +
-                  " waiting " + this.options.locksPollingInterval +
-                  "ms before trying again");
-              }
+              logger.debug("Error from locks server, tolerating error and" +
+                " waiting " + this.options.locksPollingInterval +
+                "ms before trying again");
               setTimeout(poll, this.options.locksPollingInterval);
             }
           }
@@ -156,10 +145,10 @@ class Tunnel {
       }, (err) => {
         if (err) {
           analytics.mark("sauce-connect-launcher-download", "failed");
-          console.log(clc.redBright("Failed to download sauce connect binary:"));
-          console.log(clc.redBright(err));
-          console.log(clc.redBright("sauce-connect-launcher will attempt to re-download " +
-            "next time it is run."));
+          logger.err("Failed to download sauce connect binary:");
+          logger.err(err);
+          logger.err("sauce-connect-launcher will attempt to re-download " +
+            "next time it is run.");
           reject(err);
         } else {
           analytics.mark("sauce-connect-launcher-download");
@@ -176,7 +165,7 @@ class Tunnel {
     const username = this.options.username;
     const accessKey = this.options.accessKey;
 
-    console.info("Opening sauce tunnel [" + tunnelId + "] for user " + username);
+    logger.log("Opening sauce tunnel [" + tunnelId + "] for user " + username);
 
     const connect = (/*runDiagnostics*/) => {
       return new Promise((resolve, reject) => {
@@ -197,16 +186,13 @@ class Tunnel {
           sauceOptions.fastFailRegexps = this.options.fastFailRegexpss;
         }
 
-        if (settings.debug) {
-          console.log("calling sauceConnectLauncher() w/ ", sauceOptions);
-        }
+        logger.debug("calling sauceConnectLauncher() w/ " + JSON.stringify(sauceOptions));
 
         sauceConnectLauncher(sauceOptions, (err, sauceConnectProcess) => {
           if (err) {
-            if (settings.debug) {
-              console.log("Error from sauceConnectLauncher():");
-            }
-            console.error(err.message);
+            logger.debug("Error from sauceConnectLauncher():");
+            logger.debug(err.message);
+
             if (err.message && err.message.indexOf("Could not start Sauce Connect") > -1) {
               return reject(err.message);
             } else if (BAILED) {
@@ -225,7 +211,7 @@ class Tunnel {
                   + connectFailures + " attempts."));
               } else {
                 // Otherwise, keep retrying, and hope this is merely a blip and not an outage.
-                console.log(">>> Sauce Tunnel Connection Failed!  Retrying "
+                logger.err(">>> Sauce Tunnel Connection Failed!  Retrying "
                   + connectFailures + " of " + MAX_CONNECT_RETRIES + " attempts...");
                 return connect();
               }
@@ -245,7 +231,7 @@ class Tunnel {
     return new Promise((resolve, reject) => {
       const self = this;
       if (this.tunnelInfo) {
-        console.log("Closing sauce tunnel [" + this.options.sauceTunnelId + "]");
+        logger.log("Closing sauce tunnel [" + this.options.sauceTunnelId + "]");
         this.tunnelInfo.process.close(() => {
           resolve();
         });
@@ -301,8 +287,8 @@ module.exports = {
         })
         .then(() => {
           analytics.mark("sauce-open-tunnels");
-          console.log("Sauce tunnel is opened!  Continuing...");
-          console.log("Assigned tunnel [" + config.sauceTunnelId + "] to all workers");
+          logger.log("Sauce tunnel is opened!  Continuing...");
+          logger.log("Assigned tunnel [" + config.sauceTunnelId + "] to all workers");
         })
         .catch((err) => {
           analytics.mark("sauce-open-tunnels", "failed");
@@ -316,7 +302,7 @@ module.exports = {
         if (config.sharedSauceParentAccount) {
           tunnelAnnouncement = config.sharedSauceParentAccount + "/" + tunnelAnnouncement;
         }
-        console.log("Connected to sauce tunnel pool with tunnel [" + tunnelAnnouncement + "]");
+        logger.log("Connected to sauce tunnel pool with tunnel [" + tunnelAnnouncement + "]");
         return resolve();
       });
     }
@@ -328,7 +314,7 @@ module.exports = {
       return tunnel
         .close()
         .then(() => {
-          console.log("Sauce tunnel is closed!  Continuing...");
+          logger.log("Sauce tunnel is closed!  Continuing...");
         })
     } else {
       return new Promise((resolve, reject) => {
@@ -356,7 +342,6 @@ module.exports = {
   validateConfig: (opts) => {
     const runOpts = _.assign({}, {
       argv,
-      console,
       env: process.env
     }, opts);
     // required:
@@ -396,20 +381,20 @@ module.exports = {
     };
 
     // Validate configuration if we have --sauce
-    if (runOpts.argv.sauce) {
+    if (runOpts.argv.sauce_browsers
+      || runOpts.argv.sauce_browser) {
       let valid = true;
 
       _.forEach(parameterWarnings, (v, k) => {
         if (!config[k]) {
           if (v.required) {
-            runOpts.console.log(
-              clc.redBright("Error! Sauce requires " + k + " to be set. Check if the"
-                + " environment variable $" + v.envKey + " is defined."));
+            logger.err("Error! Sauce requires " + k + " to be set. Check if the"
+              + " environment variable $" + v.envKey + " is defined.");
             valid = false;
           } else {
-            runOpts.console.log(clc.yellowBright("Warning! No " + k + " is set. This is set via the"
+            logger.warn("Warning! No " + k + " is set. This is set via the"
               + " environment variable $" + v.envKey + " . This isn't required, but can cause "
-              + "problems with Sauce if not set"));
+              + "problems with Sauce if not set");
           }
         }
       });
@@ -431,17 +416,16 @@ module.exports = {
 
       // after verification we want to add sauce_tunnel_id if it's null till now
 
-      if (!config.sauceTunnelId) {
+      if (!config.sauceTunnelId && config.useTunnels) {
         // auto generate tunnel id
         config.sauceTunnelId = guid();
       }
     }
 
-    if (runOpts.argv.debug) {
-      runOpts.console.log("Sauce configuration: ", config);
-    }
+    logger.debug("Sauce configuration: ");
+    logger.debug(JSON.stringify(config));
 
-    runOpts.console.log("Sauce configuration OK");
+    logger.log("Sauce configuration OK");
 
     return config;
   },
@@ -457,7 +441,8 @@ module.exports = {
                 id: opts.yargs.argv.sauce_browser
               })[0],
               executor: "sauce",
-              nightwatchEnv: "sauce"
+              nightwatchEnv: "sauce",
+              id: opts.yargs.argv.sauce_browser
             };
 
             resolve(p);
@@ -472,7 +457,9 @@ module.exports = {
                   id: browser
                 })[0],
                 executor: "sauce",
-                nightwatchEnv: "sauce"
+                nightwatchEnv: "sauce",
+                // id is for magellan reporter
+                id: browser
               };
 
               returnBrowsers.push(p);
@@ -544,8 +531,8 @@ module.exports = {
           listSauceCliBrowsers((browserTable) => {
             // convert table heading
             browserTable.options.head[1] = "Copy-Paste Command-Line Option";
-            opts.console.log(browserTable.toString());
-            opts.console.log("");
+            logger.loghelp(browserTable.toString());
+            logger.loghelp("");
             resolve();
           });
         });
@@ -554,8 +541,8 @@ module.exports = {
         callback();
       })
       .catch((err) => {
-        runOpts.console.log("Couldn't fetch sauce browsers. Error: ", err);
-        runOpts.console.log(err.stack);
+        logger.err("Couldn't fetch sauce browsers. Error: " + err);
+        logger.err(err.stack);
         callback();
       });
   },
@@ -577,11 +564,6 @@ module.exports = {
       "visible": true,
       "type": "function",
       "description": "List the available browsers configured (Guacamole integrated)."
-    },
-    "sauce": {
-      "visible": true,
-      "type": "boolean",
-      "description": "Run tests on SauceLabs cloud."
     },
     "sauce_create_tunnels": {
       "visible": true,

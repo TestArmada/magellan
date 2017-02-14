@@ -28,13 +28,13 @@ const profiles = require("./profiles");
 const loadRelativeModule = require("./util/load_relative_module");
 const processCleanup = require("./util/process_cleanup");
 const magellanArgs = require("./help").help;
+const logger = require("./logger");
 
 module.exports = (opts) => {
   const defer = Q.defer();
 
   const runOpts = _.assign({
     require,
-    console,
     analytics,
     settings,
     yargs,
@@ -52,15 +52,15 @@ module.exports = (opts) => {
 
   const project = runOpts.require("../package.json");
 
-  runOpts.console.log("Magellan " + project.version);
+  logger.log("Magellan " + project.version);
 
   const defaultConfigFilePath = "./magellan.json";
   const configFilePath = runOpts.yargs.argv.config;
 
   if (configFilePath) {
-    runOpts.console.log("Will try to load configuration from " + configFilePath);
+    logger.log("Will try to load configuration from " + configFilePath);
   } else {
-    runOpts.console.log("Will try to load configuration from default of " + defaultConfigFilePath);
+    logger.log("Will try to load configuration from default of " + defaultConfigFilePath);
   }
 
   // NOTE: marge can throw an error here if --config points at a file that doesn't exist
@@ -147,12 +147,12 @@ module.exports = (opts) => {
     } else if (_.isString(runOpts.margs.argv.executors)) {
       formalExecutors = [runOpts.margs.argv.executors];
     } else {
-      runOpts.console.error(clc.redBright("Error: executors only accepts string and array"));
-      runOpts.console.log(clc.yellowBright("Setting executor to \"local\" by default"));
+      logger.err("Error: executors only accepts string and array");
+      logger.warn("Setting executor to \"local\" by default");
     }
   } else {
-    runOpts.console.warn(clc.yellowBright("Warning: no executor is passed in"));
-    runOpts.console.log(clc.yellowBright("Setting executor to \"local\" by default"));
+    logger.warn("Warning: no executor is passed in");
+    logger.warn("Setting executor to \"local\" by default");
   }
 
   runOpts.settings.executors = formalExecutors;
@@ -202,7 +202,7 @@ module.exports = (opts) => {
             defer.resolve();
           });
         } else {
-          runOpts.console.error(clc.redBright("Error: executor" + k + " doesn't has method " + executorMethodName + "."));
+          logger.err("Error: executor" + k + " doesn't has method " + executorMethodName + ".");
           defer.resolve();
         }
       }
@@ -212,21 +212,20 @@ module.exports = (opts) => {
   if (!runOpts.settings.testFramework ||
     frameworkLoadException ||
     frameworkInitializationException) {
-    runOpts.console.error(clc.redBright("Error: Could not start Magellan."));
+    logger.err("Error: Could not start Magellan.");
     if (frameworkLoadException) {
-      runOpts.console.error(clc.redBright("Error: Could not load the testing framework plugin '"
+      logger.err("Error: Could not load the testing framework plugin '"
         + runOpts.settings.framework + "'."
         + "\nCheck and make sure your package.json includes a module named '"
         + runOpts.settings.framework + "'."
         + "\nIf it does not, you can remedy this by typing:"
-        + "\n\nnpm install --save " + runOpts.settings.framework));
-      runOpts.console.log(frameworkLoadException);
+        + "\n\nnpm install --save " + runOpts.settings.framework);
+      logger.log(frameworkLoadException);
     } else /* istanbul ignore else */ if (frameworkInitializationException) {
-      runOpts.console.error(
-        clc.redBright("Error: Could not initialize the testing framework plugin '"
+      logger.err("Error: Could not initialize the testing framework plugin '"
           + runOpts.settings.framework + "'."
-          + "\nThis plugin was found and loaded, but an error occurred during initialization:"));
-      runOpts.console.log(frameworkInitializationException);
+          + "\nThis plugin was found and loaded, but an error occurred during initialization:");
+      logger.log(frameworkInitializationException);
     }
 
     defer.reject({ error: "Couldn't start Magellan" });
@@ -308,7 +307,7 @@ module.exports = (opts) => {
   const tests = runOpts.getTests(runOpts.testFilters.detectFromCLI(runOpts.margs.argv));
 
   if (_.isEmpty(tests)) {
-    runOpts.console.log("Error: no tests found");
+    logger.log("Error: no tests found");
     defer.reject({ error: "No tests found" });
     return defer.promise;
   }
@@ -337,9 +336,8 @@ module.exports = (opts) => {
       .then((things) => {
         workerAllocator.initialize((err) => {
           if (err) {
-            runOpts.console.error(
-              clc.redBright("Could not start Magellan. Got error while initializing"
-                + " worker allocator"));
+            logger.err("Could not start Magellan. Got error while initializing"
+                + " worker allocator");
             deferred.reject(err);
             return defer.promise;
           }
@@ -435,11 +433,11 @@ module.exports = (opts) => {
     })
     .catch((err) => {
       if (err) {
-        runOpts.console.error(clc.redBright("Error initializing Magellan"));
-        runOpts.console.log(clc.redBright("\nError description:"));
-        runOpts.console.error(err.toString());
-        runOpts.console.log(clc.redBright("\nError stack trace:"));
-        runOpts.console.log(err.stack);
+        logger.err("Error initializing Magellan");
+        logger.err("\nError description:");
+        logger.err(err.toString());
+        logger.err("\nError stack trace:");
+        logger.err(err.stack);
       } else {
         // No err object means we didn't have an internal crash while setting up / tearing down
       }
