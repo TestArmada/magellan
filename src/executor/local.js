@@ -10,13 +10,13 @@ module.exports = {
   shortName: "local",
 
   setup: () => {
-    return new Promise((resolve, reject) => {
+    return new Promise((resolve) => {
       resolve();
     });
   },
 
   teardown: () => {
-    return new Promise((resolve, reject) => {
+    return new Promise((resolve) => {
       resolve();
     });
   },
@@ -25,7 +25,7 @@ module.exports = {
     callback();
   },
 
-  destory: (worker, callback) => {
+  wrapup: (worker, callback) => {
     callback();
   },
 
@@ -33,21 +33,24 @@ module.exports = {
     return fork(testRun.getCommand(), testRun.getArguments(), options);
   },
 
+  /*eslint-disable no-unused-vars*/
   validateConfig: (opts) => { },
 
   getConfig: () => {
     return null;
   },
 
+  /*eslint-disable global-require*/
   getProfiles: (opts) => {
-    const nightwatchConfig = require(path.resolve(opts.settings.testFramework.settings.nightwatchConfigFilePath));
+    const configPath = opts.settings.testFramework.settings.nightwatchConfigFilePath;
+    const nightwatchConfig = require(path.resolve(configPath));
     const browsers = nightwatchConfig.test_settings;
 
     return new Promise((resolve, reject) => {
       if (opts.yargs.argv.local_browser) {
         const localBrowser = opts.yargs.argv.local_browser;
         if (browsers[localBrowser]) {
-          let b = browsers[localBrowser];
+          const b = browsers[localBrowser];
 
           b.executor = "local";
           b.nightwatchEnv = localBrowser;
@@ -57,11 +60,11 @@ module.exports = {
         }
       } else if (opts.yargs.argv.local_browsers) {
         const tempBrowsers = opts.yargs.argv.local_browsers.split(",");
-        let returnBrowsers = [];
+        const returnBrowsers = [];
 
         _.forEach(tempBrowsers, (browser) => {
           if (browsers[browser]) {
-            let b = browsers[browser];
+            const b = browsers[browser];
 
             b.executor = "local";
             b.nightwatchEnv = browser;
@@ -78,22 +81,29 @@ module.exports = {
     });
   },
 
-  getCapabilities: (profile) => {
-    const nightwatchConfig = require(path.resolve(opts.settings.testFramework.settings.nightwatchConfigFilePath));
+  /*eslint-disable global-require*/
+  getCapabilities: (profile, opts) => {
+    const configPath = opts.settings.testFramework.settings.nightwatchConfigFilePath;
+    const nightwatchConfig = require(path.resolve(configPath));
     const browsers = nightwatchConfig.test_settings;
 
     return new Promise((resolve, reject) => {
-      if (browsers[profile])
+      if (browsers[profile]) {
         resolve();
+      } else {
+        reject("profile: " + profile + " isn't found");
+      }
     });
   },
 
+  /*eslint-disable global-require*/
   listBrowsers: (opts, callback) => {
-    const nightwatchConfig = require(path.resolve(opts.settings.testFramework.settings.nightwatchConfigFilePath));
+    const configPath = opts.settings.testFramework.settings.nightwatchConfigFilePath;
+    const nightwatchConfig = require(path.resolve(configPath));
     const browsers = nightwatchConfig.test_settings;
 
     _.forEach(browsers, (capabilities, browser) => {
-      logger.log(browser, capabilities)
+      logger.log(browser, capabilities);
     });
     callback();
   },

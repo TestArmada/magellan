@@ -12,7 +12,7 @@ class Profile {
   }
 
   toString() {
-    let cap = this.desiredCapabilities || this;
+    const cap = this.desiredCapabilities || this;
 
     return cap.browserName
       + (cap.version ? "|version:" + cap.version : "")
@@ -20,7 +20,7 @@ class Profile {
       + (cap.orientation ? "|orientation:" + cap.orientation : "")
       + "|executor:" + this.executor;
   }
-};
+}
 
 module.exports = {
   detectFromCLI: (opts) => {
@@ -28,7 +28,7 @@ module.exports = {
     /**
      * Handle following command argument
      * --profile
-     * 
+     *
      */
     const runOpts = _.assign({}, opts);
 
@@ -92,7 +92,7 @@ module.exports = {
             if (argv.debug) {
               logger.debug(" Selected profiles: ");
               _.forEach(profiles, (p) => {
-                let str = [];
+                const str = [];
 
                 _.map(p, (v, k) => {
                   str.push(k + ": " + v);
@@ -102,7 +102,7 @@ module.exports = {
             }
 
             // convert profile to an executor-understandable capabilities
-            let profileResolvePromises = [];
+            const profileResolvePromises = [];
 
             _.forEach(profiles, (profile) => {
               // we treat all missing profile.executor with sauce executor by default
@@ -110,8 +110,9 @@ module.exports = {
                 profile.executor = "sauce";
               }
 
-              if (executors[profile.executor]) {
-                profileResolvePromises.push(executors[profile.executor].getCapabilities(profile));
+              if (testExecutors[profile.executor]) {
+                profileResolvePromises.push(
+                  testExecutors[profile.executor].getCapabilities(profile, opts));
               } else {
                 reject("Executor " + profile.executor + " not found! You'll need to configure"
                   + " it in magellan.json");
@@ -121,7 +122,7 @@ module.exports = {
             Promise
               .all(profileResolvePromises)
               .then((targetProfiles) => {
-                let resolvedprofiles = [];
+                const resolvedprofiles = [];
 
                 if (targetProfiles && targetProfiles.length > 0) {
                   _.forEach(targetProfiles, (tp) => {
@@ -141,8 +142,9 @@ module.exports = {
           reject("Profile " + argv.profile + " not found!");
         }
       } else {
-        // user passes profile information from command line directly, like --local_browser or some params tighted to an executor
-        let profileResolvePromises = [];
+        // user passes profile information from command line directly,
+        // like --local_browser or some params tighted to an executor
+        const profileResolvePromises = [];
 
         _.forEach(testExecutors, (executor) => {
           profileResolvePromises.push(executor.getProfiles(opts));
@@ -151,7 +153,7 @@ module.exports = {
         Promise
           .all(profileResolvePromises)
           .then((targetProfiles) => {
-            let resolvedprofiles = [];
+            const resolvedprofiles = [];
 
             if (targetProfiles && targetProfiles.length > 0) {
               const flattenTargetProfiles = _.flatten(targetProfiles);

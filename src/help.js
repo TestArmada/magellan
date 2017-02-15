@@ -1,5 +1,7 @@
 "use strict";
 
+/*eslint-disable max-len*/
+/*eslint-disable no-dupe-keys*/
 module.exports = {
   name: "testarmada-magellan",
   shortName: "magellan",

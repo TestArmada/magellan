@@ -3,7 +3,6 @@
 const fork = require("child_process").fork;
 const listSauceCliBrowsers = require("guacamole/src/cli_list");
 const SauceBrowsers = require("guacamole");
-const clc = require("cli-color");
 const _ = require("lodash");
 const request = require("request");
 const argv = require("marge").argv;
@@ -53,7 +52,7 @@ class Locks {
         }, (error, response, body) => {
           try {
             if (error) {
-              throw new Error(error);
+              return callback(new Error(error));
             }
 
             const result = JSON.parse(body);
@@ -61,14 +60,15 @@ class Locks {
               if (result.accepted) {
                 logger.debug("VM claim accepted, token: " + result.token);
 
-                callback(null, { token: result.token });
+                return callback(null, { token: result.token });
               } else {
                 logger.debug("VM claim not accepted, waiting to try again ..");
                 // If we didn't get a worker, try again
-                throw new Error("Request not accepted");
+                return callback(new Error("Request not accepted"));
               }
             } else {
-              throw new Error("Result from locks server is invalid or empty: '" + result + "'");
+              return callback(new Error("Result from locks server is invalid or empty: '"
+                + result + "'"));
             }
           } catch (e) {
             // NOTE: There are several errors that can happen in the above code:
@@ -98,7 +98,7 @@ class Locks {
 
       poll();
     } else {
-      callback();
+      return callback();
     }
   }
 
@@ -109,20 +109,20 @@ class Locks {
         json: true,
         timeout: this.options.locksRequestTimeout,
         body: {
-          token: token
+          token
         },
         url: this.options.locksServerLocation + "/release"
       }, () => {
         // TODO: decide whether we care about an error at this stage. We're releasing
         // this worker whether the remote release is successful or not, since it will
         // eventually be timed out by the locks server.
-        callback();
+        return callback();
       });
     } else {
-      callback();
+      return callback();
     }
   }
-};
+}
 
 class Tunnel {
   constructor(options) {
@@ -140,6 +140,7 @@ class Tunnel {
       }
 
       analytics.push("sauce-connect-launcher-download");
+      /*eslint-disable no-console */
       sauceConnectLauncher.download({
         logger: console.log.bind(console)
       }, (err) => {
@@ -228,8 +229,7 @@ class Tunnel {
   }
 
   close() {
-    return new Promise((resolve, reject) => {
-      const self = this;
+    return new Promise((resolve) => {
       if (this.tunnelInfo) {
         logger.log("Closing sauce tunnel [" + this.options.sauceTunnelId + "]");
         this.tunnelInfo.process.close(() => {
@@ -241,7 +241,7 @@ class Tunnel {
     });
 
   }
-};
+}
 
 const config = {
   // required:
@@ -254,7 +254,6 @@ const config = {
   sharedSauceParentAccount: null,
   tunnelTimeout: null,
   useTunnels: null,
-  maxTunnels: null,
   fastFailRegexps: null,
 
   locksServerLocation: null,
@@ -292,12 +291,12 @@ module.exports = {
         })
         .catch((err) => {
           analytics.mark("sauce-open-tunnels", "failed");
-          return new Promise((resolve, reject) => {
+          return new Promise((reject) => {
             reject(err);
           });
         });
     } else {
-      return new Promise((resolve, reject) => {
+      return new Promise((resolve) => {
         let tunnelAnnouncement = config.sauceTunnelId;
         if (config.sharedSauceParentAccount) {
           tunnelAnnouncement = config.sharedSauceParentAccount + "/" + tunnelAnnouncement;
@@ -315,10 +314,10 @@ module.exports = {
         .close()
         .then(() => {
           logger.log("Sauce tunnel is closed!  Continuing...");
-        })
+        });
     } else {
-      return new Promise((resolve, reject) => {
-        resolve("=====> teardown sauce");
+      return new Promise((resolve) => {
+        resolve();
       });
     }
   },
@@ -327,7 +326,7 @@ module.exports = {
     locks.acquire(callback);
   },
 
-  destory: (info, callback) => {
+  wrapup: (info, callback) => {
     locks.release(info, callback);
   },
 
@@ -434,9 +433,9 @@ module.exports = {
     return SauceBrowsers
       .initialize()
       .then(() => {
-        return new Promise((resolve, reject) => {
+        return new Promise((resolve) => {
           if (opts.yargs.argv.sauce_browser) {
-            let p = {
+            const p = {
               desiredCapabilities: SauceBrowsers.get({
                 id: opts.yargs.argv.sauce_browser
               })[0],
@@ -446,13 +445,12 @@ module.exports = {
             };
 
             resolve(p);
-          }
-          else if (opts.yargs.argv.sauce_browsers) {
+          } else if (opts.yargs.argv.sauce_browsers) {
             const tempBrowsers = opts.yargs.argv.sauce_browsers.split(",");
-            let returnBrowsers = [];
+            const returnBrowsers = [];
 
             _.forEach(tempBrowsers, (browser) => {
-              let p = {
+              const p = {
                 desiredCapabilities: SauceBrowsers.get({
                   id: browser
                 })[0],
@@ -466,29 +464,29 @@ module.exports = {
             });
 
             resolve(returnBrowsers);
-          }
-          else {
+          } else {
             resolve();
           }
         });
       });
   },
 
-  getCapabilities: (profile) => {
+  /*eslint-disable no-unused-vars*/
+  getCapabilities: (profile, opts) => {
     // profile key mapping
     // browser => id
     // resolution => screenResolution
     // orientation => deviceOrientation
-    let p = {
+    const prof = {
       id: profile.browser
     };
 
     if (profile.resolution) {
-      p.screenResolution = profile.resolution;
+      prof.screenResolution = profile.resolution;
     }
 
     if (profile.orientation) {
-      p.deviceOrientation = profile.orientation;
+      prof.deviceOrientation = profile.orientation;
     }
 
     return SauceBrowsers
@@ -496,10 +494,10 @@ module.exports = {
       .then(() => {
         return new Promise((resolve, reject) => {
           try {
-            let desiredCapabilities = SauceBrowsers.get(p)[0];
+            const desiredCapabilities = SauceBrowsers.get(prof)[0];
             // add executor info back to capabilities
-            let p = {
-              desiredCapabilities: desiredCapabilities,
+            const p = {
+              desiredCapabilities,
               executor: profile.executor,
               nightwatchEnv: profile.executor
             };
@@ -519,15 +517,15 @@ module.exports = {
     SauceBrowsers
       .initialize(true)
       .then(() => {
-        return new Promise((resolve, reject) => {
+        return new Promise((resolve) => {
           if (opts.margs.argv.device_additions) {
-            SauceBrowsers.addNormalizedBrowsersFromFile(runOpts.margs.argv.device_additions);
+            SauceBrowsers.addNormalizedBrowsersFromFile(opts.margs.argv.device_additions);
           }
           resolve();
         });
       })
       .then(() => {
-        return new Promise((resolve, reject) => {
+        return new Promise((resolve) => {
           listSauceCliBrowsers((browserTable) => {
             // convert table heading
             browserTable.options.head[1] = "Copy-Paste Command-Line Option";
@@ -547,6 +545,7 @@ module.exports = {
       });
   },
 
+  /*eslint-disable max-len*/
   help: {
     "sauce_browser": {
       "visible": true,

@@ -25,7 +25,7 @@ module.exports = {
     logger.loghelp("Available options:");
     logger.loghelp("");
 
-    let help = {};
+    const help = {};
 
     // load magellan help by default
     _.forEach(magellanHelp, (v, k) => {
@@ -50,7 +50,7 @@ module.exports = {
 
     // load desire executor(s) help
     if (runOpts.settings.testExecutors) {
-      _.forEach(runOpts.settings.testExecutors, (v, k) => {
+      _.forEach(runOpts.settings.testExecutors, (v) => {
         if (v.help) {
           help[" Executor-specific (" + v.name + ")"] = {};
 

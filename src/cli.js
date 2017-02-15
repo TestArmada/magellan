@@ -15,7 +15,6 @@ const path = require("path");
 const _ = require("lodash");
 const margs = require("marge");
 const async = require("async");
-const clc = require("cli-color");
 const Q = require("q");
 
 const analytics = require("./global_analytics");
@@ -67,7 +66,6 @@ module.exports = (opts) => {
   // FIXME: handle this error nicely instead of printing an ugly stack trace
   runOpts.margs.init(defaultConfigFilePath, configFilePath);
 
-  const isSauce = runOpts.margs.argv.sauce ? true : false;
   const isNodeBased = runOpts.margs.argv.framework &&
     runOpts.margs.argv.framework.indexOf("mocha") > -1;
 
@@ -75,7 +73,6 @@ module.exports = (opts) => {
   const useSerialMode = runOpts.margs.argv.serial;
   const MAX_TEST_ATTEMPTS = parseInt(runOpts.margs.argv.max_test_attempts) || 3;
   let targetProfiles;
-  let testExecutors;
   let workerAllocator;
   let MAX_WORKERS;
 
@@ -135,7 +132,33 @@ module.exports = (opts) => {
     frameworkInitializationException = e;
   }
 
-  // examine executor 
+  if (!runOpts.settings.testFramework ||
+    frameworkLoadException ||
+    frameworkInitializationException) {
+    logger.err("Could not start Magellan.");
+    if (frameworkLoadException) {
+      logger.err("Could not load the testing framework plugin '"
+        + runOpts.settings.framework + "'.");
+      logger.err("Check and make sure your package.json includes a module named '"
+        + runOpts.settings.framework + "'.");
+      logger.err("If it does not, you can remedy this by typing:"
+        + "\nnpm install --save " + runOpts.settings.framework);
+      logger.err(frameworkLoadException);
+    } else /* istanbul ignore else */ if (frameworkInitializationException) {
+      logger.err("Could not initialize the testing framework plugin '"
+        + runOpts.settings.framework + "'.");
+      logger.err("This plugin was found and loaded, but an error occurred during initialization:");
+      logger.err(frameworkInitializationException);
+    }
+
+    defer.reject({ error: "Couldn't start Magellan" });
+  }
+
+
+  //
+  // Initialize Executor
+  // ============================
+  // TODO: move to a function
   // TODO: move to a function
   // let formalExecutor = ["local"];
   let formalExecutors = ["./node_modules/testarmada-magellan/src/executor/local"];
@@ -147,18 +170,18 @@ module.exports = (opts) => {
     } else if (_.isString(runOpts.margs.argv.executors)) {
       formalExecutors = [runOpts.margs.argv.executors];
     } else {
-      logger.err("Error: executors only accepts string and array");
+      logger.err("Executors only accepts string and array");
       logger.warn("Setting executor to \"local\" by default");
     }
   } else {
-    logger.warn("Warning: no executor is passed in");
+    logger.warn("No executor is passed in");
     logger.warn("Setting executor to \"local\" by default");
   }
 
   runOpts.settings.executors = formalExecutors;
 
   // load executor
-  let executorLoadException;
+  let executorLoadExceptions = [];
   runOpts.settings.testExecutors = {};
 
   _.forEach(runOpts.settings.executors, (executor) => {
@@ -167,11 +190,21 @@ module.exports = (opts) => {
       targetExecutor.validateConfig(runOpts);
       runOpts.settings.testExecutors[targetExecutor.shortName] = targetExecutor;
     } catch (e) {
-      executorLoadException = e;
+      executorLoadException.push(e);
     }
   });
 
-  testExecutors = runOpts.settings.testExecutors;
+  if (executorLoadExceptions.length > 0) {
+    // error happens while loading executor
+    logger.err("There are errors in loading executors");
+    _.forEach(executorLoadExceptions, (exception) => {
+      logger.err(exception.toString());
+    });
+
+    defer.reject({ error: "Couldn't start Magellan" });
+  }
+
+  const testExecutors = runOpts.settings.testExecutors;
 
   // finish processing all params ===========================
 
@@ -186,7 +219,7 @@ module.exports = (opts) => {
   // handle executor specific params
   const executorParams = _.omit(runOpts.margs.argv, _.keys(magellanArgs));
 
-  // ATTENTION: there should only be one executor param matched for the function call 
+  // ATTENTION: there should only be one executor param matched for the function call
   _.forEach(runOpts.settings.testExecutors, (v, k) => {
     _.forEach(executorParams, (epValue, epKey) => {
       if (v.help[epKey] && v.help[epKey].type === "function") {
@@ -194,7 +227,7 @@ module.exports = (opts) => {
         // method name convention for an executor: PREFIX_string_string_string_...
         let names = epKey.split("_");
         names = names.slice(1, names.length);
-        let executorMethodName = _.camelCase(names.join(" "));
+        const executorMethodName = _.camelCase(names.join(" "));
 
         if (_.has(v, executorMethodName)) {
           // method found in current executor
@@ -208,28 +241,6 @@ module.exports = (opts) => {
       }
     });
   });
-
-  if (!runOpts.settings.testFramework ||
-    frameworkLoadException ||
-    frameworkInitializationException) {
-    logger.err("Error: Could not start Magellan.");
-    if (frameworkLoadException) {
-      logger.err("Error: Could not load the testing framework plugin '"
-        + runOpts.settings.framework + "'."
-        + "\nCheck and make sure your package.json includes a module named '"
-        + runOpts.settings.framework + "'."
-        + "\nIf it does not, you can remedy this by typing:"
-        + "\n\nnpm install --save " + runOpts.settings.framework);
-      logger.log(frameworkLoadException);
-    } else /* istanbul ignore else */ if (frameworkInitializationException) {
-      logger.err("Error: Could not initialize the testing framework plugin '"
-          + runOpts.settings.framework + "'."
-          + "\nThis plugin was found and loaded, but an error occurred during initialization:");
-      logger.log(frameworkInitializationException);
-    }
-
-    defer.reject({ error: "Couldn't start Magellan" });
-  }
 
   //
   // Initialize Listeners
@@ -333,12 +344,12 @@ module.exports = (opts) => {
 
     Promise
       .all(_.map(testExecutors, (executor) => executor.setup()))
-      .then((things) => {
-        workerAllocator.initialize((err) => {
-          if (err) {
+      .then(() => {
+        workerAllocator.initialize((workerInitErr) => {
+          if (workerInitErr) {
             logger.err("Could not start Magellan. Got error while initializing"
-                + " worker allocator");
-            deferred.reject(err);
+              + " worker allocator");
+            deferred.reject(workerInitErr);
             return defer.promise;
           }
 
@@ -362,16 +373,18 @@ module.exports = (opts) => {
             allocator: workerAllocator,
 
             onSuccess: () => {
+              /*eslint-disable max-nested-callbacks*/
               workerAllocator.teardown(() => {
                 Promise
                   .all(_.map(testExecutors, (executor) => executor.teardown()))
-                  .then((things) => {
+                  .then(() => {
                     runOpts.processCleanup(() => {
                       deferred.resolve();
                     });
                   })
                   .catch((err) => {
                     // we eat error here
+                    logger.warn("executor teardown error: " + err);
                     runOpts.processCleanup(() => {
                       deferred.resolve();
                     });
@@ -380,18 +393,21 @@ module.exports = (opts) => {
             },
 
             onFailure: (/*failedTests*/) => {
+              /*eslint-disable max-nested-callbacks*/
               workerAllocator.teardown(() => {
                 Promise
                   .all(_.map(testExecutors, (executor) => executor.teardown()))
-                  .then((things) => {
+                  .then(() => {
                     runOpts.processCleanup(() => {
-                      // Failed tests are not a failure in Magellan itself, so we pass an empty error
-                      // here so that we don't confuse the user. Magellan already outputs a failure
+                      // Failed tests are not a failure in Magellan itself,
+                      // so we pass an empty error here so that we don't
+                      // confuse the user. Magellan already outputs a failure
                       // report to the screen in the case of failed tests.
                       deferred.reject(null);
                     });
                   })
                   .catch((err) => {
+                    logger.warn("executor teardown error: " + err);
                     // we eat error here
                     runOpts.processCleanup(() => {
                       deferred.reject(null);
@@ -405,7 +421,7 @@ module.exports = (opts) => {
         });
       })
       .catch((err) => {
-        deferred.reject(err)
+        deferred.reject(err);
       });
 
     return deferred.promise;
@@ -422,7 +438,7 @@ module.exports = (opts) => {
       //   Default to 3 workers in parallel mode (default).
       //   Default to 1 worker in serial mode.
       //
-      MAX_WORKERS = useSerialMode ? 1 : (parseInt(runOpts.margs.argv.max_workers) || 3);
+      MAX_WORKERS = useSerialMode ? 1 : parseInt(runOpts.margs.argv.max_workers) || 3;
       workerAllocator = new runOpts.WorkerAllocator(MAX_WORKERS);
     })
     .then(initializeListeners)

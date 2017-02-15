@@ -116,7 +116,8 @@ class TestRunner {
     // For each actual test path, split out
     this.tests = _.flatten(tests.map((testLocator) => {
       return options.profiles.map((profile) => {
-        return new Test(testLocator, profile, this.executors[profile.executor], this.MAX_TEST_ATTEMPTS);
+        return new Test(testLocator, profile,
+          this.executors[profile.executor], this.MAX_TEST_ATTEMPTS);
       });
     }));
 
@@ -144,7 +145,8 @@ class TestRunner {
     let profileStatement = this.profiles.map((b) => b.toString()).join(", ");
 
     if (this.serial) {
-      logger.log("Running " + this.numTests + " tests in serial mode with [" + profileStatement + "]");
+      logger.log("Running " + this.numTests + " tests in serial mode with ["
+        + profileStatement + "]");
     } else {
       logger.log("Running " + this.numTests + " tests with " + this.MAX_WORKERS
         + " workers with [" + profileStatement + "]");
@@ -214,7 +216,8 @@ class TestRunner {
             this.runTest(test, worker)
               .then((runResults) => {
                 // Give this worker back to the allocator
-                test.executor.destory(token, () => {
+                /*eslint-disable max-nested-callbacks*/
+                test.executor.wrapup(token, () => {
                   this.allocator.release(worker);
                 });
 
@@ -241,7 +244,8 @@ class TestRunner {
                 logger.err(runTestError.stack);
 
                 // Give this worker back to the allocator
-                test.executor.destory(() => {
+                /*eslint-disable max-nested-callbacks*/
+                test.executor.wrapup(() => {
                   this.allocator.release(worker);
                 });
 

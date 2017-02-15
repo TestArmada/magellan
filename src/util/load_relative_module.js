@@ -1,7 +1,6 @@
 "use strict";
 
 const path = require("path");
-const clc = require("cli-color");
 const _ = require("lodash");
 const logger = require("../logger");
 

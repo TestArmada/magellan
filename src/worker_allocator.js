@@ -1,7 +1,6 @@
 "use strict";
 
 const _ = require("lodash");
-const clc = require("cli-color");
 const settings = require("./settings");
 const portUtil = require("./util/port_util");
 const logger = require("./logger");
