@@ -154,14 +154,15 @@ module.exports = (opts) => {
     defer.reject({ error: "Couldn't start Magellan" });
   }
 
-
+  logger.log("Loaded test framework: ");
+  logger.log("  " + runOpts.settings.framework);
   //
   // Initialize Executor
   // ============================
   // TODO: move to a function
   // TODO: move to a function
   // let formalExecutor = ["local"];
-  let formalExecutors = ["./node_modules/testarmada-magellan/src/executor/local"];
+  let formalExecutors = ["testarmada-magellan-local-executor"];
 
   // executors is as array from magellan.json by default
   if (runOpts.margs.argv.executors) {
@@ -186,11 +187,11 @@ module.exports = (opts) => {
 
   _.forEach(runOpts.settings.executors, (executor) => {
     try {
-      const targetExecutor = runOpts.require(runOpts.path.resolve(executor));
+      const targetExecutor = runOpts.require(executor);
       targetExecutor.validateConfig(runOpts);
       runOpts.settings.testExecutors[targetExecutor.shortName] = targetExecutor;
     } catch (e) {
-      executorLoadException.push(e);
+      executorLoadExceptions.push(e);
     }
   });
 
@@ -203,6 +204,11 @@ module.exports = (opts) => {
 
     defer.reject({ error: "Couldn't start Magellan" });
   }
+
+  logger.log("Loaded test executors: ");
+  _.forEach(runOpts.settings.testExecutors, (executor) => {
+    logger.log("  " + executor.name);
+  });
 
   const testExecutors = runOpts.settings.testExecutors;
 

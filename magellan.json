@@ -4,10 +4,7 @@
   ],
   "framework": "vanilla-mocha",
   "max_workers": 7,
-  "executors": [
-    "./src/executor/local",
-    "./src/executor/sauce"
-  ],
+  "executors": [],
   "profiles": {
     "sauce-chrome": [
       {
