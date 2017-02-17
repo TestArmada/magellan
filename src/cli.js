@@ -433,10 +433,30 @@ module.exports = (opts) => {
     return deferred.promise;
   };
 
+  const enableExecutors = (_targetProfiles) => {
+    // this is to allow magellan to double check with profile that is retrieved by --profile or --profiles
+    targetProfiles = _targetProfiles;
+
+    const deferred = Q.defer();
+    try {
+      _.forEach(_.uniq(_.map(_targetProfiles, (targetProfile) => targetProfile.executor)), (shortname) => {
+        if (runOpts.settings.testExecutors[shortname]) {
+          runOpts.settings.testExecutors[shortname].validateConfig({ isEnabled: true });
+        }
+      });
+
+      defferred.resolve();
+    } catch (err) {
+      defferred.reject(err);
+    }
+
+    return deferred.promise;
+  };
+
   runOpts.profiles
     .detectFromCLI(runOpts)
-    .then((_targetProfiles) => {
-      targetProfiles = _targetProfiles;
+    .then(enableExecutors)
+    .then(() => {
       //
       // Worker Count:
       // =============
@@ -456,9 +476,9 @@ module.exports = (opts) => {
     .catch((err) => {
       if (err) {
         logger.err("Error initializing Magellan");
-        logger.err("\nError description:");
+        logger.err("Error description:");
         logger.err(err.toString());
-        logger.err("\nError stack trace:");
+        logger.err("Error stack trace:");
         logger.err(err.stack);
       } else {
         // No err object means we didn't have an internal crash while setting up / tearing down
