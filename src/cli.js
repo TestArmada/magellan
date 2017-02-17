@@ -445,9 +445,9 @@ module.exports = (opts) => {
         }
       });
 
-      defferred.resolve();
+      deferred.resolve();
     } catch (err) {
-      defferred.reject(err);
+      deferred.reject(err);
     }
 
     return deferred.promise;
