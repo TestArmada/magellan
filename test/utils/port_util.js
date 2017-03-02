@@ -6,8 +6,8 @@ const sinon = require("sinon");
 
 describe("port_util", () => {
   it("should get the next port", () => {
-    expect(portUtil.getNextPort()).to.eql(12009);
-    expect(portUtil.getNextPort()).to.eql(12012);
+    expect(portUtil.getNextPort()).to.eql(12000);
+    expect(portUtil.getNextPort()).to.eql(12003);
   });
 
   it("should acquire a port", () => {

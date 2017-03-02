@@ -66,8 +66,8 @@ module.exports = (opts) => {
   // FIXME: handle this error nicely instead of printing an ugly stack trace
   runOpts.margs.init(defaultConfigFilePath, configFilePath);
 
-  const isNodeBased = runOpts.margs.argv.framework &&
-    runOpts.margs.argv.framework.indexOf("mocha") > -1;
+  // const isNodeBased = runOpts.margs.argv.framework &&
+  //   runOpts.margs.argv.framework.indexOf("mocha") > -1;
 
   const debug = runOpts.margs.argv.debug || false;
   const useSerialMode = runOpts.margs.argv.serial;
@@ -182,7 +182,7 @@ module.exports = (opts) => {
   runOpts.settings.executors = formalExecutors;
 
   // load executor
-  let executorLoadExceptions = [];
+  const executorLoadExceptions = [];
   runOpts.settings.testExecutors = {};
 
   _.forEach(runOpts.settings.executors, (executor) => {
@@ -434,16 +434,19 @@ module.exports = (opts) => {
   };
 
   const enableExecutors = (_targetProfiles) => {
-    // this is to allow magellan to double check with profile that is retrieved by --profile or --profiles
+    // this is to allow magellan to double check with profile that
+    // is retrieved by --profile or --profiles
     targetProfiles = _targetProfiles;
 
     const deferred = Q.defer();
     try {
-      _.forEach(_.uniq(_.map(_targetProfiles, (targetProfile) => targetProfile.executor)), (shortname) => {
-        if (runOpts.settings.testExecutors[shortname]) {
-          runOpts.settings.testExecutors[shortname].validateConfig({ isEnabled: true });
-        }
-      });
+      _.forEach(
+        _.uniq(_.map(_targetProfiles, (targetProfile) => targetProfile.executor)),
+        (shortname) => {
+          if (runOpts.settings.testExecutors[shortname]) {
+            runOpts.settings.testExecutors[shortname].validateConfig({ isEnabled: true });
+          }
+        });
 
       deferred.resolve();
     } catch (err) {

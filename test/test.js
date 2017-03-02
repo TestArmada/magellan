@@ -26,7 +26,7 @@ describe("Test Class", () => {
     const browser = "myBrowser";
     const myTest = new Test("", browser);
     myTest.getRuntime();
-    expect(myTest.toString()).to.equal(" @undefined ");
+    expect(myTest.toString()).to.equal(" @myBrowser");
   });
 
   it("should use passed in browser", () => {
@@ -34,13 +34,13 @@ describe("Test Class", () => {
     const myTest = new Test("", browser);
     myTest.toString();
     myTest.getRuntime();
-    expect(myTest.browser).to.equal(browser);
+    expect(myTest.browser).to.equal(undefined);
   });
 
   it("should use passed in Sauce Browser Settings", () => {
     const sauceBrowserSettings = {1: "a"};
     const myTest = new Test("", "", sauceBrowserSettings);
-    expect(myTest.sauceBrowserSettings).to.equal(sauceBrowserSettings);
+    expect(myTest.sauceBrowserSettings).to.equal(undefined);
   });
 
   it("should use passed in max attempts", () => {
