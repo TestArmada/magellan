@@ -205,7 +205,7 @@ class TestRunner {
       onTestComplete(null, test);
     };
 
-    test.executor.stage((stageExecutorError, token) => {
+    test.executor.setupTest((stageExecutorError, token) => {
       if (!stageExecutorError) {
 
         this.allocator.get((getWorkerError, worker) => {
@@ -217,7 +217,7 @@ class TestRunner {
               .then((runResults) => {
                 // Give this worker back to the allocator
                 /*eslint-disable max-nested-callbacks*/
-                test.executor.wrapup(token, () => {
+                test.executor.teardownTest(token, () => {
                   this.allocator.release(worker);
                 });
 
@@ -403,12 +403,20 @@ class TestRunner {
       statusEmitter.stdout = null;
       statusEmitter.stderr = null;
 
-      // Resolve the promise
-      deferred.resolve({
-        error: (code === 0) ? null : "Child test run process exited with code " + code,
-        stderr,
-        stdout
-      });
+      test.executor.summerizeTest(
+        this.buildId,
+        {
+          result: code === 0,
+          metadata: testMetadata
+        },
+        () => {
+          // Resolve the promise
+          deferred.resolve({
+            error: (code === 0) ? null : "Child test run process exited with code " + code,
+            stderr,
+            stdout
+          });
+        });
     });
 
     if (this.debug) {

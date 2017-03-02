@@ -349,7 +349,7 @@ module.exports = (opts) => {
     const deferred = Q.defer();
 
     Promise
-      .all(_.map(testExecutors, (executor) => executor.setup()))
+      .all(_.map(testExecutors, (executor) => executor.setupRunner()))
       .then(() => {
         workerAllocator.initialize((workerInitErr) => {
           if (workerInitErr) {
@@ -382,7 +382,7 @@ module.exports = (opts) => {
               /*eslint-disable max-nested-callbacks*/
               workerAllocator.teardown(() => {
                 Promise
-                  .all(_.map(testExecutors, (executor) => executor.teardown()))
+                  .all(_.map(testExecutors, (executor) => executor.teardownRunner()))
                   .then(() => {
                     runOpts.processCleanup(() => {
                       deferred.resolve();
@@ -390,7 +390,7 @@ module.exports = (opts) => {
                   })
                   .catch((err) => {
                     // we eat error here
-                    logger.warn("executor teardown error: " + err);
+                    logger.warn("executor teardownRunner error: " + err);
                     runOpts.processCleanup(() => {
                       deferred.resolve();
                     });
@@ -402,7 +402,7 @@ module.exports = (opts) => {
               /*eslint-disable max-nested-callbacks*/
               workerAllocator.teardown(() => {
                 Promise
-                  .all(_.map(testExecutors, (executor) => executor.teardown()))
+                  .all(_.map(testExecutors, (executor) => executor.teardownRunner()))
                   .then(() => {
                     runOpts.processCleanup(() => {
                       // Failed tests are not a failure in Magellan itself,
@@ -413,7 +413,7 @@ module.exports = (opts) => {
                     });
                   })
                   .catch((err) => {
-                    logger.warn("executor teardown error: " + err);
+                    logger.warn("executor teardownRunner error: " + err);
                     // we eat error here
                     runOpts.processCleanup(() => {
                       deferred.reject(null);
