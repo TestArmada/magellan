@@ -55,7 +55,7 @@
     "slugify": "^1.0.2",
     "sync-request": "^4.0.1",
     "testarmada-tree-kill": "^2.0.0",
-    "yargs": "6.5.0"
+    "yargs": "7.0.1"
   },
   "engineStrict": true,
   "engines": {
