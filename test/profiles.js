@@ -1,11 +1,11 @@
 "use strict";
 
-var chai = require("chai");
-var chaiAsPromise = require("chai-as-promised");
-var _ = require("lodash");
+const chai = require("chai");
+const chaiAsPromise = require("chai-as-promised");
+const _ = require("lodash");
 
-var profile = require("../src/profiles");
-var logger = require("../src/logger");
+const profile = require("../src/profiles");
+const logger = require("../src/logger");
 
 chai.use(chaiAsPromise);
 
@@ -37,7 +37,7 @@ const opts = {
       getBody(encoding) {
         return "{\"profiles\":{\"chrome\":{\"browser\":\"chrome\"},\"firefox\":{\"browser\":\"firefox\"}}}";
       }
-    }
+    };
   }
 };
 
@@ -79,10 +79,10 @@ describe("handleProfiles", () => {
           getBody(encoding) {
             return "{\"profiles\":{\"chrome\":{\"browser\":\"chrome\", \"executor\":\"local\"}}}";
           }
-        }
+        };
       };
 
-      runOpts.settings.testExecutors["local"] = {
+      runOpts.settings.testExecutors.local = {
         getProfiles: (opts) => {
           return new Promise((resolve) => {
             resolve(opts.profiles);
@@ -125,7 +125,7 @@ describe("handleProfiles", () => {
           getBody(encoding) {
             return "{\"profiles\":{}}";
           }
-        }
+        };
       };
       runOpts.margs.argv.profile = "https://some_fake_url#chrome";
 
@@ -158,7 +158,7 @@ describe("handleProfiles", () => {
           getBody(encoding) {
             return "{\"profiles\":{\"firefox\":{\"browser\":\"firefox\", \"executor\":\"local\"}}}";
           }
-        }
+        };
       };
       runOpts.margs.argv.profile = "https://some_fake_url#firefox";
 
@@ -173,7 +173,7 @@ describe("handleProfiles", () => {
     });
 
     it("getCapabilities failed", () => {
-      runOpts.settings.testExecutors["sauce"].getCapabilities = () => {
+      runOpts.settings.testExecutors.sauce.getCapabilities = () => {
         return new Promise((resolve, reject) => {
           reject(new Error("FAKE_ERROR"));
         });
@@ -228,7 +228,7 @@ describe("handleProfiles", () => {
         { browser: "chrome" }
       ];
 
-      runOpts.settings.testExecutors["local"] = {
+      runOpts.settings.testExecutors.local = {
         getProfiles: (opts) => {
           return new Promise((resolve) => {
             resolve(opts.profiles);
@@ -251,7 +251,7 @@ describe("handleProfiles", () => {
         { browser: "chrome" }
       ];
 
-      runOpts.settings.testExecutors["sauce"].getProfiles = () => {
+      runOpts.settings.testExecutors.sauce.getProfiles = () => {
         return new Promise((resolve, reject) => {
           reject(new Error("FAKE_ERROR"));
         });
@@ -266,5 +266,25 @@ describe("handleProfiles", () => {
           expect(err.message).to.equal("FAKE_ERROR");
         });
     });
+  });
+
+  it("profile.toString", () => {
+    runOpts.profiles = [
+      {
+        browserName: "chrome",
+        version: 10,
+        resolution: "1x1",
+        orientation: "upright",
+        executor: "on mars"
+      }
+    ];
+
+    return profile
+      .detectFromCLI(runOpts)
+      .then((resolvedprofiles) => {
+        expect(resolvedprofiles.length).to.equal(1);
+        expect(resolvedprofiles[0].toString())
+          .to.equal("chrome|version:10|resolution:1x1|orientation:upright|executor:on mars");
+      });
   });
 });
