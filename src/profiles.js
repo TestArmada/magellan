@@ -89,17 +89,15 @@ module.exports = {
               reject("Profile(s) " + notFoundProfiles.join(",") + " not found!");
             }
 
-            if (argv.debug) {
-              logger.debug(" Selected profiles: ");
-              _.forEach(profiles, (p) => {
-                const str = [];
+            logger.debug(" Selected profiles: ");
+            _.forEach(profiles, (p) => {
+              const str = [];
 
-                _.map(p, (v, k) => {
-                  str.push(k + ": " + v);
-                });
-                logger.debug("  " + str.join(", "));
+              _.map(p, (v, k) => {
+                str.push(k + ": " + v);
               });
-            }
+              logger.debug("  " + str.join(", "));
+            });
 
             // convert profile to an executor-understandable capabilities
             const profileResolvePromises = [];
