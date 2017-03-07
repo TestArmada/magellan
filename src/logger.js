@@ -12,6 +12,7 @@ module.exports = {
   output: console,
 
   debug(msg) {
+    /* istanbul ignore if */
     if (debug) {
       const deb = clc.blueBright("[DEBUG]");
       this.output.log(util.format("%s [%s] %s", deb, PREFIX, msg));
