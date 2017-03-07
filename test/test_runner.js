@@ -63,12 +63,12 @@ const executors = {
         send() { },
         removeAllListeners() { },
         stdout: {
-          on() { },
+          on(type, callback) { callback() },
           removeAllListeners() { },
           unpipe() { }
         },
         stderr: {
-          on() { },
+          on(type, callback) { callback() },
           removeAllListeners() { },
           unpipe() { }
         }

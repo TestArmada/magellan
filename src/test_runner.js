@@ -66,6 +66,7 @@ class TestRunner {
       clearInterval,
       setInterval,
       prettyMs,
+      path,
       analytics
     }, opts);
 
@@ -553,7 +554,7 @@ class TestRunner {
       const childBuildId = guid();
 
       // Note: we must sanitize the buildid because it might contain slashes or "..", etc
-      const tempAssetPath = path.resolve(this.settings.tempDir + "/build-"
+      const tempAssetPath = this.path.resolve(this.settings.tempDir + "/build-"
         + sanitizeFilename(this.buildId) + "_" + childBuildId + "__temp_assets");
 
       this.mkdirSync(tempAssetPath);
@@ -604,7 +605,7 @@ class TestRunner {
       logger.log("Updating trends ...");
 
       let existingTrends;
-
+      
       try {
         existingTrends = JSON.parse(this.fs.readFileSync("./trends.json"));
       } catch (e) {
@@ -617,7 +618,7 @@ class TestRunner {
         existingTrends.failures[key] = existingTrends.failures[key] > -1
           ? existingTrends.failures[key] + localFailureCount : localFailureCount;
       });
-
+      
       this.fs.writeFileSync("./trends.json", JSON.stringify(existingTrends, null, 2));
 
       logger.log("Updated trends at ./trends.json");
