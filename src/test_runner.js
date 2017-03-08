@@ -605,7 +605,7 @@ class TestRunner {
       logger.log("Updating trends ...");
 
       let existingTrends;
-      
+
       try {
         existingTrends = JSON.parse(this.fs.readFileSync("./trends.json"));
       } catch (e) {
@@ -618,7 +618,7 @@ class TestRunner {
         existingTrends.failures[key] = existingTrends.failures[key] > -1
           ? existingTrends.failures[key] + localFailureCount : localFailureCount;
       });
-      
+
       this.fs.writeFileSync("./trends.json", JSON.stringify(existingTrends, null, 2));
 
       logger.log("Updated trends at ./trends.json");
