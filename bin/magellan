@@ -234,8 +234,10 @@ if (_.isEmpty(tests)) {
 
 var initializeListeners = function () {
   var deferred = Q.defer();
+  // allow all listeners to be aware of magellan worker amount
+  // this would help listener to scale if it can scale with magellan workers
   magellanGlobals.workerAmount = MAX_WORKERS;
-  
+
   async.each(listeners, function (listener, done) {
     listener.initialize(magellanGlobals)
       .then(function () {
