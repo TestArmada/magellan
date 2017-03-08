@@ -234,6 +234,8 @@ if (_.isEmpty(tests)) {
 
 var initializeListeners = function () {
   var deferred = Q.defer();
+  magellanGlobals.workerAmount = MAX_WORKERS;
+  
   async.each(listeners, function (listener, done) {
     listener.initialize(magellanGlobals)
       .then(function () {
