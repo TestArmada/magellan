@@ -446,6 +446,7 @@ class TestRunner {
         text = text
           .split("\n")
           .filter((line) => {
+            /* istanbul ignore next */
             return line.trim() !== "" || line.indexOf("\n") > -1;
           })
           .map((line) => {
@@ -468,6 +469,7 @@ class TestRunner {
         text = text
           .split("\n")
           .filter((line) => {
+            /* istanbul ignore next */
             return line.trim() !== "" || line.indexOf("\n") > -1;
           })
           .map((line) => {

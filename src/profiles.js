@@ -14,6 +14,7 @@ class Profile {
   toString() {
     const cap = this.desiredCapabilities || this;
 
+    /* istanbul ignore next */
     return cap.browserName
       + (cap.version ? "|version:" + cap.version : "")
       + (cap.resolution ? "|resolution:" + cap.resolution : "")
