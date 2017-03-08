@@ -1,6 +1,6 @@
 "use strict";
 
-const argvs = require("yargs");
+const argvs = require("marge");
 const util = require("util");
 const clc = require("cli-color");
 
