@@ -27,19 +27,27 @@ Features
     - Runs test over the cloud like saucelabs via magellan executor (configurable and in parallel)
     - Can talk to a [locks service](https://github.com/TestArmada/locks) to control saucelabs virtual machine usage (beta).
 
-### **Breaking Changes in v10.0.0 : Executor**
+------------------**BREAKING CHANGE in v10.0.0**------------------
+### Magellan Executor
   
 Executor is a mid layer between magellan and test framework to drive test run (via framework) based on a specific need (differentiated by executing environments). Magellan doesn't provide a default executor, so you need to pick at least one executors from the existing executor list, or implement one yourself.
 
-What executors can do:
- * Run tests in various environments
- * More things to do in test's lifecycle
- * Have full control of magellan execution
+what is an executor
+1. middle layer between magellan and test framework
+2. bridge to connect magellan and plugins
+
+what can an executor do
+1. resolve profiles (env info, test info, capabilities for selenium test)
+2. patch setup and teardown event on the magellan test runner
+3. patch setup and teardown event on a magellan worker
+4. do some extra work in test's lifecycle
+5. communicate to a specific test env
 
 #### Existing executors
  * [magellan-local-executor](https://github.com/TestArmada/magellan-local-executor)
  * [magellan-saucelabs-executor](https://github.com/TestArmada/magellan-saucelabs-executor)
  * [magellan-browserstack-executor](https://github.com/TestArmada/magellan-browserstack-executor)(early beta)
+ 
 
 Test Framework Compatibility and Installation
 =============================================
