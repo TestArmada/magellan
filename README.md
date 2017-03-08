@@ -30,13 +30,13 @@ Features
 ------------------**BREAKING CHANGE in v10.0.0**------------------
 ### Magellan Executor
   
-Executor is a mid layer between magellan and test framework to drive test run (via framework) based on a specific need (differentiated by executing environments). Magellan doesn't provide a default executor, so you need to pick at least one executors from the existing executor list, or implement one yourself.
+Executor is a mid layer between magellan and test framework to drive test run (via framework) based on a specific need (differentiated by executing environments). Magellan doesn't provide a default executor, so you need to pick at least one executor from the existing executor list, or implement one yourself.
 
-what is an executor
+#### What is an executor
 1. middle layer between magellan and test framework
 2. bridge to connect magellan and plugins
 
-what can an executor do
+#### What can an executor do
 1. resolve profiles (env info, test info, capabilities for selenium test)
 2. patch setup and teardown event on the magellan test runner
 3. patch setup and teardown event on a magellan worker
@@ -56,9 +56,11 @@ Magellan supports test frameworks like Mocha and Nightwatch via the usage of **p
 
 #### Mocha
 
-BREAKING CHANGE: magellan@10.0.0 doesn't support mocha plugin for now. If you're using magellan version 9 or lower to run mocha test please don't upgrade. Or if you're seeking for mocha support please use magellan version 9 or lower.
+------------------BREAKING CHANGE in v10.0.0------------------
 
-All magellan mocha supports can be found [here](https://github.com/TestArmada/magellan/blob/v8.8.3/README.md)
+magellan@10.0.0 doesn't support the mocha plugin for now. If you're using magellan version 9 or lower to run mocha test please don't upgrade. Or if you're seeking for mocha support please use magellan version 9 or lower.
+
+All magellan mocha supports can be found [here](https://github.com/TestArmada/magellan/blob/v8.8.5/README.md#mocha)
 
 #### Nightwatch
 

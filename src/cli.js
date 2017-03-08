@@ -331,6 +331,8 @@ module.exports = (opts) => {
 
   const initializeListeners = () => {
     const deferred = Q.defer();
+    magellanGlobals.workerAmount = MAX_WORKERS;
+    
     async.each(listeners, (listener, done) => {
       listener.initialize(magellanGlobals)
         .then(() => done())
