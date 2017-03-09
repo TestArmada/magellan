@@ -5,7 +5,7 @@ const TEST_STATUS_FAILED = 2;
 const TEST_STATUS_SUCCESSFUL = 3;
 
 class Test {
-  constructor(locator, browser, sauceBrowserSettings, maxAttempts) {
+  constructor(locator, profile, executor, maxAttempts) {
     //
     // note: this locator object is an instance of an object which is defined by whichever test
     // framework plugin is currently loaded. The implementation of locator could be almost any
@@ -18,14 +18,13 @@ class Test {
     this.attempts = 0;
     this.status = TEST_STATUS_NEW;
 
-    this.browser = browser;
+    this.profile = profile;
+    this.executor = executor;
 
     this.workerIndex = -1;
     this.error = undefined;
     this.stdout = "";
     this.stderr = "";
-
-    this.sauceBrowserSettings = sauceBrowserSettings;
   }
 
   // Return true if we've either:
@@ -56,11 +55,9 @@ class Test {
     this.runningTime = (new Date()).getTime() - this.startTime;
   }
 
-  // return an unambiguous representation of this test: path, browserId, resolution, orientation
+  // return an unambiguous representation of this test: path, profile information
   toString() {
-    return this.locator.toString() + " @" + this.browser.browserId
-      + " " + (this.browser.resolution ? "res:" + this.browser.resolution : "")
-      + (this.browser.orientation ? "orientation:" + this.browser.orientation : "");
+    return this.locator.toString() + " @" + this.profile.toString();
   }
 
   getRuntime() {

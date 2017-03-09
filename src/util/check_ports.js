@@ -3,6 +3,7 @@
 const _ = require("lodash");
 const request = require("request");
 const portscanner = require("portscanner");
+const logger = require("../logger");
 
 const PORT_STATUS_IN_USE = 0;
 const PORT_STATUS_AVAILABLE = 1;
@@ -10,8 +11,7 @@ const PORT_STATUS_AVAILABLE = 1;
 const checkPortStatus = (desiredPort, callback, opts) => {
   const runOpts = _.assign({
     request,
-    portscanner,
-    console
+    portscanner
   }, opts);
 
   runOpts.request("http://127.0.0.1:" + desiredPort +
@@ -25,7 +25,7 @@ const checkPortStatus = (desiredPort, callback, opts) => {
         }
       });
     } else {
-      runOpts.console.log(
+      logger.log(
         "Found selenium HTTP server at port " + desiredPort + ", port is in use.");
       return callback(PORT_STATUS_IN_USE);
     }

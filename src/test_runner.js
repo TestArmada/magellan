@@ -4,7 +4,6 @@
 // TODO: Extract trending into another class
 // TODO: Move bailFast to a strategy pattern implementation
 
-const fork = require("child_process").fork;
 const async = require("async");
 const _ = require("lodash");
 const clc = require("cli-color");
@@ -18,11 +17,11 @@ const mkdirSync = require("./mkdir_sync");
 const guid = require("./util/guid");
 const logStamp = require("./util/logstamp");
 const sanitizeFilename = require("sanitize-filename");
-const sauceBrowsers = require("./sauce/browsers");
 const analytics = require("./global_analytics");
 
 const settings = require("./settings");
 const Test = require("./test");
+const logger = require("./logger");
 
 const WORKER_START_DELAY = 1000;
 const WORKER_STOP_DELAY = 1500;
@@ -60,16 +59,14 @@ const strictness = {
 class TestRunner {
   constructor(tests, options, opts) {
     _.assign(this, {
-      console,
       fs,
       mkdirSync,
-      fork,
-      sauceBrowsers,
       settings,
       setTimeout,
       clearInterval,
       setInterval,
       prettyMs,
+      path,
       analytics
     }, opts);
 
@@ -104,12 +101,11 @@ class TestRunner {
 
     this.hasBailed = false;
 
-    this.browsers = options.browsers;
+    this.profiles = options.profiles;
+    this.executors = options.executors;
     this.debug = options.debug;
 
     this.serial = options.serial || false;
-
-    this.sauceSettings = options.sauceSettings;
 
     this.listeners = options.listeners || [];
 
@@ -120,12 +116,9 @@ class TestRunner {
 
     // For each actual test path, split out
     this.tests = _.flatten(tests.map((testLocator) => {
-      return options.browsers.map((requestedBrowser) => {
-        // Note: For non-sauce browsers, this can come back empty, which is just fine.
-        const sauceBrowserSettings = this.sauceBrowsers.browser(requestedBrowser.browserId,
-          requestedBrowser.resolution, requestedBrowser.orientation);
-        return new Test(testLocator, requestedBrowser, sauceBrowserSettings,
-          this.MAX_TEST_ATTEMPTS);
+      return options.profiles.map((profile) => {
+        return new Test(testLocator, profile,
+          this.executors[profile.executor], this.MAX_TEST_ATTEMPTS);
       });
     }));
 
@@ -133,7 +126,7 @@ class TestRunner {
       this.trends = {
         failures: {}
       };
-      this.console.log("Gathering trends to ./trends.json");
+      logger.log("Gathering trends to ./trends.json");
     }
 
     this.numTests = this.tests.length;
@@ -150,16 +143,14 @@ class TestRunner {
   start() {
     this.startTime = (new Date()).getTime();
 
-    let browserStatement = " with ";
-    browserStatement += this.browsers.map((b) => b.toString()).join(", ");
+    let profileStatement = this.profiles.map((b) => b.toString()).join(", ");
 
     if (this.serial) {
-      this.console.log(
-        "\nRunning " + this.numTests + " tests in serial mode" + browserStatement + "\n"
-      );
+      logger.log("Running " + this.numTests + " tests in serial mode with ["
+        + profileStatement + "]");
     } else {
-      this.console.log("\nRunning " + this.numTests + " tests with " + this.MAX_WORKERS
-        + " workers" + browserStatement + "\n");
+      logger.log("Running " + this.numTests + " tests with " + this.MAX_WORKERS
+        + " workers with [" + profileStatement + "]");
     }
 
     if (this.tests.length === 0) {
@@ -197,66 +188,84 @@ class TestRunner {
 
     this.analytics.push("acquire-worker-" + analyticsGuid);
 
-    this.allocator.get((error, worker) => {
-      if (!error) {
-        this.analytics.mark("acquire-worker-" + analyticsGuid);
+    const failTest = (error) => {
+      this.analytics.mark("acquire-worker-" + analyticsGuid, "failed");
+      // If the allocator could not give us a worker, pass
+      // back a failed test result with the allocator's error.
+      logger.err("Worker allocator error: " + error);
+      logger.err(error.stack);
 
-        this.runTest(test, worker)
-          .then((runResults) => {
-            // Give this worker back to the allocator
-            this.allocator.release(worker);
+      /*eslint-disable no-magic-numbers*/
+      test.workerIndex = -1;
+      test.error = undefined;
+      test.stdout = "";
+      test.stderr = error;
 
-            test.workerIndex = worker.index;
-            test.error = runResults.error;
-            test.stdout = runResults.stdout;
-            test.stderr = runResults.stderr;
+      test.fail();
 
-            // Pass or fail the test
-            if (runResults.error) {
-              test.fail();
-            } else {
-              test.pass();
-            }
+      onTestComplete(null, test);
+    };
 
-            onTestComplete(null, test);
-          })
-          .catch((runTestError) => {
-            // Catch a testing infrastructure error unrelated to the test itself failing.
-            // This indicates something went wrong with magellan itself. We still need
-            // to drain the queue, so we fail the test, even though the test itself may
-            // have not actually failed.
-            this.console.log(clc.redBright(
-              "Fatal internal error while running a test:", runTestError
-            ));
-            this.console.log(clc.redBright(runTestError.stack));
+    test.executor.setupTest((stageExecutorError, token) => {
+      if (!stageExecutorError) {
 
-            // Give this worker back to the allocator
-            this.allocator.release(worker);
+        this.allocator.get((getWorkerError, worker) => {
+          if (!getWorkerError) {
 
-            test.workerIndex = worker.index;
-            test.error = runTestError;
-            test.stdout = "";
-            test.stderr = runTestError;
+            this.analytics.mark("acquire-worker-" + analyticsGuid);
 
-            test.fail();
-            onTestComplete(runTestError, test);
-          });
+            this.runTest(test, worker)
+              .then((runResults) => {
+                // Give this worker back to the allocator
+                /*eslint-disable max-nested-callbacks*/
+                test.executor.teardownTest(token, () => {
+                  this.allocator.release(worker);
+                });
+
+                test.workerIndex = worker.index;
+                test.error = runResults.error;
+                test.stdout = runResults.stdout;
+                test.stderr = runResults.stderr;
+
+                // Pass or fail the test
+                if (runResults.error) {
+                  test.fail();
+                } else {
+                  test.pass();
+                }
+
+                onTestComplete(null, test);
+              })
+              .catch((runTestError) => {
+                // Catch a testing infrastructure error unrelated to the test itself failing.
+                // This indicates something went wrong with magellan itself. We still need
+                // to drain the queue, so we fail the test, even though the test itself may
+                // have not actually failed.
+                logger.err("Fatal internal error while running a test:" + runTestError);
+                logger.err(runTestError.stack);
+
+                // Give this worker back to the allocator
+                /*eslint-disable max-nested-callbacks*/
+                test.executor.wrapup(() => {
+                  this.allocator.release(worker);
+                });
+
+                test.workerIndex = worker.index;
+                test.error = runTestError;
+                test.stdout = "";
+                test.stderr = runTestError;
+
+                test.fail();
+                onTestComplete(runTestError, test);
+              });
+          } else {
+            // fail test due to failure of allocator.get()
+            failTest(getWorkerError);
+          }
+        });
       } else {
-        this.analytics.mark("acquire-worker-" + analyticsGuid, "failed");
-        // If the allocator could not give us a worker, pass
-        // back a failed test result with the allocator's error.
-        this.console.error("Worker allocator error: " + error);
-        this.console.error(error.stack);
-
-        /*eslint-disable no-magic-numbers*/
-        test.workerIndex = -1;
-        test.error = undefined;
-        test.stdout = "";
-        test.stderr = error;
-
-        test.fail();
-
-        onTestComplete(null, test);
+        // fail test due to failure of test.executor.stage()
+        failTest(stageExecutorError);
       }
     });
   }
@@ -266,8 +275,14 @@ class TestRunner {
   // Rejections only happen if we encounter a problem with magellan itself, not
   // Rejections only happen if we encounter a problem with magellan itself, not
   // the test. The test will resolve with a test result whether it fails or passes.
-  spawnTestProcess(testRun, test) {
+  execute(testRun, test) {
     const deferred = Q.defer();
+
+    if (testRun.enableExecutor
+      && typeof testRun.enableExecutor === "function") {
+      // if we have addExecutor defined in test run (new in magellan 10.0.0)
+      testRun.enableExecutor(test.executor);
+    }
 
     let env;
     try {
@@ -284,9 +299,10 @@ class TestRunner {
       stdio: ["pipe", "pipe", "pipe", "ipc"]
     };
 
-    let childProcess;
+    let handler;
     try {
-      childProcess = this.fork(testRun.getCommand(), testRun.getArguments(), options);
+      //////////////////////////////////////////////////
+      handler = this.executors[test.profile.executor].execute(testRun, options);
       this.notIdle();
     } catch (e) {
       deferred.reject(e);
@@ -296,15 +312,15 @@ class TestRunner {
     // Simulate some of the aspects of a node process by adding stdout and stderr streams
     // that can be used by listeners and reporters.
     const statusEmitter = new EventEmitter();
-    statusEmitter.stdout = childProcess.stdout;
-    statusEmitter.stderr = childProcess.stderr;
+    statusEmitter.stdout = handler.stdout;
+    statusEmitter.stderr = handler.stderr;
     const statusEmitterEmit = (type, message) => {
       statusEmitter.emit(type, message);
     };
 
     let sentry;
 
-    let seleniumSessionId;
+    let testMetadata;
     let stdout = clc.greenBright(logStamp()) + " Magellan child process start\n\n";
     let stderr = "";
 
@@ -340,7 +356,7 @@ class TestRunner {
 
         metadata: {
           test: test.locator.toString(),
-          browser: test.browser.browserId,
+          profile: test.profile.id,
           // NOTE: attempt numbers are 1-indexed
           attemptNumber: (test.attempts + 1)
         }
@@ -375,40 +391,39 @@ class TestRunner {
         status: "finished",
         name: test.locator.toString(),
         passed: code === 0,
-        metadata: {
-          //
-          // TODO: move the generation of this resultURL to sauce support modules
-          // TODO: leave it open to have result URLs for anything including non-sauce tests
-          //       right now this is directly tied to sauce since sauce is the only thing that
-          //       generates a resultURL, but in the future, we may have resultURLs that
-          //       originate from somewhere else.
-          //
-          resultURL: "https://saucelabs.com/tests/" + seleniumSessionId
-        }
+        metadata: testMetadata
       });
 
       // Detach ALL listeners that may have been attached
-      childProcess.stdout.removeAllListeners();
-      childProcess.stderr.removeAllListeners();
-      childProcess.stdout.unpipe();
-      childProcess.stderr.unpipe();
-      childProcess.removeAllListeners();
+      handler.stdout.removeAllListeners();
+      handler.stderr.removeAllListeners();
+      handler.stdout.unpipe();
+      handler.stderr.unpipe();
+      handler.removeAllListeners();
 
       statusEmitter.stdout = null;
       statusEmitter.stderr = null;
 
-      // Resolve the promise
-      deferred.resolve({
-        error: (code === 0) ? null : "Child test run process exited with code " + code,
-        stderr,
-        stdout
-      });
+      test.executor.summerizeTest(
+        this.buildId,
+        {
+          result: code === 0,
+          metadata: testMetadata
+        },
+        () => {
+          // Resolve the promise
+          deferred.resolve({
+            error: (code === 0) ? null : "Child test run process exited with code " + code,
+            stderr,
+            stdout
+          });
+        });
     });
 
     if (this.debug) {
       // For debugging purposes.
-      childProcess.on("message", (msg) => {
-        this.console.log("Message from worker:", msg);
+      handler.on("message", (msg) => {
+        logger.debug("Message from worker:" + JSON.stringify(msg));
       });
     }
 
@@ -419,18 +434,19 @@ class TestRunner {
     //
     // FIXME: make it possible to receive this information from test frameworks not based on nodejs
     //
-    childProcess.on("message", (message) => {
-      if (message.type === "selenium-session-info") {
-        seleniumSessionId = message.sessionId;
+    handler.on("message", (message) => {
+      if (message.type === "test-meta-data") {
+        testMetadata = message.metadata;
       }
     });
 
-    childProcess.stdout.on("data", (data) => {
+    handler.stdout.on("data", (data) => {
       let text = ("" + data);
       if (text.trim() !== "") {
         text = text
           .split("\n")
           .filter((line) => {
+            /* istanbul ignore next */
             return line.trim() !== "" || line.indexOf("\n") > -1;
           })
           .map((line) => {
@@ -447,12 +463,13 @@ class TestRunner {
       }
     });
 
-    childProcess.stderr.on("data", (data) => {
+    handler.stderr.on("data", (data) => {
       let text = ("" + data);
       if (text.trim() !== "") {
         text = text
           .split("\n")
           .filter((line) => {
+            /* istanbul ignore next */
             return line.trim() !== "" || line.indexOf("\n") > -1;
           })
           .map((line) => {
@@ -469,7 +486,7 @@ class TestRunner {
       }
     });
 
-    childProcess.on("close", workerClosed);
+    handler.on("close", workerClosed);
 
     // A sentry monitors how long a given worker has been working. In every
     // strictness level except BAIL_NEVER, we kill a worker process and its
@@ -493,10 +510,10 @@ class TestRunner {
         this.clearInterval(sentry);
 
         // Tell the child to shut down the running test immediately
-        childProcess.send({
+        handler.send({
           signal: "bail",
           customMessage: "Killed by magellan after " + strictness.LONG_RUNNING_TEST
-            + "ms (long running test)"
+          + "ms (long running test)"
         });
 
         this.setTimeout(() => {
@@ -521,10 +538,6 @@ class TestRunner {
       msg.push("-->");
       msg.push((this.serial ? "Serial mode" : "Worker " + worker.index) + ",");
 
-      if (this.sauceSettings && worker.tunnelId) {
-        msg.push("tunnel id: " + worker.tunnelId + ",");
-      }
-
       msg.push("mock port:" + worker.portOffset + ",");
 
       if (worker.token) {
@@ -533,7 +546,7 @@ class TestRunner {
 
       msg.push("running test: " + test.toString());
 
-      this.console.log(msg.join(" "));
+      logger.log(msg.join(" "));
     }
 
     let testRun;
@@ -543,7 +556,7 @@ class TestRunner {
       const childBuildId = guid();
 
       // Note: we must sanitize the buildid because it might contain slashes or "..", etc
-      const tempAssetPath = path.resolve(this.settings.tempDir + "/build-"
+      const tempAssetPath = this.path.resolve(this.settings.tempDir + "/build-"
         + sanitizeFilename(this.buildId) + "_" + childBuildId + "__temp_assets");
 
       this.mkdirSync(tempAssetPath);
@@ -564,17 +577,15 @@ class TestRunner {
 
         // Magellan environment id (i.e. id of browser, id of device, version, etc.),
         // typically reflects one of the items from --browsers=item1,item2,item3 options
-        environmentId: test.browser.browserId,
+        // environmentId: test.browser.browserId,
+        profile: test.profile,
+        // executor: this.executors[test.profile.executor],
 
         // The locator object originally generated by the plugin itself
         locator: test.locator,
 
         seleniumPort: worker.portOffset + 1,
-        mockingPort: worker.portOffset,
-
-        tunnelId: worker.tunnelId,
-        sauceSettings: this.sauceSettings,
-        sauceBrowserSettings: test.sauceBrowserSettings
+        mockingPort: worker.portOffset
       });
     } catch (e) {
       deferred.reject(e);
@@ -582,7 +593,7 @@ class TestRunner {
 
     if (testRun) {
       this.setTimeout(() => {
-        this.spawnTestProcess(testRun, test)
+        this.execute(testRun, test)
           .then(deferred.resolve)
           .catch(deferred.reject);
       }, WORKER_START_DELAY);
@@ -593,14 +604,14 @@ class TestRunner {
 
   gatherTrends() {
     if (this.settings.gatherTrends) {
-      this.console.log("Updating trends ...");
+      logger.log("Updating trends ...");
 
       let existingTrends;
 
       try {
         existingTrends = JSON.parse(this.fs.readFileSync("./trends.json"));
       } catch (e) {
-        existingTrends = {failures: {}};
+        existingTrends = { failures: {} };
       }
 
       Object.keys(this.trends.failures).forEach((key) => {
@@ -612,21 +623,20 @@ class TestRunner {
 
       this.fs.writeFileSync("./trends.json", JSON.stringify(existingTrends, null, 2));
 
-      this.console.log("Updated trends at ./trends.json");
+      logger.log("Updated trends at ./trends.json");
     }
   }
 
   logFailedTests() {
-    this.console.log(clc.redBright("\n============= Failed Tests:  =============\n"));
+    logger.log(clc.redBright("============= Failed Tests:  ============="));
 
     this.failedTests.forEach((failedTest) => {
-      this.console.log("\n- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -"
-        + " - - - - - - - - - - - - - - - ");
-      this.console.log("Failed Test: " + failedTest.toString());
-      this.console.log(" # attempts: " + failedTest.attempts);
-      this.console.log("     output: ");
-      this.console.log(failedTest.stdout);
-      this.console.log(failedTest.stderr);
+      logger.log("- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -");
+      logger.log("Failed Test: " + failedTest.toString());
+      logger.log(" # attempts: " + failedTest.attempts);
+      logger.log("     output: ");
+      logger.log(failedTest.stdout);
+      logger.log(failedTest.stderr);
     });
   }
 
@@ -667,23 +677,23 @@ class TestRunner {
       }
     });
 
-    this.console.log(clc.greenBright("\n============= Suite Complete =============\n"));
-    this.console.log("     Status: " + status);
-    this.console.log("    Runtime: " + this.prettyMs((new Date()).getTime() - this.startTime));
-    this.console.log("Total tests: " + this.numTests);
-    this.console.log(" Successful: " + this.passedTests.length + " / " + this.numTests);
+    logger.log(clc.greenBright("============= Suite Complete ============="));
+    logger.log("     Status: " + status);
+    logger.log("    Runtime: " + this.prettyMs((new Date()).getTime() - this.startTime));
+    logger.log("Total tests: " + this.numTests);
+    logger.log(" Successful: " + this.passedTests.length + " / " + this.numTests);
 
     _.forOwn(retryMetrics, (testCount, numRetries) => {
-      this.console.log(testCount + " test(s) have retried: " + numRetries + " time(s)");
+      logger.log(testCount + " test(s) have retried: " + numRetries + " time(s)");
     });
 
     if (this.failedTests.length > 0) {
-      this.console.log("     Failed: " + this.failedTests.length + " / " + this.numTests);
+      logger.log("     Failed: " + this.failedTests.length + " / " + this.numTests);
     }
 
     const skipped = this.numTests - (this.passedTests.length + this.failedTests.length);
     if (this.hasBailed && skipped > 0) {
-      this.console.log("    Skipped: " + skipped);
+      logger.log("    Skipped: " + skipped);
     }
 
     const flushNextListener = () => {
@@ -702,7 +712,7 @@ class TestRunner {
             promise
               .then(flushNextListener)
               .catch((error) => {
-                this.console.log("Error when flushing listener output: ", error);
+                logger.log("Error when flushing listener output: ", error);
                 flushNextListener();
               });
           } else {
@@ -740,7 +750,7 @@ class TestRunner {
     if (this.hasBailed) {
       // Ignore results from this test if we've bailed. This is likely a test that
       // was killed when the build went into bail mode.
-      this.console.log("\u2716 " + clc.redBright("KILLED ") + " " + test.toString()
+      logger.log("\u2716 " + clc.redBright("KILLED ") + " " + test.toString()
         + (this.serial ? "\n" : ""));
       return;
     }
@@ -780,9 +790,9 @@ class TestRunner {
     let suffix;
 
     if (this.serial) {
-      prefix = "\n(" + (this.passedTests.length + this.failedTests.length) + " / "
+      prefix = "(" + (this.passedTests.length + this.failedTests.length) + " / "
         + this.numTests + ")";
-      suffix = "\n";
+      suffix = "";
     } else {
       prefix = "(" + (this.passedTests.length + this.failedTests.length) + " / "
         + this.numTests + ") <-- Worker " + test.workerIndex;
@@ -790,8 +800,8 @@ class TestRunner {
     }
 
     const requeueNote = testRequeued ? clc.cyanBright("(will retry).  Spent "
-        + test.getRuntime() + " msec") : "";
-    this.console.log(prefix + " "
+      + test.getRuntime() + " msec") : "";
+    logger.log(prefix + " "
       + (successful ? clc.greenBright("PASS ") : clc.redBright("FAIL ")) + requeueNote + " "
       + test.toString() + " " + suffix);
 
@@ -842,7 +852,7 @@ class TestRunner {
 
       if (totalAttempts > strictness.THRESHOLD_MIN_ATTEMPTS) {
         if (ratio > strictness.THRESHOLD) {
-          this.console.log("Magellan has seen at least " + (strictness.THRESHOLD * 100) + "% of "
+          logger.log("Magellan has seen at least " + (strictness.THRESHOLD * 100) + "% of "
             + " tests fail after seeing at least " + strictness.THRESHOLD_MIN_ATTEMPTS
             + " tests run. Bailing early.");
           return true;

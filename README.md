@@ -17,18 +17,37 @@ Features
     - Testing and debugging workflows. Run many tests at once, one test at a time, filter by tags, groups, etc.
     - Suite run control: Bail likely-failing suite runs early, or bail upon first failure.
     - Run many different parallel **local** browsers (eg: Chrome, Firefox, etc) all at the same time.
-    - Run many different parallel **remote** (SauceLabs) browsers.
+    - Run many different parallel **remote** (SauceLabs, Browserstack, etc.) browsers.
   - **Integration Support**
     - Status reporter API with events streamed from workers, with some included reporters.
     - Slack reporting support.
     - MongoDB event export.
     - [Admiral](https://github.com/TestArmada/admiral) reporting support.
     - Plays well with CI (Jenkins, etc).
-    - SauceLabs Remote Browser and Device Support:
-      - Optional Sauce Connect tunnel management (`--create_tunnels`).
-      - Create lists of browser tiers or browser testing groups with browser profiles (eg: tier1 browsers, tier2 browsers, mobile browsers, vintage IE versions, etc).
-      - Manage not just browsers, but also devices for native application testing (iOS and Android)
+    - Runs test over the cloud like saucelabs via magellan executor (configurable and in parallel)
     - Can talk to a [locks service](https://github.com/TestArmada/locks) to control saucelabs virtual machine usage (beta).
+
+------------------**BREAKING CHANGE in v10.0.0**------------------
+### Magellan Executor
+  
+Executor is a mid layer between magellan and test framework to drive test run (via framework) based on a specific need (differentiated by executing environments). Magellan doesn't provide a default executor, so you need to pick at least one executor from the existing executor list, or implement one yourself.
+
+#### What is an executor
+1. middle layer between magellan and test framework
+2. bridge to connect magellan and plugins
+
+#### What can an executor do
+1. resolve profiles (env info, test info, capabilities for selenium test)
+2. patch setup and teardown event on the magellan test runner
+3. patch setup and teardown event on a magellan worker
+4. do some extra work in test's lifecycle
+5. communicate to a specific test env
+
+#### Existing executors
+ * [magellan-local-executor](https://github.com/TestArmada/magellan-local-executor)
+ * [magellan-saucelabs-executor](https://github.com/TestArmada/magellan-saucelabs-executor)
+ * [magellan-browserstack-executor](https://github.com/TestArmada/magellan-browserstack-executor)(early beta)
+ 
 
 Test Framework Compatibility and Installation
 =============================================
@@ -37,29 +56,11 @@ Magellan supports test frameworks like Mocha and Nightwatch via the usage of **p
 
 #### Mocha
 
-Plugin:
-  - https://github.com/TestArmada/magellan-mocha-plugin
+------------------BREAKING CHANGE in v10.0.0------------------
 
-Boilerplate / example projects:
+magellan@10.0.0 doesn't support the mocha plugin for now. If you're using magellan version 9 or lower to run mocha test please don't upgrade. Or if you're seeking for mocha support please use magellan version 9 or lower.
 
-  - `wd` ( [example Mocha/wd project](https://github.com/TestArmada/boilerplate-mocha-wd) )
-  - `webdriver.io` ( [example Mocha/webdriver.io project](https://github.com/TestArmada/boilerplate-mocha-webdriverio) )
-  - `node.js` test suites - see `magellan`'s own test suite
-  - `appium.js` - example project coming soon.
-
-Installation:
-
-```shell
-npm install --save-dev testarmada-magellan
-npm install --save-dev testarmada-magellan-mocha-plugin
-```
-
-`magellan.json`
-```json
-{
-  "framework": "testarmada-magellan-mocha-plugin"
-}
-```
+All magellan mocha supports can be found [here](https://github.com/TestArmada/magellan/blob/v8.8.5/README.md#mocha)
 
 #### Nightwatch
 
@@ -72,17 +73,30 @@ Boilerplate / example project:
 Helper Library: (note: this is not required for nightwatch support)
   - https://github.com/TestArmada/magellan-nightwatch
 
+Executor:
+ - must have
+   - https://github.com/TestArmada/magellan-local-executor
+ - optional
+   - https://github.com/TestArmada/magellan-saucelabs-executor
+   - https://github.com/TestArmada/magellan-browserstack-executor (early beta)
+
 Installation:
 
 ```shell
 npm install --save-dev testarmada-magellan
 npm install --save-dev testarmada-magellan-nightwatch-plugin
+npm install --save-dev testarmada-magellan-local-executor
+npm install --save-dev testarmada-magellan-saucelabs-executor
 ```
 
 `magellan.json`
 ```json
 {
-  "framework": "testarmada-magellan-nightwatch-plugin"
+  "framework": "testarmada-magellan-nightwatch-plugin",
+  "executors": [
+    "testarmada-magellan-local-executor",
+    "testarmada-magellan-saucelabs-executor"
+  ]
 }
 ```
 
@@ -130,44 +144,27 @@ Quick Reference Guide for Command-Line Use
 
 #### Running Many Tests in Parallel (Default)
 
-By default, `magellan` will try to run your test suite the fastest way possible, in parallel, in the `phantomjs` browser.
+By default, `magellan` will try to run your test suite the fastest way possible, in parallel
 
-To execute your tests, run:
+You can also run parallel tests on a real local browser (with `magellan-local-executor`):
 ```console
-$ magellan
-```
-
-You can also run parallel tests on a real local browser:
-```console
-# launch several instances of Chrome at once and run tests in parallel
-$ magellan --browser=chrome
+# launch several instances of phantomjs at once and run tests in parallel
+$ magellan --local_browser=phantomjs
 
 # launch several instances of Firefox at once and run tests in parallel
-$ magellan --browser=firefox
+$ magellan --local_browser=firefox
 ```
 
 #### Testing in Multiple Browsers
 
 `magellan` can run your test suite across multiple browsers with one command:
 ```console
-# Run tests locally in both PhantomJS and Chrome
-$ magellan --browser=chrome,phantomjs
 
-# Run tests locally in Chrome and Firefox
-$ magellan --browser=chrome,firefox
+# Run tests locally in Chrome,phantomjs and Firefox
+$ magellan --local_browsers=chrome,firefox,phantomjs
 ```
 
 #### Controlling Which Tests Run
-
-##### Tag Support in Mocha-based Tests
-
-In Mocha-based tests, Magellan will find tags in `it()` strings in the form of a tagname preceded by an `@`. For example, to define a test that would match with `--tags=commerce` or `--tags=smoke`, we would write:
-
-```javascript
-it("should submit the purchase @commerce @smoke", function (done) {
-  ...
-});
-```
 
 ##### Tag Support in Nightwatch.js-based Tests
 
@@ -440,100 +437,8 @@ module.exports = SetupTeardown;
 
 Note: Magellan should ensure that `flush()` always runs even if your test suite fails.
 
-SauceLabs Support
-=================
-
-Magellan supports running tests through SauceLabs remote browsers. To do this, the following environment variables should be set:
-
-```shell
-# Set SauceLabs Credentials
-export SAUCE_USERNAME='xxxxxxxxxx'
-export SAUCE_ACCESS_KEY='xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx'
-
-# Set Secure Tunnel Settings
-
-# SauceConnect version for download
-export SAUCE_CONNECT_VERSION=4.3.10
-```
-
-A Sauce Connect tunnel prefix must be set for tunnel management to work when using `--create_tunnels` (see more on this below).
-
-```
-# Tunnel id prefix, Example: "my_tunnel", "qa_tunnel", etc
-export SAUCE_TUNNEL_ID="xxxxxxxxx"
-```
-
-Listing and Using SauceLabs Browsers
-====================================
-
-Magellan can query the SauceLabs API for a list of available browsers (for web testing) and devices (for native app testing in iOS and Android), and present them as a list of friendly browser ids:
-
-```console
-$ magellan --list_browsers
-```
-
-To use a given SauceLabs browser, specify it when using the `--sauce` option:
-
-```console
-$ magellan --sauce --browser=chrome_42_Windows_2012_R2_Desktop
-```
-
-To use multiple SauceLabs browsers and environments at the same time, simply list multiple ids:
-```
-$ magellan --sauce --browsers=chrome_42_Windows_2012_R2_Desktop,safari_7_OS_X_10_9_Desktop
-```
-
-Note: If you are building reporting or CI tools and want to use the same SauceLabs API and browser naming support toolset, check out [guacamole](https://github.com/TestArmada/guacamole).
-
-SauceLabs Tunnelling Support (Sauce Connect)
-============================================
-
-**NOTE**: By default, Magellan assumes that tests run on an open network visible to SauceLabs.
-
-If your tests are running in a closed CI environment not visible to the Internet, a tunnel is required from SauceLabs to your test machine (when using `--sauce` mode). To activate tunnel creation, use `--create_tunnels`. Magellan will create a tunnel for the test run. If you want to distribute your work load across more than one tunnel, specify the `--max_tunnels=N` option, like so:
-
-```console
-$ magellan --sauce --browser=chrome_42_Windows_2012_R2_Desktop --create_tunnels --max_tunnels=4 --max_workers=16
-```
-
-In the above example, 4 tunnels will be distributed amongst 16 workers.
-
-SauceLabs VM Traffic Control (`locks`)
-======================================
-
-To specify a `locks` server, set the environment variable `LOCKS_SERVER`:
-
-```
-export LOCKS_SERVER=http://locks.server.example:4765/
-```
-
-or use the `--locks_server` option:
-```
-$ magellan --locks_server=http://locks.server.example:4765 --sauce --browser=chrome_42_Windows_2012_R2_Desktop --create_tunnels --max_tunnels=4 --max_workers=16
-```
-
-Display Resolution and Orientation Support (SauceLabs Browsers)
-===============================================================
-
-To ensure that the SauceLabs display being used has enough resolution to support a given browser window size, use the `--resolution` option:
-
-Single Sauce browser:
-```console
-$ magellan --sauce --browser=chrome_42_Windows_2012_R2_Desktop --resolution=1024x768
-```
-
-Multiple Sauce browsers:
-```console
-$ magellan --sauce --browsers=chrome_42_Windows_2012_R2_Desktop,safari_7_OS_X_10_9_Desktop --resolution=1024x768
-```
-
-In this case, `1024x768` is selected for `chrome_42_Windows_2012_R2_Desktop` and `safari_7_OS_X_10_9_Desktop`. If this resolution isn't available in all Sauce browser environments specified, Magellan will return an error.
-
-For Sauce devices that support it, orientation is also supported with the `--orientation` option:
-
-```console
-$ magellan --sauce --browser=iphone_8_2_iOS_iPhone_Simulator --orientation=landscape
-```
+Local Browser Profiles
+=======================
 
 Sometimes it's useful to specify a list of environments with differing resolutions or orientations. For this case, Magellan supports profiles stored in `magellan.json`:
 

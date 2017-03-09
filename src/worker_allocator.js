@@ -1,9 +1,9 @@
 "use strict";
 
 const _ = require("lodash");
-const clc = require("cli-color");
 const settings = require("./settings");
 const portUtil = require("./util/port_util");
+const logger = require("./logger");
 
 const MAX_ALLOCATION_ATTEMPTS = 120;
 const WORKER_START_DELAY = 1000;
@@ -14,7 +14,6 @@ const WORKER_START_DELAY = 1000;
 class Allocator {
   constructor(MAX_WORKERS, opts) {
     _.assign(this, {
-      console,
       setTimeout,
       checkPorts: portUtil.checkPorts,
       getNextPort: portUtil.getNextPort,
@@ -22,8 +21,8 @@ class Allocator {
     }, opts);
 
     if (this.debug) {
-      this.console.log("Worker Allocator starting.");
-      this.console.log("Port allocation range from: " + settings.BASE_PORT_START + " to "
+      logger.log("Worker Allocator starting.");
+      logger.log("Port allocation range from: " + settings.BASE_PORT_START + " to "
         + (settings.BASE_PORT_START + settings.BASE_PORT_RANGE - 1) + " with "
         + settings.BASE_PORT_SPACING + " ports available to each worker.");
     }
@@ -105,11 +104,11 @@ class Allocator {
           // Print a message that ports are not available, show which ones in the range
           availableWorker.occupied = false;
 
-          this.console.log(clc.yellowBright("Detected port contention while spinning up worker: "));
+          logger.warn("Detected port contention while spinning up worker: ");
           statuses.forEach((status, portIndex) => {
             if (!status.available) {
-              this.console.log(clc.yellowBright("  in use: #: " + status.port + " purpose: "
-                + (desiredPortLabels[portIndex] ? desiredPortLabels[portIndex] : "generic")));
+              logger.warn("  in use: #: " + status.port + " purpose: "
+                + (desiredPortLabels[portIndex] ? desiredPortLabels[portIndex] : "generic"));
             }
           });
 

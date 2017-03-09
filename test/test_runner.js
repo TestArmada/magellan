@@ -1,592 +1,566 @@
-/* eslint no-undef: 0, no-invalid-this: 0, no-magic-numbers: 0, no-unused-expressions: 0,
-  no-throw-literal: 0 */
 "use strict";
-const expect = require("chai").expect;
+
+const chai = require("chai");
+const chaiAsPromise = require("chai-as-promised");
 const _ = require("lodash");
-const EventEmitter = require("events").EventEmitter;
-const sinon = require("sinon");
 
 const TestRunner = require("../src/test_runner");
+const logger = require("../src/logger");
 
-class BadTestRun {
-  getEnvironment() {
-    throw new Error("foo");
-  }
-  getCommand() {
-    return "command";
-  }
-  getArguments() {
-    return "args";
-  }
-}
+chai.use(chaiAsPromise);
 
-class FakeTestRun {
-  getEnvironment() {
-    return "foo";
-  }
-  getCommand() {
-    return "command";
-  }
-  getArguments() {
-    return "args";
-  }
-}
+const expect = chai.expect;
+const assert = chai.assert;
 
-class MockIO extends EventEmitter {
-  constructor() {
-    super();
-  }
-  unpipe() {
-  }
-}
-
-class MockChildProcess extends EventEmitter {
-  constructor() {
-    super();
-    this.stdout = new MockIO();
-    this.stdout.setMaxListeners(50);
-    this.stderr = new MockIO();
-    this.stderr.setMaxListeners(50);
-  }
-  removeAllListeners() {
-  }
-}
-
-const _testStruct = (moreOpts) => {
-  return _.merge({
-    testLocator: "baz",
-    stopClock: () => {},
-    startClock: () => {},
-    getRuntime: () => {return 20;},
-    fail: () => {},
-    browser: {
-      browserId: "chrome"
-    },
-    locator: "bar",
-    status: 3,
-    canRun: () => {
-      return true;
+const settings = {
+  bailTime: 1,
+  buildId: "FADSFASDF_ASDFSADF2",
+  bailTimeExplicitlySet: true,
+  gatherTrends: true,
+  testFramework: {
+    TestRun: function () {
+      return {
+        getEnvironment() { },
+        enableExecutor() { }
+      }
     }
-  }, moreOpts);
+  }
 };
 
-const _tests = () => {
-  return [
-    {test: "foo", locator: "bar"},
-    {test: "bar", locator: "bar"},
-    {test: "baz", locator: "bar"}
-  ];
-};
+const tests = [
+  { filename: 'tests/demo-app.js' },
+  { filename: 'tests/demo-web.js' }
+];
 
-const _options = (moreOpts) => {
-  return _.merge({
-    browsers: [{
-      browserId: "chrome",
-      resolution: 2000,
-      orientation: "portrait"
-    }],
-    allocator: {
-      get: (cb) => {
-        cb(null, {index: 0, tunnelId: 50, token: "foo"});
-      },
-      release: () => {}
+const executors = {
+  "sauce": {
+    getProfiles(opts) {
+      return new Promise((resolve) => {
+        resolve(opts.profiles);
+      });
     },
-    listeners: [
-      {
-        listenTo: () => {}
-      },
-      {
-        listenTo: () => {},
-        flush: () => {}
-      },
-      {
-        listenTo: () => {},
-        flush: () => {
-          return {
-            then: () => {
-              return {
-                catch: (cb) => { cb({}); }
-              };
-            }
-          };
-        }
-      }
-    ],
-    sauceSettings: {
-      user: "Jack"
-    }
-  }, moreOpts);
-};
-
-const _testOptions = (moreOpts) => {
-  return _.merge({
-    console: {
-      log: () => {},
-      error: () => {}
+    getCapabilities(profile, opts) {
+      return new Promise((resolve) => {
+        resolve(profile);
+      });
     },
-    fs: {
-      readFileSync: () => {
-        return JSON.stringify({failures: {
-          foo: 1,
-          baz: 2
-        }});
-      },
-      writeFileSync: () => {}
+    setupTest(callback) {
+      callback(null, "FAKE_EXECUTOR_TOKEN");
     },
-    mkdirSync: () => {},
-    fork: () => {
-      const m = new MockChildProcess();
-      m.setMaxListeners(50);
-      return m;
+    teardownTest(token, callback) {
+      callback();
     },
-    sauceBrowsers: {
-      browser: () => {
-        return {foo: 1};
-      }
-    },
-    settings: {
-      testFramework: {
-        TestRun: FakeTestRun
-      },
-      tempDir: "foo",
-      buildId: "buildId-bar"
-    },
-    clearInterval: () => {},
-    setTimeout: (cb) => { cb(); },
-    setInterval: (cb) => { cb(); },
-    prettyMs: () => {return "";}
-  }, moreOpts);
-};
-
-describe("TestRunner Class", () => {
-  it("should initialize", () => {
-    const tr = new TestRunner(_tests(), _options({}), _testOptions({}));
-    expect(tr).to.be.not.be.null;
-  });
-
-  it("should initialize with bail options", () => {
-    const tr1 = new TestRunner(_tests(), _options({bailFast: true}), _testOptions({}));
-    expect(tr1).to.be.not.be.null;
-    expect(tr1.strictness).to.eql(4);
-
-    const tr2 = new TestRunner(_tests(), _options({bailOnThreshold: 3}), _testOptions({}));
-    expect(tr2).to.be.not.be.null;
-    expect(tr2.strictness).to.eql(3);
-
-    const tr3 = new TestRunner(_tests(), _options(), _testOptions({
-      settings: {
-        bailTimeExplicitlySet: 1000
-      }
-    }));
-    expect(tr3).to.be.not.be.null;
-    expect(tr3.strictness).to.eql(2);
-  });
-
-  it("should initialize with trends", () => {
-    const tr = new TestRunner(_tests(), _options(), _testOptions({
-      settings: {
-        gatherTrends: true
-      }
-    }));
-    expect(tr).to.be.not.be.null;
-    expect(tr.trends).to.eql({failures: {}});
-  });
-
-  it("should start", () => {
-    const tr1 = new TestRunner(_tests(), _options(), _testOptions({}));
-    tr1.start();
-    expect(tr1.startTime).to.not.be.null;
-
-    // Test serial
-    const tr2 = new TestRunner(_tests(), _options({
-      serial: true
-    }), _testOptions({}));
-    tr2.start();
-    expect(tr2.startTime).to.not.be.null;
-
-    // Test no tests
-    const tr3 = new TestRunner([], _options({}), _testOptions({}));
-    tr3.start();
-    expect(tr3.startTime).to.not.be.null;
-  });
-
-  it("should idle", () => {
-    const tr1 = new TestRunner(_tests(), _options(), _testOptions({}));
-    tr1.notIdle();
-    expect(tr1.busyCount).to.eql(1);
-    tr1.notIdle();
-    expect(tr1.busyCount).to.eql(2);
-    tr1.notIdle();
-    expect(tr1.busyCount).to.eql(3);
-    tr1.maybeIdle();
-    expect(tr1.busyCount).to.eql(2);
-    tr1.maybeIdle();
-    expect(tr1.busyCount).to.eql(1);
-    tr1.maybeIdle();
-    expect(tr1.busyCount).to.eql(0);
-  });
-
-  it("should run a test", () => {
-    const spy1 = sinon.spy();
-    const tr1 = new TestRunner(_tests(), _options(), _testOptions({
-      analytics: {
-        push: spy1,
-        mark: spy1
-      }
-    }));
-    tr1.stageTest(_testStruct(), () => {});
-    expect(spy1.called).to.be.true;
-  });
-
-  it("should fail on a bad worker allocation", (done) => {
-    // Uncle Owen! This one"s got a bad motivator!
-    const spy = sinon.spy();
-    const test = {
-      fail: spy
-    };
-    const tr = new TestRunner(_tests(), _options({
-      allocator: {
-        get: (cb) => {
-          cb({bad: "stuff"});
-        }
-      }
-    }), _testOptions({}));
-    tr.stageTest(_testStruct(test), () => {
-      expect(spy.called).to.be.true;
-      done();
-    });
-  });
-
-  it("should run through a passing test", (done) => {
-    const myMock = new MockChildProcess();
-    myMock.setMaxListeners(50);
-    const spy = sinon.spy();
-    const tr = new TestRunner(_tests(), _options({
-      listeners: [
-        {}
-      ],
-      debug: true
-    }), _testOptions({
-      fork: () => {
-        return myMock;
-      },
-      settings: {
-        gatherTrends: true
-      }
-    }));
-    tr.stageTest(_testStruct({
-      pass: spy
-    }), () => {
-      expect(spy.called).to.be.true;
-
-      tr.trends.failures = {
-        fooz: 1,
-        bar: 2,
-        baz: 3
-      };
-      tr.gatherTrends();
-      tr.logFailedTests();
-      tr.summarizeCompletedBuild();
-
-      done();
-    });
-
-    myMock.emit("message", {sessionId: 52});
-    myMock.emit("message", {type: "selenium-session-info", sessionId: 52});
-    myMock.stdout.emit("data", "");
-    myMock.stdout.emit("data", "Lotsa love");
-    myMock.stdout.emit("data", "Lotsa love\n2");
-    myMock.stderr.emit("data", "");
-    myMock.stderr.emit("data", "Notso lotsa love");
-    myMock.stderr.emit("data", "Notso lotsa love\n2");
-    myMock.emit("close", 0);
-  });
-
-  it("should run through a passing test w/o debugging", (done) => {
-    const myMock = new MockChildProcess();
-    myMock.setMaxListeners(50);
-    const spy = sinon.spy();
-    const tr = new TestRunner(_tests(), _options({
-      listeners: [
-        {}
-      ]
-    }), _testOptions({
-      fork: () => {
-        return myMock;
-      },
-      settings: {
-        gatherTrends: true
-      }
-    }));
-    tr.stageTest(_testStruct({
-      pass: spy
-    }), () => {
-      expect(spy.called).to.be.true;
-
-      tr.gatherTrends();
-      tr.logFailedTests();
-      tr.summarizeCompletedBuild();
-      done();
-    });
-
-    myMock.emit("message", {sessionId: 52});
-    myMock.emit("message", {type: "selenium-session-info", sessionId: 52});
-    myMock.emit("close", 0);
-  });
-
-  it("should report failed tests", () => {
-    const spy = sinon.spy();
-    let text = "";
-    const tr = new TestRunner(_tests(), _options(), _testOptions({
-      settings: {
-        gatherTrends: true
-      },
-      console: {
-        log: (t) => {
-          text += t;
-        }
-      },
-      fs: {
-        writeFileSync: spy
-      }
-    }));
-    tr.failedTests = [
-      {
-        stdout: "---FOOOZ---",
-        stderr: "---BAAAZ---"
-      }
-    ];
-    tr.gatherTrends();
-    tr.logFailedTests();
-    tr.summarizeCompletedBuild();
-
-    expect(spy.called).to.be.true;
-    expect(text.match(/---FOOOZ---/).length).to.eql(1);
-    expect(text.match(/---BAAAZ---/).length).to.eql(1);
-  });
-
-  it("should handle failed tests", (done) => {
-    const myMock = new MockChildProcess();
-    myMock.setMaxListeners(50);
-    const spy = sinon.spy();
-    const tr = new TestRunner(_tests(), _options(), _testOptions({
-      fork: () => {
-        return myMock;
-      },
-      settings: {
-        gatherTrends: true
-      }
-    }));
-    tr.stageTest(_testStruct({
-      fail: spy
-    }), () => {
-      expect(spy.called).to.be.true;
-      tr.gatherTrends();
-      tr.logFailedTests();
-      tr.summarizeCompletedBuild();
-      done();
-    });
-    myMock.emit("close", -1);
-  });
-
-  it("should handle inability to get test environment", (done) => {
-    const spy = sinon.spy();
-    const tr = new TestRunner(_tests(), _options(), _testOptions({
-      settings: {
-        testFramework: {
-          TestRun: BadTestRun
-        }
-      }
-    }));
-    tr.stageTest(_testStruct({
-      fail: spy
-    }), () => {
-      expect(spy.called).to.be.true;
-      done();
-    });
-  });
-
-  it("should handle inability to fork", (done) => {
-    const spy = sinon.spy();
-    const tr = new TestRunner(_tests(), _options(), _testOptions({
-      fork: () => {
-        throw new Error("Nope!");
-      }
-    }));
-    tr.stageTest(_testStruct({
-      fail: spy
-    }), () => {
-      expect(spy.called).to.be.true;
-      done();
-    });
-  });
-
-  it("should handle throwing in listenTo", () => {
-    const spy = sinon.spy();
-    const tr = new TestRunner(_tests(), _options({
-      listeners: [
-        {
-          listenTo: () => {
-            throw "Whoops!";
+    execute() {
+      return {
+        on(code, callback) {
+          if (code === "message") {
+            callback({ type: "test-meta-data", metadata: "FAKE_META" })
           }
+          else {
+            callback(0);
+          }
+        },
+        send() { },
+        removeAllListeners() { },
+        stdout: {
+          on(type, callback) { callback() },
+          removeAllListeners() { },
+          unpipe() { }
+        },
+        stderr: {
+          on(type, callback) { callback() },
+          removeAllListeners() { },
+          unpipe() { }
         }
-      ]
-    }), _testOptions());
-    tr.stageTest(_testStruct({
-      fail: spy
-    }), () => {
-      expect(spy.called).to.be.true;
-      // Not sure this is actually correct behavior. A throw in a listener is not a test failure.
-      done();
+      }
+    },
+    summerizeTest(buildid, metadat, callback) { callback(); },
+    wrapup(callback) { callback(); }
+  }
+};
+
+const profiles = [
+  { browser: "chrome", executor: "sauce" },
+  { browser: "firefox", executor: "sauce" }
+];
+
+const allocator = {
+  get(callback) { callback(null, { token: "FAKE_WORKER_TOKEN" }); },
+  release() { }
+};
+
+const options = {
+  debug: true,
+  bailFast: false,
+  bailOnThreshold: false,
+  maxWorkers: 1,
+  maxTestAttempts: 1,
+  serial: true,
+  onFailure() { },
+  onSuccess() { },
+  allocator: {},
+  listeners: [{
+    flush() { return new Promise((resolve) => { resolve() }); },
+    listenTo() { }
+  }]
+};
+
+let optsMock = {
+  fs: {
+    readFileSync() {
+      return "{\"failures\":{\"a\":1}}";
+    },
+    writeFileSync() { }
+  },
+  setTimeout(callback) { callback(); },
+  path: {
+    resolve() { return "FAKE_TEMP_PATH"; }
+  },
+  mkdirSync() { },
+  setInterval(callback) { callback(); }
+};
+
+let optionsMock = {};
+
+describe("test_runner", () => {
+  beforeEach(() => {
+    optsMock.settings = _.cloneDeep(settings);
+    optionsMock = _.cloneDeep(options);
+    optionsMock.profiles = _.cloneDeep(profiles);
+    optionsMock.executors = _.cloneDeep(executors);
+    optionsMock.allocator = _.cloneDeep(allocator);
+  });
+
+  describe("initialize", () => {
+    it("should pass", () => {
+      const tr = new TestRunner(tests, optionsMock, optsMock);
+      expect(tr.numTests).to.equal(4);
+      expect(tr.profiles.length).to.equal(2);
+      expect(tr.strictness).to.equal(2);
+    });
+
+    it("should pass with bail fast", () => {
+      optionsMock.bailFast = true;
+      const tr = new TestRunner(tests, optionsMock, optsMock);
+      expect(tr.strictness).to.equal(4);
+    });
+
+    it("should pass with bail early", () => {
+      optionsMock.bailOnThreshold = true;
+      const tr = new TestRunner(tests, optionsMock, optsMock);
+      expect(tr.strictness).to.equal(3);
+    });
+
+    it("should pass with bail never", () => {
+      optsMock.settings.bailTimeExplicitlySet = false;
+      const tr = new TestRunner(tests, optionsMock, optsMock);
+      expect(tr.strictness).to.equal(1);
     });
   });
 
-  it("should handle bailing", () => {
-    const myMock = new MockChildProcess();
-    myMock.setMaxListeners(50);
-    const tr = new TestRunner(_tests(), _options({
-      bailOnThreshold: 1
-    }), _testOptions({
-      fork: () => {
-        return myMock;
-      },
-      settings: {
-        gatherTrends: true
-      }
-    }));
-    tr.stageTest(_testStruct(), () => {});
-    myMock.emit("close", -1);
-    myMock.emit("close", -1);
-    myMock.emit("close", -1);
+  it("notIdle", () => {
+    const tr = new TestRunner(tests, optionsMock, optsMock);
+    tr.notIdle();
+    expect(tr.busyCount).to.equal(1);
+  });
 
-    expect(tr.shouldBail()).to.be.false;
-    tr.passedTests = [{attempts: 2}, {attempts: 1}];
-    expect(tr.shouldBail()).to.be.false;
-    tr.failedTests = [{attempts: 2}, {attempts: 1}];
-    expect(tr.shouldBail()).to.be.false;
-    tr.failedTests = [{attempts: 20}, {attempts: 25}];
-    expect(tr.shouldBail()).to.be.true;
+  it("maybeIdle", () => {
+    const tr = new TestRunner(tests, optionsMock, optsMock);
+    tr.busyCount = 1;
+    tr.maybeIdle();
+    expect(tr.busyCount).to.equal(0);
+  });
 
-    tr.gatherTrends();
+  it("logFailedTest", () => {
+    const tr = new TestRunner(tests, optionsMock, optsMock);
+    tr.failedTests = [{
+      toString() { },
+      attempts: 3,
+      stdout: "",
+      stderr: ""
+    }];
+
     tr.logFailedTests();
-    tr.summarizeCompletedBuild();
   });
 
-  it("should have bail fast logic", () => {
-    const tr = new TestRunner(_tests(), _options({
-      bailFast: true
-    }), _testOptions({}));
-
-    expect(tr.shouldBail()).to.be.false;
-    tr.passedTests = [{attempts: 2}, {attempts: 1}];
-    expect(tr.shouldBail()).to.be.false;
-    tr.failedTests = [{attempts: 2}, {attempts: 1}];
-    expect(tr.shouldBail()).to.be.true;
+  it("gatherTrends", () => {
+    const tr = new TestRunner(tests, optionsMock, optsMock);
+    tr.trends.failures = {
+      a: 1
+    };
+    tr.gatherTrends();
   });
 
-  it("should have bail fast logic", () => {
-    const tr = new TestRunner(_tests(), _options({
-      bailFast: true
-    }), _testOptions({}));
+  describe("shouldBail", () => {
+    it("should not bail if bail never", () => {
+      const tr = new TestRunner(tests, optionsMock, optsMock);
+      expect(tr.shouldBail()).to.equal(false);
+    });
 
-    expect(tr.shouldBail()).to.be.false;
-    tr.passedTests = [{attempts: 2}, {attempts: 1}];
-    expect(tr.shouldBail()).to.be.false;
-    tr.failedTests = [{attempts: 2}, {attempts: 1}];
-    expect(tr.shouldBail()).to.be.true;
+    it("should not bail if bail time only", () => {
+      optsMock.settings.bailTimeExplicitlySet = false;
+      const tr = new TestRunner(tests, optionsMock, optsMock);
+      expect(tr.shouldBail()).to.equal(false);
+    });
 
+    it("bail fast with 1 failure", () => {
+      optionsMock.bailFast = true;
+      const tr = new TestRunner(tests, optionsMock, optsMock);
+      tr.failedTests = [{}];
+      expect(tr.shouldBail()).to.equal(true);
+    });
+
+    it("bail fast with 0 failure", () => {
+      optionsMock.bailFast = true;
+      const tr = new TestRunner(tests, optionsMock, optsMock);
+      tr.failedTests = [];
+      expect(tr.shouldBail()).to.equal(false);
+    });
+
+    it("should not bail if unknown bail setup", () => {
+      const tr = new TestRunner(tests, optionsMock, optsMock);
+      tr.failedTests = [];
+      tr.strictness = 10;
+      expect(tr.shouldBail()).to.equal(false);
+    });
+
+    it("should bail on threshold", () => {
+      optionsMock.bailOnThreshold = true;
+      const tr = new TestRunner(tests, optionsMock, optsMock);
+
+      tr.passedTests = [{ attempts: 1 }, { attempts: 1 }, { attempts: 1 }, { attempts: 1 }];
+      tr.failedTests = [{ attempts: 3 }, { attempts: 3 }, { attempts: 3 }];
+      expect(tr.shouldBail()).to.equal(true);
+    });
+
+    it("should not bail if threshold isn't meet", () => {
+      optionsMock.bailOnThreshold = true;
+      const tr = new TestRunner(tests, optionsMock, optsMock);
+
+      tr.passedTests = [{ attempts: 1 }, { attempts: 1 }, { attempts: 1 }, { attempts: 1 }];
+      tr.failedTests = [{ attempts: 3 }];
+      expect(tr.shouldBail()).to.equal(false);
+    });
+  });
+
+  describe("summarizeCompletedBuild", () => {
+    it("no failed test", () => {
+      const tr = new TestRunner(tests, optionsMock, optsMock);
+      tr.startTime = (new Date()).getTime() - 300000;
+      return tr.summarizeCompletedBuild();
+    });
+
+    it("two failed tests, bail", () => {
+      const tr = new TestRunner(tests, optionsMock, optsMock);
+      tr.hasBailed = true;
+      tr.tests[0].status = 3;
+      tr.tests[0].getRetries = () => 3;
+      tr.failedTests = [{ attempts: 3 }];
+      tr.startTime = (new Date()).getTime() - 300000;
+      return tr.summarizeCompletedBuild();
+    });
+
+    it("two failed tests, bail with existing retries", () => {
+      const tr = new TestRunner(tests, optionsMock, optsMock);
+      tr.hasBailed = true;
+      tr.tests[0].status = 3;
+      tr.tests[0].getRetries = () => 3;
+      tr.tests[1].status = 3;
+      tr.tests[1].getRetries = () => 3;
+      tr.failedTests = [{ attempts: 3 }];
+      tr.startTime = (new Date()).getTime() - 300000;
+      return tr.summarizeCompletedBuild();
+    });
+
+    it("two failed tests, no bail", () => {
+      const tr = new TestRunner(tests, optionsMock, optsMock);
+      tr.failedTests = [{ attempts: 3 }, { attempts: 3 }];
+      tr.startTime = (new Date()).getTime() - 300000;
+      return tr.summarizeCompletedBuild();
+    });
+
+    it("listener doesn't flush function", () => {
+      optionsMock.listeners = [{ flush: "asdf" }];
+      const tr = new TestRunner(tests, optionsMock, optsMock);
+      tr.startTime = (new Date()).getTime() - 300000;
+      return tr.summarizeCompletedBuild();
+    });
+
+    it("listener doesn't flush promise", () => {
+      optionsMock.listeners = [{ flush() { } }];
+      const tr = new TestRunner(tests, optionsMock, optsMock);
+      tr.startTime = (new Date()).getTime() - 300000;
+      return tr.summarizeCompletedBuild();
+    });
+
+    it("listener doesn't flush promise resolve", () => {
+      optionsMock.listeners = [{ flush() { return new Promise((resolve, reject) => { reject(); }) } }];
+      const tr = new TestRunner(tests, optionsMock, optsMock);
+      tr.startTime = (new Date()).getTime() - 300000;
+      return tr.summarizeCompletedBuild();
+    });
+  });
+
+  describe("buildFinished", () => {
+    it("should succeed", (done) => {
+      const tr = new TestRunner(tests, optionsMock, optsMock);
+      tr.onFailure = () => assert(false, "shouldn't be here");
+      tr.onSuccess = () => done();
+      tr.startTime = (new Date()).getTime() - 300000;
+      tr.buildFinished();
+    });
+
+    it("should fail", (done) => {
+      const tr = new TestRunner(tests, optionsMock, optsMock);
+      tr.onFailure = () => done();
+      tr.onSuccess = () => assert(false, "shouldn't be here");
+      tr.failedTests = [{}];
+      tr.startTime = (new Date()).getTime() - 300000;
+      tr.buildFinished();
+    });
+  });
+
+  it("checkBuild", () => {
+    const tr = new TestRunner(tests, optionsMock, optsMock);
     tr.hasBailed = false;
+    tr.THRESHOLD_MIN_ATTEMPTS = 1;
+    tr.startTime = (new Date()).getTime() - 300000;
     tr.checkBuild();
   });
 
-  it("should have bail early logic", () => {
-    const tr = new TestRunner(_tests(), _options({
-      bailOnThreshold: 1
-    }), _testOptions({}));
+  describe("onTestComplete", () => {
+    const failedTest = {
+      locator: { filename: 'tests/demo-app.js' },
+      maxAttempts: 3,
+      attempts: 0,
+      status: 2,
+      profile: { browser: 'chrome' },
+      executor: undefined,
+      workerIndex: -1,
+      error: undefined,
+      stdout: '',
+      stderr: '',
+      getRetries() { },
+      canRun() { return false },
+      getRuntime() { }
+    };
 
-    expect(tr.shouldBail()).to.be.false;
-    tr.passedTests = [{attempts: 2}, {attempts: 1}];
-    expect(tr.shouldBail()).to.be.false;
-    tr.failedTests = [{attempts: 25}, {attempts: 26}];
-    expect(tr.shouldBail()).to.be.true;
+    const successfulTest = {
+      locator: { filename: 'tests/demo-app.js' },
+      maxAttempts: 1,
+      attempts: 0,
+      status: 3,
+      profile: { browser: 'chrome' },
+      executor: executors["sauce"],
+      workerIndex: -1,
+      error: undefined,
+      stdout: '',
+      stderr: '',
+      getRetries() { }
+    };
+
+    it("has bailed", () => {
+      const tr = new TestRunner(tests, optionsMock, optsMock);
+      tr.hasBailed = true;
+      tr.onTestComplete(null, failedTest);
+    });
+
+    it("successful test", () => {
+      const tr = new TestRunner(tests, optionsMock, optsMock);
+      tr.onTestComplete(null, successfulTest);
+    });
+
+    it("successful test without serial", () => {
+      optionsMock.serial = false;
+      const tr = new TestRunner(tests, optionsMock, optsMock);
+      tr.onTestComplete(null, successfulTest);
+    });
+
+    it("failed test", () => {
+      const tr = new TestRunner(tests, optionsMock, optsMock);
+      tr.onTestComplete(null, failedTest);
+    });
   });
 
-  it("should summarize under constious circumnstances", () => {
-    let text = "";
-    const tr = new TestRunner(_tests(), _options(), _testOptions({
-      console: {
-        log: (t) => {
-          text += t;
-        }
-      }
-    }));
+  describe("start", () => {
+    it("no test", () => {
+      const tr = new TestRunner(tests, optionsMock, optsMock);
+      tr.tests = [];
+      tr.start();
+    });
 
-    tr.summarizeCompletedBuild();
-    expect(text.match(/BAILED/)).to.be.null;
-
-    text = "";
-    tr.hasBailed = true;
-    tr.summarizeCompletedBuild();
-    expect(text.match(/BAILED/).length).to.eql(1);
-
-    text = "";
-    tr.tests = [
-      {status: 0},
-      {status: 3, getRetries: () => { return 0; }},
-      {status: 3, getRetries: () => { return 1; }},
-      {status: 3, getRetries: () => { return 1; }}
-    ];
-    tr.summarizeCompletedBuild();
-    expect(text.match(/Skipped: 3/).length).to.eql(1);
+    it("multi tests without serial", () => {
+      optionsMock.serial = false;
+      const tr = new TestRunner(tests, optionsMock, optsMock);
+      tr.start();
+    });
   });
 
-  it("should handle constious forms of test completion", () => {
-    let text = "";
-    const tr1 = new TestRunner(_tests(), _options(), _testOptions({
-      settings: {
-        gatherTrends: true
-      },
-      console: {
-        log: (t) => {
-          text += t;
+  describe("runTest", () => {
+    const worker = { portOffset: 1 };
+
+    it("no bail", () => {
+      const tr = new TestRunner(tests, optionsMock, optsMock);
+      tr.hasBailed = false;
+      return tr.runTest(tr.tests[0], worker).then();
+    });
+
+    it("throws error", () => {
+      optsMock.settings.testFramework.TestRun = function () {
+        throw new Error("FAKE_ERROR");
+      };
+
+      const tr = new TestRunner(tests, optionsMock, optsMock);
+      tr.hasBailed = false;
+      return tr.runTest(tr.tests[0], worker)
+        .then()
+        .catch(err => expect(err.message).to.equal("FAKE_ERROR"));
+    });
+  });
+
+  describe("execute", () => {
+    const successfulTest = {
+      locator: { filename: 'tests/demo-app.js' },
+      maxAttempts: 1,
+      attempts: 0,
+      status: 3,
+      profile: { browser: 'chrome', executor: "sauce" },
+      executor: executors["sauce"],
+      workerIndex: -1,
+      error: undefined,
+      stdout: '',
+      stderr: '',
+      getRetries() { },
+      startClock() { },
+      getRuntime() { },
+      stopClock() { }
+    };
+
+    it("getEnvironment failed", () => {
+      const testRun = {
+        getEnvironment() { throw new Error("FAKE_ERROR") },
+        enableExecutor() { }
+      };
+
+      const tr = new TestRunner(tests, optionsMock, optsMock);
+      return tr.execute(testRun, successfulTest)
+        .then()
+        .catch(err => {
+          expect(err.message).to.equal("FAKE_ERROR");
+        })
+    });
+
+    it("bail fast", () => {
+      const testRun = {
+        getEnvironment() { },
+        enableExecutor() { }
+      };
+
+
+      optionsMock.executors["sauce"].execute = () => {
+        return {
+          on(code, callback) {
+            if (code === "message") {
+              callback({ type: "test-meta-data", metadata: "FAKE_META" })
+            }
+            else {
+              callback(1);
+            }
+          },
+          send() { },
+          removeAllListeners() { },
+          stdout: {
+            on() { },
+            removeAllListeners() { },
+            unpipe() { }
+          },
+          stderr: {
+            on() { },
+            removeAllListeners() { },
+            unpipe() { }
+          }
         }
       }
-    }));
 
-    text = "";
-    tr1.hasBailed = true;
-    tr1.onTestComplete(new Error("foo"), _testStruct());
-    expect(text.match(/KILLED/).length).to.eql(1);
 
-    tr1.hasBailed = false;
-    tr1.onTestComplete(new Error("foo"), _testStruct({
-      status: 0
-    }));
-    expect(tr1.passedTests.length).to.eql(0);
+      const tr = new TestRunner(tests, optionsMock, optsMock);
+      tr.strictness = 4;
+      tr.hasBailed = true;
+      return tr.execute(testRun, successfulTest)
+        .then(result => expect(result.error).to.equal("Child test run process exited with code 1"));
+    });
 
-    tr1.hasBailed = false;
-    tr1.onTestComplete(new Error("foo"), _testStruct({
-      status: 3
-    }));
-    expect(tr1.passedTests.length).to.eql(1);
+    it("no bail", () => {
+      const testRun = {
+        getEnvironment() { },
+        enableExecutor() { }
+      };
 
-    text = "";
-    tr1.serial = true;
-    tr1.onTestComplete(new Error("foo"), _testStruct({
-      status: 3
-    }));
-    expect(text.match(/worker/)).to.be.null;
+      optionsMock.executors["sauce"].execute = () => {
+        return {
+          on(code, callback) {
+            if (code === "message") {
+              callback({ type: "test-meta-data", metadata: "FAKE_META" })
+            }
+            else {
+              callback(1);
+            }
+          },
+          send() { },
+          removeAllListeners() { },
+          stdout: {
+            on() { },
+            removeAllListeners() { },
+            unpipe() { }
+          },
+          stderr: {
+            on() { },
+            removeAllListeners() { },
+            unpipe() { }
+          }
+        }
+      };
 
-    const tr2 = new TestRunner(_tests(), _options(), _testOptions());
-    tr2.onTestComplete(new Error("foo"), _testStruct({
-      status: 0
-    }));
-    expect(tr2.failedTests.length).to.eql(1);
+      const tr = new TestRunner(tests, optionsMock, optsMock);
+      tr.strictness = 1;
+      tr.hasBailed = false;
+      return tr.execute(testRun, successfulTest)
+        .then(result => expect(result.error).to.equal("Child test run process exited with code 1"));
+    });
+  });
 
-    tr2.onTestComplete(new Error("foo"), _testStruct({
-      status: 0,
-      canRun: () => { return false; }
-    }));
-    expect(tr2.failedTests.length).to.eql(2);
+  describe("stageTest", () => {
+    it("executor stage error", (done) => {
+      const onTestComplete = () => done();
+      optionsMock.executors["sauce"].setupTest = (callback) => callback("error");
+
+      const tr = new TestRunner(tests, optionsMock, optsMock);
+      tr.stageTest(tr.tests[0], onTestComplete);
+    });
+
+    it("allocator get error", (done) => {
+      const onTestComplete = () => done();
+      optionsMock.allocator.get = (callback) => callback("error");
+
+      const tr = new TestRunner(tests, optionsMock, optsMock);
+      tr.stageTest(tr.tests[0], onTestComplete);
+    });
+
+    it("runTestError", () => {
+      optsMock.settings.testFramework.TestRun = function () {
+        throw new Error("FAKE_ERROR");
+      };
+
+      const onTestComplete = () => done();
+      const tr = new TestRunner(tests, optionsMock, optsMock);
+      tr.stageTest(tr.tests[0], onTestComplete);
+    });
+
+    it("successful", (done) => {
+      const onTestComplete = () => done();
+
+      const tr = new TestRunner(tests, optionsMock, optsMock);
+      tr.stageTest(tr.tests[0], onTestComplete);
+    });
   });
 });

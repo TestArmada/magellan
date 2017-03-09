@@ -15,7 +15,6 @@ const path = require("path");
 const _ = require("lodash");
 const margs = require("marge");
 const async = require("async");
-const clc = require("cli-color");
 const Q = require("q");
 
 const analytics = require("./global_analytics");
@@ -23,63 +22,57 @@ const TestRunner = require("./test_runner");
 const getTests = require("./get_tests");
 const testFilters = require("./test_filter");
 const WorkerAllocator = require("./worker_allocator");
-const SauceWorkerAllocator = require("./sauce/worker_allocator");
-const browserOptions = require("./detect_browsers");
 const settings = require("./settings");
-const sauceSettings = require("./sauce/settings")();
-const browsers = require("./sauce/browsers");
+const profiles = require("./profiles");
 const loadRelativeModule = require("./util/load_relative_module");
 const processCleanup = require("./util/process_cleanup");
+const magellanArgs = require("./help").help;
+const logger = require("./logger");
 
 module.exports = (opts) => {
   const defer = Q.defer();
 
   const runOpts = _.assign({
     require,
-    console,
     analytics,
     settings,
-    sauceSettings,
-    browsers,
     yargs,
     margs,
-    SauceWorkerAllocator,
     WorkerAllocator,
     TestRunner,
     process,
     getTests,
     testFilters,
-    browserOptions,
     processCleanup,
+    profiles,
     path,
     loadRelativeModule
   }, opts);
 
   const project = runOpts.require("../package.json");
 
-  runOpts.console.log("Magellan " + project.version);
+  logger.log("Magellan " + project.version);
 
   const defaultConfigFilePath = "./magellan.json";
   const configFilePath = runOpts.yargs.argv.config;
 
   if (configFilePath) {
-    runOpts.console.log("Will try to load configuration from " + configFilePath);
+    logger.log("Will try to load configuration from " + configFilePath);
   } else {
-    runOpts.console.log("Will try to load configuration from default of " + defaultConfigFilePath);
+    logger.log("Will try to load configuration from default of " + defaultConfigFilePath);
   }
 
   // NOTE: marge can throw an error here if --config points at a file that doesn't exist
   // FIXME: handle this error nicely instead of printing an ugly stack trace
   runOpts.margs.init(defaultConfigFilePath, configFilePath);
 
-  const isSauce = runOpts.margs.argv.sauce ? true : false;
-  const isNodeBased = runOpts.margs.argv.framework &&
-    runOpts.margs.argv.framework.indexOf("mocha") > -1;
+  // const isNodeBased = runOpts.margs.argv.framework &&
+  //   runOpts.margs.argv.framework.indexOf("mocha") > -1;
 
   const debug = runOpts.margs.argv.debug || false;
   const useSerialMode = runOpts.margs.argv.serial;
   const MAX_TEST_ATTEMPTS = parseInt(runOpts.margs.argv.max_test_attempts) || 3;
-  let selectedBrowsers;
+  let targetProfiles;
   let workerAllocator;
   let MAX_WORKERS;
 
@@ -93,7 +86,7 @@ module.exports = (opts) => {
   //
   // Initialize Framework Plugins
   // ============================
-  //
+  // TODO: move to a function
 
   // We translate old names like "mocha" to the new module names for the
   // respective plugins that provide support for those frameworks. Officially,
@@ -139,6 +132,88 @@ module.exports = (opts) => {
     frameworkInitializationException = e;
   }
 
+  if (!runOpts.settings.testFramework ||
+    frameworkLoadException ||
+    frameworkInitializationException) {
+    logger.err("Could not start Magellan.");
+    if (frameworkLoadException) {
+      logger.err("Could not load the testing framework plugin '"
+        + runOpts.settings.framework + "'.");
+      logger.err("Check and make sure your package.json includes a module named '"
+        + runOpts.settings.framework + "'.");
+      logger.err("If it does not, you can remedy this by typing:"
+        + "\nnpm install --save " + runOpts.settings.framework);
+      logger.err(frameworkLoadException);
+    } else /* istanbul ignore else */ if (frameworkInitializationException) {
+      logger.err("Could not initialize the testing framework plugin '"
+        + runOpts.settings.framework + "'.");
+      logger.err("This plugin was found and loaded, but an error occurred during initialization:");
+      logger.err(frameworkInitializationException);
+    }
+
+    defer.reject({ error: "Couldn't start Magellan" });
+  }
+
+  logger.log("Loaded test framework: ");
+  logger.log("  " + runOpts.settings.framework);
+  //
+  // Initialize Executor
+  // ============================
+  // TODO: move to a function
+  // TODO: move to a function
+  // let formalExecutor = ["local"];
+  let formalExecutors = ["testarmada-magellan-local-executor"];
+
+  // executors is as array from magellan.json by default
+  if (runOpts.margs.argv.executors) {
+    if (_.isArray(runOpts.margs.argv.executors)) {
+      formalExecutors = runOpts.margs.argv.executors;
+    } else if (_.isString(runOpts.margs.argv.executors)) {
+      formalExecutors = [runOpts.margs.argv.executors];
+    } else {
+      logger.err("Executors only accepts string and array");
+      logger.warn("Setting executor to \"local\" by default");
+    }
+  } else {
+    logger.warn("No executor is passed in");
+    logger.warn("Setting executor to \"local\" by default");
+  }
+
+  runOpts.settings.executors = formalExecutors;
+
+  // load executor
+  const executorLoadExceptions = [];
+  runOpts.settings.testExecutors = {};
+
+  _.forEach(runOpts.settings.executors, (executor) => {
+    try {
+      const targetExecutor = runOpts.require(executor);
+      targetExecutor.validateConfig(runOpts);
+      runOpts.settings.testExecutors[targetExecutor.shortName] = targetExecutor;
+    } catch (e) {
+      executorLoadExceptions.push(e);
+    }
+  });
+
+  if (executorLoadExceptions.length > 0) {
+    // error happens while loading executor
+    logger.err("There are errors in loading executors");
+    _.forEach(executorLoadExceptions, (exception) => {
+      logger.err(exception.toString());
+    });
+
+    defer.reject({ error: "Couldn't start Magellan" });
+  }
+
+  logger.log("Loaded test executors: ");
+  _.forEach(runOpts.settings.testExecutors, (executor) => {
+    logger.log("  " + executor.name);
+  });
+
+  const testExecutors = runOpts.settings.testExecutors;
+
+  // finish processing all params ===========================
+
   // Show help and exit if it's asked for
   if (runOpts.margs.argv.help) {
     const help = runOpts.require("./cli_help");
@@ -147,43 +222,31 @@ module.exports = (opts) => {
     return defer.promise;
   }
 
-  if (runOpts.margs.argv.list_browsers) {
-    runOpts.browsers.initialize(true).then(() => {
-      if (runOpts.margs.argv.device_additions) {
-        runOpts.browsers.addDevicesFromFile(runOpts.margs.argv.device_additions);
+  // handle executor specific params
+  const executorParams = _.omit(runOpts.margs.argv, _.keys(magellanArgs));
+
+  // ATTENTION: there should only be one executor param matched for the function call
+  _.forEach(runOpts.settings.testExecutors, (v, k) => {
+    _.forEach(executorParams, (epValue, epKey) => {
+      if (v.help[epKey] && v.help[epKey].type === "function") {
+        // we found a match in current executor
+        // method name convention for an executor: PREFIX_string_string_string_...
+        let names = epKey.split("_");
+        names = names.slice(1, names.length);
+        const executorMethodName = _.camelCase(names.join(" "));
+
+        if (_.has(v, executorMethodName)) {
+          // method found in current executor
+          v[executorMethodName](runOpts, () => {
+            defer.resolve();
+          });
+        } else {
+          logger.err("Error: executor" + k + " doesn't has method " + executorMethodName + ".");
+          defer.resolve();
+        }
       }
-      runOpts.browsers.listBrowsers();
-      defer.resolve();
-    }).catch((err) => {
-      runOpts.console.log("Couldn't fetch runOpts.browsers. Error: ", err);
-      runOpts.console.log(err.stack);
-      defer.reject(err);
     });
-    return defer.promise;
-  }
-
-  if (!runOpts.settings.testFramework ||
-      frameworkLoadException ||
-      frameworkInitializationException) {
-    runOpts.console.error(clc.redBright("Error: Could not start Magellan."));
-    if (frameworkLoadException) {
-      runOpts.console.error(clc.redBright("Error: Could not load the testing framework plugin '"
-        + runOpts.settings.framework + "'."
-        + "\nCheck and make sure your package.json includes a module named '"
-        + runOpts.settings.framework + "'."
-        + "\nIf it does not, you can remedy this by typing:"
-        + "\n\nnpm install --save " + runOpts.settings.framework));
-      runOpts.console.log(frameworkLoadException);
-    } else /* istanbul ignore else */ if (frameworkInitializationException) {
-      runOpts.console.error(
-        clc.redBright("Error: Could not initialize the testing framework plugin '"
-        + runOpts.settings.framework + "'."
-        + "\nThis plugin was found and loaded, but an error occurred during initialization:"));
-      runOpts.console.log(frameworkInitializationException);
-    }
-
-    defer.reject({error: "Couldn't start Magellan"});
-  }
+  });
 
   //
   // Initialize Listeners
@@ -261,13 +324,15 @@ module.exports = (opts) => {
   const tests = runOpts.getTests(runOpts.testFilters.detectFromCLI(runOpts.margs.argv));
 
   if (_.isEmpty(tests)) {
-    runOpts.console.log("Error: no tests found");
-    defer.reject({error: "No tests found"});
+    logger.log("Error: no tests found");
+    defer.reject({ error: "No tests found" });
     return defer.promise;
   }
 
   const initializeListeners = () => {
     const deferred = Q.defer();
+    magellanGlobals.workerAmount = MAX_WORKERS;
+
     async.each(listeners, (listener, done) => {
       listener.initialize(magellanGlobals)
         .then(() => done())
@@ -285,122 +350,127 @@ module.exports = (opts) => {
   const startSuite = () => {
     const deferred = Q.defer();
 
-    workerAllocator.initialize((err) => {
-      if (err) {
-        runOpts.console.error(
-          clc.redBright("Could not start Magellan. Got error while initializing"
-          + " worker allocator"));
+    Promise
+      .all(_.map(testExecutors, (executor) => executor.setupRunner()))
+      .then(() => {
+        workerAllocator.initialize((workerInitErr) => {
+          if (workerInitErr) {
+            logger.err("Could not start Magellan. Got error while initializing"
+              + " worker allocator");
+            deferred.reject(workerInitErr);
+            return defer.promise;
+          }
+
+          const testRunner = new runOpts.TestRunner(tests, {
+            debug,
+
+            maxWorkers: MAX_WORKERS,
+
+            maxTestAttempts: MAX_TEST_ATTEMPTS,
+
+            profiles: targetProfiles,
+            executors: testExecutors,
+
+            listeners,
+
+            bailFast: runOpts.margs.argv.bail_fast ? true : false,
+            bailOnThreshold: runOpts.margs.argv.bail_early ? true : false,
+
+            serial: useSerialMode,
+
+            allocator: workerAllocator,
+
+            onSuccess: () => {
+              /*eslint-disable max-nested-callbacks*/
+              workerAllocator.teardown(() => {
+                Promise
+                  .all(_.map(testExecutors, (executor) => executor.teardownRunner()))
+                  .then(() => {
+                    runOpts.processCleanup(() => {
+                      deferred.resolve();
+                    });
+                  })
+                  .catch((err) => {
+                    // we eat error here
+                    logger.warn("executor teardownRunner error: " + err);
+                    runOpts.processCleanup(() => {
+                      deferred.resolve();
+                    });
+                  });
+              });
+            },
+
+            onFailure: (/*failedTests*/) => {
+              /*eslint-disable max-nested-callbacks*/
+              workerAllocator.teardown(() => {
+                Promise
+                  .all(_.map(testExecutors, (executor) => executor.teardownRunner()))
+                  .then(() => {
+                    runOpts.processCleanup(() => {
+                      // Failed tests are not a failure in Magellan itself,
+                      // so we pass an empty error here so that we don't
+                      // confuse the user. Magellan already outputs a failure
+                      // report to the screen in the case of failed tests.
+                      deferred.reject(null);
+                    });
+                  })
+                  .catch((err) => {
+                    logger.warn("executor teardownRunner error: " + err);
+                    // we eat error here
+                    runOpts.processCleanup(() => {
+                      deferred.reject(null);
+                    });
+                  });
+              });
+            }
+          });
+
+          testRunner.start();
+        });
+      })
+      .catch((err) => {
         deferred.reject(err);
-        return defer.promise;
-      }
-
-      const testRunner = new runOpts.TestRunner(tests, {
-        debug,
-
-        maxWorkers: MAX_WORKERS,
-
-        maxTestAttempts: MAX_TEST_ATTEMPTS,
-
-        browsers: selectedBrowsers,
-
-        listeners,
-
-        bailFast: runOpts.margs.argv.bail_fast ? true : false,
-        bailOnThreshold: runOpts.margs.argv.bail_early ? true : false,
-
-        serial: useSerialMode,
-
-        allocator: workerAllocator,
-
-        sauceSettings: isSauce ? runOpts.sauceSettings : undefined,
-
-        onSuccess: () => {
-          workerAllocator.teardown(() => {
-            runOpts.processCleanup(() => {
-              deferred.resolve();
-            });
-          });
-        },
-
-        onFailure: (/*failedTests*/) => {
-          workerAllocator.teardown(() => {
-            runOpts.processCleanup(() => {
-              // Failed tests are not a failure in Magellan itself, so we pass an empty error
-              // here so that we don't confuse the user. Magellan already outputs a failure
-              // report to the screen in the case of failed tests.
-              deferred.reject(null);
-            });
-          });
-        }
       });
-
-      testRunner.start();
-    });
 
     return deferred.promise;
   };
 
-  runOpts.browsers.initialize(isSauce)
-    .then(() => {
-      if (runOpts.margs.argv.device_additions) {
-        runOpts.browsers.addDevicesFromFile(runOpts.margs.argv.device_additions);
-      }
-    })
-    .then(runOpts.browserOptions.detectFromCLI.bind({}, runOpts.margs.argv, isSauce, isNodeBased))
-    .then((_selectedBrowsers) => {
-      selectedBrowsers = _selectedBrowsers;
-      if (!_selectedBrowsers) {
-        // If this list comes back completely undefined, it's because we didn't
-        // get anything back from either profile lookup or the saucelabs API, which
-        // likely means we requested a browser that doesn't exist or no longer exists.
-        runOpts.console.log(clc.redBright("\nError: No matching browsers have been found."
-          + "\nTo see a list of sauce browsers, use the --list_browsers option.\n"));
-        throw new Error("Invalid browser specified for Sauce support");
-      } else if (_selectedBrowsers.length === 0) {
-        runOpts.console.log(
-          clc.redBright("\nError: To use --sauce mode, you need to specify a browser."
-          + "\nTo see a list of sauce browsers, use the --list_browsers option.\n"));
-        throw new Error("No browser specified for Sauce support");
-      } else if (debug) {
-        runOpts.console.log("Selected browsers: ");
-        runOpts.console.log(_selectedBrowsers.map((b) => {
-          return [
-            b.browserId,
-            b.resolution ? b.resolution : "(any resolution)",
-            b.orientation ? b.orientation : "(any orientation)"
-          ].join(" ");
-        }).join("\n"));
-      }
-    })
+  const enableExecutors = (_targetProfiles) => {
+    // this is to allow magellan to double check with profile that
+    // is retrieved by --profile or --profiles
+    targetProfiles = _targetProfiles;
+
+    const deferred = Q.defer();
+    try {
+      _.forEach(
+        _.uniq(_.map(_targetProfiles, (targetProfile) => targetProfile.executor)),
+        (shortname) => {
+          if (runOpts.settings.testExecutors[shortname]) {
+            runOpts.settings.testExecutors[shortname].validateConfig({ isEnabled: true });
+          }
+        });
+
+      deferred.resolve();
+    } catch (err) {
+      deferred.reject(err);
+    }
+
+    return deferred.promise;
+  };
+
+  runOpts.profiles
+    .detectFromCLI(runOpts)
+    .then(enableExecutors)
     .then(() => {
       //
       // Worker Count:
       // =============
       //
-      // Non-sauce mode:
-      //   Default to 8 workers if we're running phantomjs and *only* phantomjs,
-      //                otherwise 3 if other browsers are involved
-      //   Default to 1 worker in serial mode.
-      //
-      // Sauce mode:
       //   Default to 3 workers in parallel mode (default).
       //   Default to 1 worker in serial mode.
       //
-      /*eslint-disable no-extra-parens*/
-      if (isSauce) {
-        MAX_WORKERS = useSerialMode ? 1 : (parseInt(runOpts.margs.argv.max_workers) || 3);
-      } else {
-        const DEFAULT_MAX_WORKERS = (selectedBrowsers.length === 1
-          && selectedBrowsers[0] === "phantomjs") ? 8 : 3;
-        MAX_WORKERS = useSerialMode ?
-          1 : (parseInt(runOpts.margs.argv.max_workers) || DEFAULT_MAX_WORKERS);
-      }
-
-      if (isSauce) {
-        workerAllocator = new runOpts.SauceWorkerAllocator(MAX_WORKERS);
-      } else {
-        workerAllocator = new runOpts.WorkerAllocator(MAX_WORKERS);
-      }
+      MAX_WORKERS = useSerialMode ? 1 : parseInt(runOpts.margs.argv.max_workers) || 3;
+      workerAllocator = new runOpts.WorkerAllocator(MAX_WORKERS);
     })
     .then(initializeListeners)
     // NOTE: if we don't end up in catch() below, magellan exits with status code 0 naturally
@@ -410,17 +480,17 @@ module.exports = (opts) => {
     })
     .catch((err) => {
       if (err) {
-        runOpts.console.error(clc.redBright("Error initializing Magellan"));
-        runOpts.console.log(clc.redBright("\nError description:"));
-        runOpts.console.error(err.toString());
-        runOpts.console.log(clc.redBright("\nError stack trace:"));
-        runOpts.console.log(err.stack);
+        logger.err("Error initializing Magellan");
+        logger.err("Error description:");
+        logger.err(err.toString());
+        logger.err("Error stack trace:");
+        logger.err(err.stack);
       } else {
         // No err object means we didn't have an internal crash while setting up / tearing down
       }
 
       // Fail the test suite or fail because of an internal crash
-      defer.reject({error: "Internal crash"});
+      defer.reject({ error: "Internal crash" });
     });
 
   return defer.promise;

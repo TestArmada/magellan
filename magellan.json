@@ -1,5 +1,16 @@
 {
-  "mocha_tests": ["./integration"],
+  "mocha_tests": [
+    "./integration"
+  ],
   "framework": "vanilla-mocha",
-  "max_workers": 7
+  "max_workers": 7,
+  "executors": [],
+  "profiles": {
+    "sauce-chrome": [
+      {
+        "browser": "chrome_latest_Windows_10_Desktop",
+        "resolution": "1280x1024"
+      }
+    ]
+  }
 }

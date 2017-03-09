@@ -1,11 +1,103 @@
-/* eslint no-undef: 0, no-unused-expressions: 0, no-invalid-this: 0,
-  no-throw-literal: 0, no-empty: 0, camelcase: 0, no-unused-vars: 0 */
 "use strict";
-const expect = require("chai").expect;
+
+const chai = require("chai");
+const chaiAsPromise = require("chai-as-promised");
 const _ = require("lodash");
-const Q = require("q");
-const sinon = require("sinon");
-const cli = require("../src/cli");
+
+const cli = require("../src/cli.js");
+const logger = require("../src/logger");
+
+chai.use(chaiAsPromise);
+
+const expect = chai.expect;
+const assert = chai.assert;
+
+const _fakeRequire = (overrides) => {
+  return (name) => {
+    if (overrides && overrides(name)) {
+      return overrides(name);
+    }
+    if (name === "../package.json") {
+      return {
+        version: "1.2.3"
+      };
+    }
+    if (name.match(/package.json/)) {
+      return {
+        name: "foobar",
+        dependencies: [],
+        devDependencies: []
+      };
+    }
+    if (name === "./cli_help") {
+      return {
+        help: () => { }
+      };
+    }
+    if (name === "./reporters/slack/settings") {
+      return {};
+    }
+    if (name === "./reporters/slack/slack" ||
+      name === "./reporters/screenshot_aggregator/reporter" ||
+      name === "./reporters/stdout/reporter") {
+      return new FakeReporter();
+    }
+    if (name === "testarmada-magellan-local-executor") {
+      return fakeExecutor;
+    }
+    if (name.indexOf("error") > -1) {
+      throw new Error("FAKE FRAMEWORK EXCEPTION");
+    }
+
+    if (name.match(/\/index/)) {
+      return {
+        initialize: () => { },
+        getPluginOptions: () => { }
+      };
+    }
+    return {
+    };
+  }
+};
+
+const fakeExecutor = {
+  name: "testarmada-magellan-local-executor",
+  shortName: "local",
+  help: {
+    "local_list_browsers": {
+      "visible": true,
+      "type": "function",
+      "description": "List the available browsers configured."
+    },
+    "local_list_fakes": {
+      "visible": true,
+      "type": "function",
+      "description": "List the available browsers configured."
+    }
+  },
+  validateConfig() { },
+  setupRunner() {
+    return new Promise((resolve) => {
+      resolve();
+    });
+  },
+  teardownRunner() {
+    return new Promise((resolve) => {
+      resolve();
+    });
+  },
+  listBrowsers(param, callback) {
+    callback();
+  }
+};
+
+const FakeProfiles = {
+  detectFromCLI() {
+    return new Promise((resolve) => {
+      resolve([{ executor: "local" }]);
+    });
+  }
+};
 
 class FakeAllocator {
   constructor() {
@@ -28,90 +120,22 @@ class FakeTestRunner {
   }
 }
 
-class FailingTestRunner {
-  constructor(tests, opts) {
-    this.tests = tests;
-    this.opts = opts;
-  }
-  start() {
-    this.opts.onFailure();
-  }
-}
-
 class FakeReporter {
   initialize() {
-    const defer = Q.defer();
-    defer.resolve();
-    return defer.promise;
+    return new Promise((resolve) => { resolve() });
   }
   listenTo() {
   }
   flush() {
-    const defer = Q.defer();
-    defer.resolve();
-    return defer.promise;
+    return new Promise((resolve) => { resolve() });
   }
 }
-
-class BadReporter {
-  initialize() {
-    throw new Error("Bad!");
-  }
-  listenTo() {
-  }
-  flush() {
-    const defer = Q.defer();
-    defer.resolve();
-    return defer.promise;
-  }
-}
-
-const _fakeRequire = (overrides) => {
-  return (name) => {
-    if (overrides && overrides(name)) {
-      return overrides(name);
-    }
-    if (name === "../package.json") {
-      return {
-        version: "1.2.3"
-      };
-    }
-    if (name.match(/package.json/)) {
-      return {
-        name: "foobar",
-        dependencies: [],
-        devDependencies: []
-      };
-    }
-    if (name === "./cli_help") {
-      return {
-        help: () => {}
-      };
-    }
-    if (name === "./reporters/slack/settings") {
-      return {};
-    }
-    if (name === "./reporters/slack/slack" ||
-        name === "./reporters/screenshot_aggregator/reporter" ||
-        name === "./reporters/stdout/reporter") {
-      return new FakeReporter();
-    }
-    if (name.match(/\/index/)) {
-      return {
-        initialize: () => {},
-        getPluginOptions: () => {}
-      };
-    }
-    return {
-    };
-  };
-};
 
 const _testConfig = (overrides) => {
   return _.merge({
     console: {
-      log: () => {},
-      error: () => {}
+      log: () => { },
+      error: () => { }
     },
     require: _fakeRequire(),
     process: {
@@ -122,23 +146,27 @@ const _testConfig = (overrides) => {
       }
     },
     analytics: {
-      mark: () => {},
-      push: () => {}
+      mark: () => { },
+      push: () => { }
     },
     getTests: () => {
       return [
-        {test: "a"},
-        {test: "b"},
-        {test: "c"}
+        { test: "a" },
+        { test: "b" },
+        { test: "c" }
       ];
     },
     margs: {
-      init: () => {},
+      init: () => { },
       argv: {
+        debug: true
       }
     },
     settings: {
-      framework: "foo"
+      framework: "foo",
+      testExecutors: {
+        "local": fakeExecutor
+      }
     },
     processCleanup: (cb) => {
       cb();
@@ -152,410 +180,178 @@ const _testConfig = (overrides) => {
         return str;
       }
     },
-    SauceWorkerAllocator: FakeAllocator,
     WorkerAllocator: FakeAllocator,
     TestRunner: FakeTestRunner,
-    browsers: {
-      initialize: () => {
-        const defer = Q.defer();
-        defer.resolve();
-        return defer.promise;
-      }
-    },
+    profiles: FakeProfiles,
     testFilters: {
-      detectFromCLI: () => {}
+      detectFromCLI: () => { }
     },
-    browserOptions: {
-      detectFromCLI: () => {
-        return [
-          {browserId: "chrome", resolution: 1024, orientation: "portrait"},
-          {browserId: "foo"}
-        ];
-      }
-    }
+    loadRelativeModule: () => { return new FakeReporter(); }
   }, overrides);
 };
 
-describe("CLI", () => {
-  it("startup", (done) => {
-    const spy = sinon.spy();
-    cli(_testConfig({
-      console: {
-        log: spy
-      }
-    })).then(() => {
-      expect(spy.called).to.be.true;
-      done();
-    });
-  });
-
-  it("allow for config path", (done) => {
-    let text = "";
-    cli(_testConfig({
+describe("pure_cli", () => {
+  it("allow for config path", () => {
+    return cli(_testConfig({
       yargs: {
         argv: {
           config: "FOOBAR_CONFIG"
         }
-      },
-      console: {
-        log: (t) => {
-          text += t;
-        }
       }
-    })).then(() => {
-      expect(text.match(/FOOBAR_CONFIG/).length).to.eql(1);
-      done();
-    });
+    }))
+      .then()
+      .catch(err => assert(false, "shouldn't be here"));
   });
 
-  it("check for mocha", (done) => {
-    cli(_testConfig({
-      margs: {
-        argv: {
-          framework: "mocha"
-        }
-      },
-      browserOptions: {
-        detectFromCLI: (a, b, c) => {
-          expect(c).to.be.true;
-          return [
-            {browserId: "chrome", resolution: 1024, orientation: "portrait"}
-          ];
-        }
-      }
-    })).then(() => {
-      done();
-    });
-  });
-
-  it("check for rowdy-mocha", (done) => {
-    let sawRequire = false;
-    cli(_testConfig({
-      settings: {
-        framework: "rowdy-mocha"
-      },
-      require: _fakeRequire((name) => {
-        if (name === "./node_modules/testarmada-magellan-mocha-plugin/index") {
-          sawRequire = true;
-        }
-      })
-    })).then(() => {
-      expect(sawRequire).to.be.true;
-      done();
-    });
-
-    try {
-      cli(_testConfig({
+  describe("resolve framework", () => {
+    it("legacy framework name translation", () => {
+      return cli(_testConfig({
         settings: {
-          framework: "rowdy-mocha"
+          framework: "vanilla-mocha"
+        }
+      }))
+        .then()
+        .catch(err => assert(false, "shouldn't be here"));
+    });
+
+    it("handle framework load exception", () => {
+      return cli(_testConfig({
+        settings: {
+          framework: "error"
+        }
+      }))
+        .then(() => assert(false, "shouldn't be here"))
+        .catch(err => { });
+    });
+
+    it("handle framework init exception", () => {
+      return cli(_testConfig({
+        settings: {
+          framework: "local"
         },
         require: _fakeRequire((name) => {
-          if (name === "./node_modules/testarmada-magellan-mocha-plugin/index") {
-            throw "Boom!";
+          if (name.match(/\/index/)) {
+            return {
+              initialize: () => { },
+              getPluginOptions: () => { throw new Error("FAKE INIT ERROR") }
+            };
           }
         })
-      })).then(() => {
-        expect(sawRequire).to.be.true;
-        done();
-      });
-    } catch (e) {
-    }
-  });
-
-  it("allow for sauce", (done) => {
-    cli(_testConfig({
-      margs: {
-        argv: {
-          sauce: true
-        }
-      },
-      browsers: {
-        initialize: (sauce) => {
-          expect(sauce).to.be.true;
-          const defer = Q.defer();
-          defer.resolve();
-          return defer.promise;
-        }
-      }
-    })).then(() => {
-      done();
+      }))
+        .then(() => assert(false, "shouldn't be here"))
+        .catch(err => { });
     });
   });
 
-  it("show help", (done) => {
-    const spy = sinon.spy();
-    cli(_testConfig({
+  it("get help", () => {
+    return cli(_testConfig({
       margs: {
         argv: {
           help: true
         }
-      },
-      require: _fakeRequire((name) => {
-        if (name === "./cli_help") {
-          return {
-            help: spy
-          };
-        }
-        return null;
-      })
-    })).then(() => {
-      expect(spy.called).to.be.true;
-      done();
-    });
-  });
-
-  it("allow for no plugin options", (done) => {
-    cli(_testConfig({
-      require: _fakeRequire((name) => {
-        if (name.match(/\/index/)) {
-          return {
-            initialize: () => {}
-          };
-        }
-      })
-    })).then(() => {
-      done();
-    });
-  });
-
-  it("throw an exception in initialization", (done) => {
-    cli(_testConfig({
-      require: _fakeRequire((name) => {
-        if (name.match(/\/index/)) {
-          return BadReporter;
-        }
-      })
-    })).then(() => {
-    }).catch(() => {
-      done();
-    });
-  });
-
-  it("allow for setup_teardown", (done) => {
-    cli(_testConfig({
-      margs: {
-        argv: {
-          setup_teardown: "hola!"
-        }
-      },
-      loadRelativeModule: () => {
-        return new FakeReporter();
       }
-    })).then(() => {
-      done();
-    }).catch((e) => {
-    });
+    }))
+      .then()
+      .catch(err => assert(false, "shouldn't be here"));
   });
 
-  it("allow for reporters", (done) => {
-    cli(_testConfig({
+  it("setup_teardown", () => {
+    return cli(_testConfig({
       margs: {
         argv: {
-          reporters: ["a", "b", "c"]
-        }
-      },
-      loadRelativeModule: () => {
-        return new FakeReporter();
-      }
-    })).then(() => {
-      done();
-    }).catch((e) => {
-    });
-  });
-
-  it("allow for aggregateScreenshots", (done) => {
-    cli(_testConfig({
-      settings: {
-        aggregateScreenshots: true
-      },
-      require: _fakeRequire((name) => {
-        if (name === "./reporters/screenshot_aggregator/reporter") {
-          return FakeReporter;
-        }
-      })
-    })).then(() => {
-      done();
-    }).catch((e) => {
-    });
-  });
-
-  it("allow for serial", (done) => {
-    cli(_testConfig({
-      margs: {
-        argv: {
-          serial: true
-        }
-      },
-      require: _fakeRequire((name) => {
-        if (name === "./reporters/stdout/reporter") {
-          return FakeReporter;
-        }
-      })
-    })).then(() => {
-      done();
-    }).catch((e) => {
-    });
-  });
-
-  it("allow for serial and sauce", (done) => {
-    cli(_testConfig({
-      margs: {
-        argv: {
-          serial: true,
-          sauce: true
-        }
-      },
-      require: _fakeRequire((name) => {
-        if (name === "./reporters/stdout/reporter") {
-          return FakeReporter;
-        }
-      })
-    })).then(() => {
-      done();
-    }).catch((e) => {
-    });
-  });
-
-  it("allow for optional_reporters", (done) => {
-    cli(_testConfig({
-      margs: {
-        argv: {
-          optional_reporters: ["a", "b", "c"]
-        }
-      },
-      loadRelativeModule: () => {
-        return new FakeReporter();
-      }
-    })).then(() => {
-      done();
-    }).catch((e) => {
-    });
-  });
-
-  it("allow for no browsers", (done) => {
-    let called = false;
-    cli(_testConfig({
-      browserOptions: {
-        detectFromCLI: () => {
-          called = true;
-          return null;
+          setup_teardown: "something"
         }
       }
-    })).then(() => {
-    }).catch((e) => {
-      expect(called).to.be.true;
-      done();
-    });
+    }))
+      .then()
+      .catch(err => assert(false, "shouldn't be here"));
   });
 
-  it("allow for zero browsers", (done) => {
-    let called = false;
-    cli(_testConfig({
-      browserOptions: {
-        detectFromCLI: () => {
-          called = true;
-          return [];
+
+
+  describe("resolve executor", () => {
+    it("as string", () => {
+      return cli(_testConfig({
+        margs: {
+          argv: {
+            executors: "testarmada-magellan-local-executor"
+          }
         }
-      }
-    })).then(() => {
-    }).catch((e) => {
-      expect(called).to.be.true;
-      done();
+      }))
+        .then()
+        .catch(err => assert(false, "shouldn't be here"));
     });
-  });
 
-  it("allow for just phantomjs", (done) => {
-    let called = false;
-    cli(_testConfig({
-      browserOptions: {
-        detectFromCLI: () => {
-          called = true;
-          return ["phantomjs"];
+    it("as array", () => {
+      return cli(_testConfig({
+        margs: {
+          argv: {
+            executors: ["testarmada-magellan-local-executor"]
+          }
         }
-      }
-    })).then(() => {
-      expect(called).to.be.true;
-      done();
-    }).catch((e) => {
+      }))
+        .then()
+        .catch(err => assert(false, "shouldn't be here"));
     });
-  });
 
-  it("allow for debug", (done) => {
-    cli(_testConfig({
-      margs: {
-        argv: {
-          debug: true
+    it("malformed", () => {
+      return cli(_testConfig({
+        margs: {
+          argv: {
+            executors: {}
+          }
         }
-      },
-      TestRunner: FakeTestRunner
-    })).then(() => {
-      done();
-    }).catch((e) => {
+      }))
+        .then()
+        .catch(err => assert(false, "shouldn't be here"));
     });
-  });
 
-  it("allow for no tests", (done) => {
-    let called = false;
-    cli(_testConfig({
-      getTests: () => {
-        called = true;
-        return [];
-      }
-    })).then(() => {
-    }).catch((e) => {
-      expect(called).to.be.true;
-      done();
-    });
-  });
-
-  it("allow for failing worker", (done) => {
-    cli(_testConfig({
-      TestRunner: FailingTestRunner
-    })).then(() => {
-    }).catch((e) => {
-      done();
-    });
-  });
-
-  it("allow for bad WorkerAllocator", (done) => {
-    cli(_testConfig({
-      WorkerAllocator: FakeAllocator
-    })).then(() => {
-      done();
-    }).catch((e) => {
-    });
-  });
-
-  it("allow for bail_early", (done) => {
-    cli(_testConfig({
-      margs: {
-        argv: {
-          bail_early: true
+    it("executor method", () => {
+      return cli(_testConfig({
+        margs: {
+          argv: {
+            executors: ["testarmada-magellan-local-executor"],
+            local_list_browsers: true
+          }
         }
-      },
-      TestRunner: FakeTestRunner
-    })).then(() => {
-      done();
-    }).catch((e) => {
+      }))
+        .then()
+        .catch(err => assert(false, "shouldn't be here"));
     });
-  });
 
-  it("allow for bail_fast", (done) => {
-    cli(_testConfig({
-      margs: {
-        argv: {
-          bail_fast: true
+    it("executor method no matches", () => {
+      return cli(_testConfig({
+        margs: {
+          argv: {
+            executors: ["testarmada-magellan-local-executor"],
+            local_list_fakes: true
+          }
         }
-      },
-      TestRunner: FakeTestRunner
-    })).then(() => {
-      done();
-    }).catch((e) => {
+      }))
+        .then()
+        .catch(err => assert(false, "shouldn't be here"));
+    });
+
+    it("executor load exception", () => {
+      return cli(_testConfig({
+        margs: {
+          argv: {
+            executors: ["testarmada-magellan-local-executor"]
+          }
+        },
+        require: _fakeRequire((name) => {
+          if (name === "testarmada-magellan-local-executor") {
+            throw new Error("FAKE EXECUTOR INIT ERROR");
+          }
+        })
+      }))
+        .then(() => assert(false, "shouldn't be here"))
+        .catch(err => { });
     });
   });
 
-  it("allow for slack initialization", (done) => {
-    cli(_testConfig({
+  it("enable slack", () => {
+    return cli(_testConfig({
       require: _fakeRequire((name) => {
         if (name === "./reporters/slack/settings") {
           return {
@@ -566,102 +362,214 @@ describe("CLI", () => {
           return FakeReporter;
         }
       })
-    })).then(() => {
-      done();
-    }).catch((e) => {
-    });
+    }))
+      .then()
+      .catch(err => assert(false, "shouldn't be here"));
   });
 
-  it("list browsers", (done) => {
-    const spy = sinon.spy();
-    cli(_testConfig({
+  it("reporter as array", () => {
+    return cli(_testConfig({
       margs: {
         argv: {
-          list_browsers: true
+          reporters: ["a", "b", "c"]
         }
       },
-      browsers: {
-        initialize: (a) => {
-          expect(a).to.be.true;
-          const defer = Q.defer();
-          defer.resolve();
-          return defer.promise;
-        },
-        listBrowsers: spy
+      loadRelativeModule: () => {
+        return new FakeReporter();
       }
-    })).then(() => {
-      expect(spy.called).to.be.true;
-      done();
-    });
+    }))
+      .then()
+      .catch(err => assert(false, "shouldn't be here"));
   });
 
-  it("fail in list browsers", (done) => {
-    cli(_testConfig({
+  it("allow optional reporter", () => {
+    return cli(_testConfig({
       margs: {
         argv: {
-          list_browsers: true
+          optional_reporters: ["a", "b", "c"]
         }
       },
-      browsers: {
-        listBrowsers: () => {
-          throw "Foo!";
+      loadRelativeModule: () => {
+        return new FakeReporter();
+      }
+    }))
+      .then()
+      .catch(err => assert(false, "shouldn't be here"));
+  });
+
+  it("enable serial", () => {
+    return cli(_testConfig({
+      margs: {
+        argv: {
+          serial: true
+        }
+      },
+      require: _fakeRequire((name) => {
+        if (name === "./reporters/stdout/reporter") {
+          return FakeReporter;
+        }
+      })
+    }))
+      .then()
+      .catch(err => assert(false, "shouldn't be here"));
+  });
+
+  it("enable screenshot", () => {
+    return cli(_testConfig({
+      settings: {
+        aggregateScreenshots: true
+      },
+      require: _fakeRequire((name) => {
+        if (name === "./reporters/screenshot_aggregator/reporter") {
+          return FakeReporter;
+        }
+      })
+    }))
+      .then()
+      .catch(err => assert(false, "shouldn't be here"));
+  });
+
+  it("allow no test", () => {
+    return cli(_testConfig({
+      getTests: () => {
+        return [];
+      }
+    }))
+      .then(() => assert(false, "shouldn't be here"))
+      .catch(err => { });
+  });
+
+  it("allow worker error", () => {
+    return cli(_testConfig({
+      WorkerAllocator: class InvalidWorkerAllocator {
+        constructor() {
+        }
+        initialize(cb) {
+          cb("FAKE_ERROR");
+        }
+        teardown(cb) {
+          cb();
         }
       }
     }))
-    .then(() => {
-    })
-    .catch(() => {
-      done();
-    });
+      .then(() => assert(false, "shouldn't be here"))
+      .catch(err => { });
   });
 
-  it("list browsers with device_additions", (done) => {
-    const spy = sinon.spy();
-    cli(_testConfig({
+  it("executor teardownRunner error", () => {
+    return cli(_testConfig({
       margs: {
         argv: {
-          list_browsers: true,
-          device_additions: "hey"
+          executors: ["testarmada-magellan-local-executor"]
         }
       },
-      browsers: {
-        initialize: (a) => {
-          expect(a).to.be.true;
-          const defer = Q.defer();
-          defer.resolve();
-          return defer.promise;
-        },
-        listBrowsers: spy,
-        addDevicesFromFile: (f) => {
-          expect(f).to.eql("hey");
+      require: _fakeRequire((name) => {
+        if (name === "testarmada-magellan-local-executor") {
+          return {
+            name: "testarmada-magellan-local-executor",
+            shortName: "local",
+            help: {
+              "local_list_browsers": {
+                "visible": true,
+                "type": "function",
+                "description": "List the available browsers configured."
+              },
+              "local_list_fakes": {
+                "visible": true,
+                "type": "function",
+                "description": "List the available browsers configured."
+              }
+            },
+            validateConfig() { },
+            setupRunner() {
+              return new Promise((resolve) => {
+                resolve();
+              });
+            },
+            teardownRunner() {
+              return new Promise((resolve, reject) => {
+                reject("FAKE_ERROR");
+              });
+            },
+            listBrowsers(param, callback) {
+              callback();
+            }
+          }
+        }
+      })
+    }))
+      .then(() => assert(false, "shouldn't be here"))
+      .catch(err => { });
+  });
+
+  it("runner on failure", () => {
+    return cli(_testConfig({
+      TestRunner: class InvalidRunner {
+        constructor(tests, opts) {
+          this.tests = tests;
+          this.opts = opts;
+        }
+        start() {
+          this.opts.onFailure();
         }
       }
     }))
-    .then(() => {
-      expect(spy.called).to.be.true;
-      done();
-    })
-    .catch((err) => {
-    });
+      .then(() => assert(false, "shouldn't be here"))
+      .catch(err => { });
   });
 
-  it("deal with device_additions", (done) => {
-    let called = false;
-    cli(_testConfig({
-      margs: {
-        argv: {
-          device_additions: "hey"
+  it("executor teardownRunner error with onFailure", () => {
+    return cli(_testConfig({
+      TestRunner: class InvalidRunner {
+        constructor(tests, opts) {
+          this.tests = tests;
+          this.opts = opts;
+        }
+        start() {
+          this.opts.onFailure();
         }
       },
-      browsers: {
-        addDevicesFromFile: (f) => {
-          called = true;
-          expect(f).to.eql("hey");
+      margs: {
+        argv: {
+          executors: ["testarmada-magellan-local-executor"]
         }
-      }
-    })).then(() => {
-      expect(called).to.be.true;
-      done();
-    });
+      },
+      require: _fakeRequire((name) => {
+        if (name === "testarmada-magellan-local-executor") {
+          return {
+            name: "testarmada-magellan-local-executor",
+            shortName: "local",
+            help: {
+              "local_list_browsers": {
+                "visible": true,
+                "type": "function",
+                "description": "List the available browsers configured."
+              },
+              "local_list_fakes": {
+                "visible": true,
+                "type": "function",
+                "description": "List the available browsers configured."
+              }
+            },
+            validateConfig() { },
+            setupRunner() {
+              return new Promise((resolve) => {
+                resolve();
+              });
+            },
+            teardownRunner() {
+              return new Promise((resolve, reject) => {
+                reject("FAKE_ERROR");
+              });
+            },
+            listBrowsers(param, callback) {
+              callback();
+            }
+          }
+        }
+      })
+    }))
+      .then(() => assert(false, "shouldn't be here"))
+      .catch(err => { });
   });
 });
