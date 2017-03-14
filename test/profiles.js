@@ -275,7 +275,8 @@ describe("handleProfiles", () => {
         version: 10,
         resolution: "1x1",
         orientation: "upright",
-        executor: "on mars"
+        executor: "on mars",
+        id: "chrome"
       }
     ];
 
@@ -284,7 +285,7 @@ describe("handleProfiles", () => {
       .then((resolvedprofiles) => {
         expect(resolvedprofiles.length).to.equal(1);
         expect(resolvedprofiles[0].toString())
-          .to.equal("chrome|version:10|resolution:1x1|orientation:upright|executor:on mars");
+          .to.equal("env:chrome|executor:on mars");
       });
   });
 });
