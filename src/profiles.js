@@ -12,14 +12,8 @@ class Profile {
   }
 
   toString() {
-    const cap = this.desiredCapabilities || this;
-
     /* istanbul ignore next */
-    return cap.browserName
-      + (cap.version ? "|version:" + cap.version : "")
-      + (cap.resolution ? "|resolution:" + cap.resolution : "")
-      + (cap.orientation ? "|orientation:" + cap.orientation : "")
-      + "|executor:" + this.executor;
+    return "env:" + this.id + "|executor:" + this.executor;
   }
 }
 
