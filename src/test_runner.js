@@ -455,6 +455,7 @@ class TestRunner {
           })
           .join("\n");
 
+        /* istanbul ignore else */
         if (text.length > 0) {
           stdout += text + "\n";
         } else {
@@ -477,7 +478,7 @@ class TestRunner {
             return clc.redBright(logStamp()) + " " + line;
           })
           .join("\n");
-
+        /* istanbul ignore else */
         if (text.length > 0) {
           stdout += text + "\n";
         } else {
