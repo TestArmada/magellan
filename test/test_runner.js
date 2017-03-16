@@ -34,6 +34,9 @@ const tests = [
 
 const executors = {
   "sauce": {
+    name: "testarmada-magellan-sauce-executor",
+    shortName: "sauce",
+
     getProfiles(opts) {
       return new Promise((resolve) => {
         resolve(opts.profiles);
@@ -54,7 +57,7 @@ const executors = {
       return {
         on(code, callback) {
           if (code === "message") {
-            callback({ type: "test-meta-data", metadata: "FAKE_META" })
+            callback({ type: "test-meta-data", metadata: { resultURL: "FAKE_URL", sessionId: "FAKE_SESSION" } })
           }
           else {
             callback(0);
@@ -461,7 +464,7 @@ describe("test_runner", () => {
         return {
           on(code, callback) {
             if (code === "message") {
-              callback({ type: "test-meta-data", metadata: "FAKE_META" })
+              callback({ type: "test-meta-data", metadata: { resultURL: "FAKE_URL", sessionId: "FAKE_SESSION" } });
             }
             else {
               callback(1);
@@ -500,7 +503,7 @@ describe("test_runner", () => {
         return {
           on(code, callback) {
             if (code === "message") {
-              callback({ type: "test-meta-data", metadata: "FAKE_META" })
+              callback({ type: "test-meta-data", metadata: { resultURL: "FAKE_URL", sessionId: "FAKE_SESSION" } })
             }
             else {
               callback(1);
