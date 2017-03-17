@@ -387,7 +387,9 @@ class TestRunner {
       this.clearInterval(sentry);
 
       // add executor info into meta-data
-      testMetadata.executor = test.executor.shortName;
+      if (testMetadata) {
+        testMetadata.executor = test.executor.shortName;
+      }
 
       statusEmitterEmit("message", {
         type: "worker-status",
