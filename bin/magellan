@@ -3,6 +3,23 @@
 
 "use strict";
 
+const yargs = require("yargs");
+const logger = require("../src/logger");
+const margs = require("marge");
+
+const defaultConfigFilePath = "./magellan.json";
+const configFilePath = yargs.argv.config;
+
+if (configFilePath) {
+  logger.log("Will try to load configuration from " + configFilePath);
+} else {
+  logger.log("Will try to load configuration from default of " + defaultConfigFilePath);
+}
+
+// NOTE: marge can throw an error here if --config points at a file that doesn't exist
+// FIXME: handle this error nicely instead of printing an ugly stack trace
+margs.init(defaultConfigFilePath, configFilePath);
+
 require("../src/cli")()
   .then(() => process.exit(0))
   .catch(() => process.exit(1));

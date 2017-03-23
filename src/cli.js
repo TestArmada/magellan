@@ -53,19 +53,6 @@ module.exports = (opts) => {
 
   logger.log("Magellan " + project.version);
 
-  const defaultConfigFilePath = "./magellan.json";
-  const configFilePath = runOpts.yargs.argv.config;
-
-  if (configFilePath) {
-    logger.log("Will try to load configuration from " + configFilePath);
-  } else {
-    logger.log("Will try to load configuration from default of " + defaultConfigFilePath);
-  }
-
-  // NOTE: marge can throw an error here if --config points at a file that doesn't exist
-  // FIXME: handle this error nicely instead of printing an ugly stack trace
-  runOpts.margs.init(defaultConfigFilePath, configFilePath);
-
   // const isNodeBased = runOpts.margs.argv.framework &&
   //   runOpts.margs.argv.framework.indexOf("mocha") > -1;
 
