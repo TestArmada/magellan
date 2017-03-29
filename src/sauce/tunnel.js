@@ -70,7 +70,7 @@ module.exports = {
         logfile: logFilePath
       };
 
-      if(argv.no_ssl_bump_domains){
+      if (argv.no_ssl_bump_domains) {
         sauceOptions["no-ssl-bump-domains"] = argv.no_ssl_bump_domains;
       }
 
