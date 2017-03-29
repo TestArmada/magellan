@@ -33,6 +33,7 @@ module.exports = {
     console.log("");
     console.log(" Browser and SauceLabs Support:");
     console.log("  --sauce                        Run tests on SauceLabs cloud.");
+    console.log("  --no_ssl_bump_domains=domains  Disable SSL re-encrypted on sauce connect tunnel.");
     console.log("  --list_browsers                List the available browsers configured.");
     console.log("  --browser=browsername          Run tests in chrome, firefox, etc (default: phantomjs).");
     console.log("  --browsers=b1,b2,..            Run multiple browsers in parallel.");
