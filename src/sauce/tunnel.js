@@ -1,6 +1,7 @@
 "use strict";
 
 var clc = require("cli-color");
+var argv = require("marge").argv;
 
 var settings = require("../settings");
 var sauceSettings = require("./settings");
@@ -68,6 +69,10 @@ module.exports = {
         verboseDebugging: settings.debug,
         logfile: logFilePath
       };
+
+      if (argv.no_ssl_bump_domains) {
+        sauceOptions["no-ssl-bump-domains"] = argv.no_ssl_bump_domains;
+      }
 
       if (settings.fastFailRegexps) {
         sauceOptions.fastFailRegexps = settings.fastFailRegexps;
