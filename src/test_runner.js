@@ -229,7 +229,6 @@ class TestRunner {
 
                 // Pass or fail the test
                 if (runResults.error) {
-                  /* istanbul ignore next */
                   test.fail();
                 } else {
                   test.pass();
