@@ -4,9 +4,8 @@
 "use strict";
 
 const yargs = require("yargs");
-const margs = require("marge");
-
 const logger = require("../src/logger");
+const margs = require("marge");
 
 const defaultConfigFilePath = "./magellan.json";
 const configFilePath = yargs.argv.config;

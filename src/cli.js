@@ -416,7 +416,6 @@ module.exports = (opts) => {
         });
       })
       .catch((err) => {
-        /* istanbul ignore next */
         deferred.reject(err);
       });
 
@@ -440,7 +439,6 @@ module.exports = (opts) => {
 
       deferred.resolve();
     } catch (err) {
-      /* istanbul ignore next */
       deferred.reject(err);
     }
 
