@@ -85,7 +85,7 @@ class Allocator {
       // Standard Magellan port convention: 
       // let n = settings.BASE_PORT_SPACING - 1;
       // portOffset     : selenium server
-      // portOffset + 1 : available for application to use
+      // portOffset + 1 : pre-assigned for mocking (available for application to use)
       // ...
       // portOffset + n : available for application to use
       const desiredPortLabels = ["selenium port"];
