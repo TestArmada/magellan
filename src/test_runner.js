@@ -545,7 +545,7 @@ class TestRunner {
       msg.push((this.serial ? "Serial mode" : "Worker " + worker.index) + ",");
 
       msg.push("port range: [" + worker.portOffset + ", "
-        + worker.portOffset + settings.BASE_PORT_SPACING - 1 + "],");
+        + (worker.portOffset + settings.BASE_PORT_SPACING - 1) + "],");
 
       if (worker.token) {
         msg.push("VM token:" + worker.token + ",");
