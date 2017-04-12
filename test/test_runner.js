@@ -37,6 +37,12 @@ const executors = {
     name: "testarmada-magellan-sauce-executor",
     shortName: "sauce",
 
+    getPorts(opts) {
+      return {
+        seleniumPort: opts.portOffset,
+        mockingPort: opts.portOffset + 1
+      }
+    },
     getProfiles(opts) {
       return new Promise((resolve) => {
         resolve(opts.profiles);

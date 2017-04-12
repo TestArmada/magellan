@@ -229,6 +229,7 @@ class TestRunner {
 
                 // Pass or fail the test
                 if (runResults.error) {
+                  /* istanbul ignore next */
                   test.fail();
                 } else {
                   test.pass();
@@ -575,7 +576,7 @@ class TestRunner {
       };
 
       if (settings.BASE_PORT_SPACING > 1) {
-        ports.mockingPort = worker.portOffset + 1; 
+        ports.mockingPort = worker.portOffset + 1;
       }
 
       // if executor has its own port rule
