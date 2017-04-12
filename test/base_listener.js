@@ -8,6 +8,7 @@ const expect = chai.expect;
 chai.use(chaiAsPromised);
 
 describe("listener", () => {
+  
   it("should act like a class", () => {
     expect(new BaseListener()).to.be.an.instanceof(BaseListener);
   });
