@@ -27,7 +27,7 @@ const profiles = require("./profiles");
 const loadRelativeModule = require("./util/load_relative_module");
 const processCleanup = require("./util/process_cleanup");
 const magellanArgs = require("./help").help;
-const logger = require("../src/logger");
+const logger = require("./logger");
 
 module.exports = (opts) => {
   const defer = Q.defer();

@@ -7,7 +7,7 @@ const argv = require("marge").argv;
 const env = process.env;
 const fs = require("fs");
 const path = require("path");
-const logger = require("../src/logger");
+const logger = require("./logger");
 
 // Allow an external build id (eg: from CI system, for example) to be used. If we're not given one,
 // we generate a random build id instead. NOTE: This build id must work as a part of a filename.

@@ -3,7 +3,7 @@
 const _ = require("lodash");
 const settings = require("./settings");
 const portUtil = require("./util/port_util");
-const logger = require("../src/logger");
+const logger = require("./logger");
 
 const MAX_ALLOCATION_ATTEMPTS = 120;
 const WORKER_START_DELAY = 1000;
@@ -81,7 +81,7 @@ class Allocator {
 
       const portOffset = this.getNextPort();
 
-      // Standard Magellan port convention: 
+      // Standard Magellan port convention:
       // let n = settings.BASE_PORT_SPACING - 1;
       // portOffset     : selenium server
       // portOffset + 1 : pre-assigned for mocking (available for application to use)

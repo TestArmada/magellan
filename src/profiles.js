@@ -2,7 +2,7 @@
 
 const _ = require("lodash");
 const hostedProfiles = require("./hosted_profiles");
-const logger = require("../src/logger");
+const logger = require("./logger");
 
 class Profile {
   constructor(p) {

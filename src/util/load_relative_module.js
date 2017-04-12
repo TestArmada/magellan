@@ -2,7 +2,7 @@
 
 const path = require("path");
 const _ = require("lodash");
-const logger = require("../src/logger");
+const logger = require("../logger");
 
 module.exports = (mPath, moduleIsOptional, opts) => {
   let resolvedRequire;
