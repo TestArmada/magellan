@@ -54,6 +54,7 @@
     "sauce-connect-launcher": "^1.1.1",
     "slugify": "^1.0.2",
     "sync-request": "^4.0.1",
+    "testarmada-logger": "^1.0.0",
     "testarmada-tree-kill": "^2.0.0",
     "yargs": "6.5.0"
   },

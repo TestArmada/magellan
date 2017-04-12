@@ -5,7 +5,8 @@ const _ = require("lodash");
 
 const pid = process.pid;
 const settings = require("../settings");
-const logger = require("../logger");
+const logger = require("testarmada-logger");
+logger.prefix = "Magellan";
 
 // Max time before we forcefully kill child processes left over after a suite run
 const ZOMBIE_POLLING_MAX_TIME = 15000;

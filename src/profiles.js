@@ -2,7 +2,8 @@
 
 const _ = require("lodash");
 const hostedProfiles = require("./hosted_profiles");
-const logger = require("./logger");
+const logger = require("testarmada-logger");
+logger.prefix = "Magellan";
 
 class Profile {
   constructor(p) {
