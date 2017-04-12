@@ -25,7 +25,11 @@ class Allocator {
       + (settings.BASE_PORT_START + settings.BASE_PORT_RANGE - 1) + " with "
       + settings.BASE_PORT_SPACING + " ports available to each worker.");
 
-
+    if (settings.BASE_PORT_SPACING === 1) {
+      logger.warn("Only one port is available per worker, "
+        + "increase --base_port_spacing to allocate more ports per worker");
+    }
+    
     this.initializeWorkers(MAX_WORKERS);
   }
 

@@ -574,11 +574,8 @@ class TestRunner {
         mockingPort: null
       };
 
-      if (settings.BASE_PORT_SPACING === 1) {
-        logger.warn("Only one port is available per worker, "
-          + "increase --base_port_spacing to allocate more ports per worker");
-      } else {
-        ports.mockingPort = worker.portOffset + 1;
+      if (settings.BASE_PORT_SPACING > 1) {
+        ports.mockingPort = worker.portOffset + 1; 
       }
 
       // if executor has its own port rule
