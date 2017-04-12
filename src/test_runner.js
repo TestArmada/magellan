@@ -21,8 +21,7 @@ const analytics = require("./global_analytics");
 
 const settings = require("./settings");
 const Test = require("./test");
-const logger = require("testarmada-logger");
-logger.prefix = "Magellan";
+const logger = require("../src/logger");
 
 const WORKER_START_DELAY = 1000;
 const WORKER_STOP_DELAY = 1500;

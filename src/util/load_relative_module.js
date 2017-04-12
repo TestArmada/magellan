@@ -2,8 +2,7 @@
 
 const path = require("path");
 const _ = require("lodash");
-const logger = require("testarmada-logger");
-logger.prefix = "Magellan";
+const logger = require("../src/logger");
 
 module.exports = (mPath, moduleIsOptional, opts) => {
   let resolvedRequire;

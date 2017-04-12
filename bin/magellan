@@ -6,8 +6,7 @@
 const yargs = require("yargs");
 const margs = require("marge");
 
-const logger = require("testarmada-logger");
-logger.prefix = "Magellan";
+const logger = require("../src/logger");
 
 const defaultConfigFilePath = "./magellan.json";
 const configFilePath = yargs.argv.config;

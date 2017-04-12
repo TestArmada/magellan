@@ -5,8 +5,7 @@ const _ = require("lodash");
 const project = require("../package.json");
 const settings = require("./settings");
 const magellanHelp = require("./help").help;
-const logger = require("testarmada-logger");
-logger.prefix = "Magellan";
+const logger = require("../src/logger");
 
 const MAX_HELP_KEY_WIDTH = 40;
 

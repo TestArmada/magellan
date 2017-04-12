@@ -3,8 +3,7 @@
 const _ = require("lodash");
 const settings = require("./settings");
 const portUtil = require("./util/port_util");
-const logger = require("testarmada-logger");
-logger.prefix = "Magellan";
+const logger = require("../src/logger");
 
 const MAX_ALLOCATION_ATTEMPTS = 120;
 const WORKER_START_DELAY = 1000;
