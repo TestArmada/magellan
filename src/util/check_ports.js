@@ -3,7 +3,9 @@
 const _ = require("lodash");
 const request = require("request");
 const portscanner = require("portscanner");
-const logger = require("../logger");
+
+const logger = require("testarmada-logger");
+logger.prefix = "Magellan";
 
 const PORT_STATUS_IN_USE = 0;
 const PORT_STATUS_AVAILABLE = 1;
