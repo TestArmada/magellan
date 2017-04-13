@@ -5,5 +5,3 @@ node_js:
   - v5
   - v4
 sudo: false
-after_success:
-  - bash <(curl -s https://codecov.io/bash)

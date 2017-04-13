@@ -20,11 +20,15 @@ class Allocator {
       debug: settings.debug
     }, opts);
 
-    if (this.debug) {
-      logger.log("Worker Allocator starting.");
-      logger.log("Port allocation range from: " + settings.BASE_PORT_START + " to "
-        + (settings.BASE_PORT_START + settings.BASE_PORT_RANGE - 1) + " with "
-        + settings.BASE_PORT_SPACING + " ports available to each worker.");
+    logger.debug("Worker Allocator starting.");
+    logger.debug("Port allocation range from: " + settings.BASE_PORT_START + " to "
+      + (settings.BASE_PORT_START + settings.BASE_PORT_RANGE - 1) + " with "
+      + settings.BASE_PORT_SPACING + " ports available to each worker.");
+
+    /* istanbul ignore if */
+    if (settings.BASE_PORT_SPACING === 1) {
+      logger.warn("Only one port is available per worker");
+      logger.warn("Increase --base_port_spacing to allocate more ports per worker if needed");
     }
 
     this.initializeWorkers(MAX_WORKERS);
@@ -82,11 +86,13 @@ class Allocator {
 
       const portOffset = this.getNextPort();
 
-      // Standard Magellan convention: port = mock, port + 1 = selenium
-      // Other ports after this within the BASE_PORT_SPACING range can
-      // be used for whatever the user desires, so those are labelled
-      // as "generic" (if found to be occupied, that is).
-      const desiredPortLabels = ["mocking port", "selenium port"];
+      // Standard Magellan port convention:
+      // let n = settings.BASE_PORT_SPACING - 1;
+      // portOffset     : selenium server
+      // portOffset + 1 : pre-assigned for mocking (available for application to use)
+      // ...
+      // portOffset + n : available for application to use
+      const desiredPortLabels = ["selenium port"];
       const desiredPorts = [];
 
       // if BASE_PORT_SPACING is the default of 3, we'll check 3 ports
