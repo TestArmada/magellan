@@ -420,7 +420,8 @@ class TestRunner {
           deferred.resolve({
             error: (code === 0) ? null : "Child test run process exited with code " + code,
             stderr,
-            stdout: stdout + (additionalLog && typeof additionalLog === "string" ? additionalLog : "")
+            stdout: stdout +
+              (additionalLog && typeof additionalLog === "string" ? additionalLog : "")
           });
         });
     });
