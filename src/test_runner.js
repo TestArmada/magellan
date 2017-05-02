@@ -415,12 +415,13 @@ class TestRunner {
           result: code === 0,
           metadata: testMetadata
         },
-        () => {
+        (additionalLog) => {
           // Resolve the promise
           deferred.resolve({
             error: (code === 0) ? null : "Child test run process exited with code " + code,
             stderr,
-            stdout
+            stdout: stdout +
+              (additionalLog && typeof additionalLog === "string" ? additionalLog : "")
           });
         });
     });
