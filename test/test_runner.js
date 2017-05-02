@@ -381,6 +381,7 @@ describe("test_runner", () => {
 
     it("successful test without serial", () => {
       optionsMock.serial = false;
+
       const tr = new TestRunner(tests, optionsMock, optsMock);
       tr.onTestComplete(null, successfulTest);
     });
@@ -400,6 +401,7 @@ describe("test_runner", () => {
 
     it("multi tests without serial", () => {
       optionsMock.serial = false;
+      optionsMock.executors["sauce"].summerizeTest = (buildid, metadat, callback) => callback("wt");
       const tr = new TestRunner(tests, optionsMock, optsMock);
       tr.start();
     });
@@ -542,7 +544,7 @@ describe("test_runner", () => {
     it("executor stage error", (done) => {
       const onTestComplete = () => done();
       optionsMock.executors["sauce"].setupTest = (callback) => callback("error");
-
+      
       const tr = new TestRunner(tests, optionsMock, optsMock);
       tr.stageTest(tr.tests[0], onTestComplete);
     });
