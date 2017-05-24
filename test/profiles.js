@@ -105,7 +105,7 @@ describe("handleProfiles", () => {
         });
     });
 
-    it("one profile with five duplicate names should return one unique name", () => {
+    it("one profile with five duplicate browsers should return one unique browser", () => {
       runOpts.margs.argv.profile = "http://some_fake_url#chrome,chrome,chrome,chrome,chrome";
 
       return profile
@@ -131,7 +131,7 @@ describe("handleProfiles", () => {
         });
     });
 
-    it("multiple profiles with one duplicate name should return unique names", () => {
+    it("multiple profiles with one duplicate and one unique browser should return two browsers", () => {
       runOpts.margs.argv.profile = "http://some_fake_url#chrome,firefox,firefox";
 
       return profile
@@ -145,7 +145,7 @@ describe("handleProfiles", () => {
         });
     });
 
-    it("multiple profiles with two duplicate names should return unique names", () => {
+    it("multiple profiles with two duplicate browsers should return two browsers", () => {
       runOpts.margs.argv.profile = "http://some_fake_url#chrome,firefox,firefox,chrome";
 
       return profile
@@ -159,7 +159,7 @@ describe("handleProfiles", () => {
         });
     });
 
-    it("multiple profiles with four duplicate names and one unique should return three unique names", () => {
+    it("multiple profiles with four duplicate and one unique browser should return two browsers", () => {
       runOpts.margs.argv.profile = "http://some_fake_url#firefox,chrome,firefox,firefox,firefox";
 
       return profile
@@ -289,7 +289,6 @@ describe("handleProfiles", () => {
           });
         }
       };
-
 
       return profile
         .detectFromCLI(runOpts)
