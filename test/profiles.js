@@ -105,6 +105,18 @@ describe("handleProfiles", () => {
         });
     });
 
+    it("one profile with five duplicate names should return one unique name", () => {
+      runOpts.margs.argv.profile = "http://some_fake_url#chrome,chrome,chrome,chrome,chrome";
+
+      return profile
+        .detectFromCLI(runOpts)
+        .then((resolvedprofiles) => {
+          expect(resolvedprofiles.length).to.equal(1);
+          expect(resolvedprofiles[0].browser).to.equal("chrome");
+          expect(resolvedprofiles[0].executor).to.equal("sauce");
+        });
+    });
+
     it("multiple profiles from http", () => {
       runOpts.margs.argv.profile = "http://some_fake_url#chrome,firefox";
 
@@ -115,6 +127,48 @@ describe("handleProfiles", () => {
           expect(resolvedprofiles[0].browser).to.equal("chrome");
           expect(resolvedprofiles[0].executor).to.equal("sauce");
           expect(resolvedprofiles[1].browser).to.equal("firefox");
+          expect(resolvedprofiles[1].executor).to.equal("sauce");
+        });
+    });
+
+    it("multiple profiles with one duplicate name should return unique names", () => {
+      runOpts.margs.argv.profile = "http://some_fake_url#chrome,firefox,firefox";
+
+      return profile
+        .detectFromCLI(runOpts)
+        .then((resolvedprofiles) => {
+          expect(resolvedprofiles.length).to.equal(2);
+          expect(resolvedprofiles[0].browser).to.equal("chrome");
+          expect(resolvedprofiles[0].executor).to.equal("sauce");
+          expect(resolvedprofiles[1].browser).to.equal("firefox");
+          expect(resolvedprofiles[1].executor).to.equal("sauce");
+        });
+    });
+
+    it("multiple profiles with two duplicate names should return unique names", () => {
+      runOpts.margs.argv.profile = "http://some_fake_url#chrome,firefox,firefox,chrome";
+
+      return profile
+        .detectFromCLI(runOpts)
+        .then((resolvedprofiles) => {
+          expect(resolvedprofiles.length).to.equal(2);
+          expect(resolvedprofiles[0].browser).to.equal("chrome");
+          expect(resolvedprofiles[0].executor).to.equal("sauce");
+          expect(resolvedprofiles[1].browser).to.equal("firefox");
+          expect(resolvedprofiles[1].executor).to.equal("sauce");
+        });
+    });
+
+    it("multiple profiles with four duplicate names and one unique should return three unique names", () => {
+      runOpts.margs.argv.profile = "http://some_fake_url#firefox,chrome,firefox,firefox,firefox";
+
+      return profile
+        .detectFromCLI(runOpts)
+        .then((resolvedprofiles) => {
+          expect(resolvedprofiles.length).to.equal(2);
+          expect(resolvedprofiles[0].browser).to.equal("firefox");
+          expect(resolvedprofiles[0].executor).to.equal("sauce");
+          expect(resolvedprofiles[1].browser).to.equal("chrome");
           expect(resolvedprofiles[1].executor).to.equal("sauce");
         });
     });
