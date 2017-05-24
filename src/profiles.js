@@ -74,7 +74,11 @@ module.exports = {
 
             _.forEach(requestedProfiles, (requestedProfile) => {
               if (argv.profiles[requestedProfile]) {
-                profiles = _.concat(profiles, argv.profiles[requestedProfile]);
+                // keep only the unique profiles and eliminate duplicates from test run
+                profiles = _.uniqWith(
+                  _.concat(profiles, argv.profiles[requestedProfile]),
+                  _.isEqual
+                );
               } else {
                 notFoundProfiles.push(requestedProfile);
               }

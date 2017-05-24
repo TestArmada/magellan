@@ -105,6 +105,18 @@ describe("handleProfiles", () => {
         });
     });
 
+    it("one profile with five duplicate browsers should return one unique browser", () => {
+      runOpts.margs.argv.profile = "http://some_fake_url#chrome,chrome,chrome,chrome,chrome";
+
+      return profile
+        .detectFromCLI(runOpts)
+        .then((resolvedprofiles) => {
+          expect(resolvedprofiles.length).to.equal(1);
+          expect(resolvedprofiles[0].browser).to.equal("chrome");
+          expect(resolvedprofiles[0].executor).to.equal("sauce");
+        });
+    });
+
     it("multiple profiles from http", () => {
       runOpts.margs.argv.profile = "http://some_fake_url#chrome,firefox";
 
@@ -115,6 +127,48 @@ describe("handleProfiles", () => {
           expect(resolvedprofiles[0].browser).to.equal("chrome");
           expect(resolvedprofiles[0].executor).to.equal("sauce");
           expect(resolvedprofiles[1].browser).to.equal("firefox");
+          expect(resolvedprofiles[1].executor).to.equal("sauce");
+        });
+    });
+
+    it("multiple profiles with one duplicate and one unique browser should return two browsers", () => {
+      runOpts.margs.argv.profile = "http://some_fake_url#chrome,firefox,firefox";
+
+      return profile
+        .detectFromCLI(runOpts)
+        .then((resolvedprofiles) => {
+          expect(resolvedprofiles.length).to.equal(2);
+          expect(resolvedprofiles[0].browser).to.equal("chrome");
+          expect(resolvedprofiles[0].executor).to.equal("sauce");
+          expect(resolvedprofiles[1].browser).to.equal("firefox");
+          expect(resolvedprofiles[1].executor).to.equal("sauce");
+        });
+    });
+
+    it("multiple profiles with two duplicate browsers should return two browsers", () => {
+      runOpts.margs.argv.profile = "http://some_fake_url#chrome,firefox,firefox,chrome";
+
+      return profile
+        .detectFromCLI(runOpts)
+        .then((resolvedprofiles) => {
+          expect(resolvedprofiles.length).to.equal(2);
+          expect(resolvedprofiles[0].browser).to.equal("chrome");
+          expect(resolvedprofiles[0].executor).to.equal("sauce");
+          expect(resolvedprofiles[1].browser).to.equal("firefox");
+          expect(resolvedprofiles[1].executor).to.equal("sauce");
+        });
+    });
+
+    it("multiple profiles with four duplicate and one unique browser should return two browsers", () => {
+      runOpts.margs.argv.profile = "http://some_fake_url#firefox,chrome,firefox,firefox,firefox";
+
+      return profile
+        .detectFromCLI(runOpts)
+        .then((resolvedprofiles) => {
+          expect(resolvedprofiles.length).to.equal(2);
+          expect(resolvedprofiles[0].browser).to.equal("firefox");
+          expect(resolvedprofiles[0].executor).to.equal("sauce");
+          expect(resolvedprofiles[1].browser).to.equal("chrome");
           expect(resolvedprofiles[1].executor).to.equal("sauce");
         });
     });
@@ -136,6 +190,94 @@ describe("handleProfiles", () => {
         })
         .catch((err) => {
           expect(err).to.equal("Profile chrome not found!");
+        });
+    });
+
+    it("two profiles with duplicate profiles should return one unique profile", () => {
+      runOpts.syncRequest = (method, url) => {
+        return {
+          getBody(encoding) {
+            return "{\"profiles\":{\"chrome\":[{\"browser\":\"chrome\", \"resolution\":\"1280x1024\"}],\"chromeV2\":[{\"browser\":\"chrome\", \"resolution\":\"1280x1024\"}],\"firefox\":[{\"browser\":\"firefox\", \"resolution\":\"1280x1024\"}]}}";
+          }
+        };
+      };
+
+      runOpts.margs.argv.profile = "http://some_fake_url#chrome,chromeV2";
+
+      return profile
+        .detectFromCLI(runOpts)
+        .then((resolvedprofiles) => {
+          expect(resolvedprofiles.length).to.equal(1);
+          expect(resolvedprofiles[0].browser).to.equal("chrome");
+          expect(resolvedprofiles[0].resolution).to.equal("1280x1024");
+        });
+    });
+
+    it("two duplicates and one unique profiles should return two unique profiles", () => {
+      runOpts.syncRequest = (method, url) => {
+        return {
+          getBody(encoding) {
+            return "{\"profiles\":{\"chrome\":[{\"browser\":\"chrome\", \"resolution\":\"1280x1024\"}],\"chromeV2\":[{\"browser\":\"chrome\", \"resolution\":\"1280x1024\"}],\"firefox\":[{\"browser\":\"firefox\", \"resolution\":\"1280x1024\"}]}}";
+          }
+        };
+      };
+
+      runOpts.margs.argv.profile = "http://some_fake_url#chrome,chromeV2,firefox";
+
+      return profile
+        .detectFromCLI(runOpts)
+        .then((resolvedprofiles) => {
+          expect(resolvedprofiles.length).to.equal(2);
+          expect(resolvedprofiles[0].browser).to.equal("chrome");
+          expect(resolvedprofiles[0].resolution).to.equal("1280x1024");
+          expect(resolvedprofiles[1].browser).to.equal("firefox");
+          expect(resolvedprofiles[1].resolution).to.equal("1280x1024");
+        });
+    });
+
+    it("two profiles with no duplications should return same two profiles", () => {
+      runOpts.syncRequest = (method, url) => {
+        return {
+          getBody(encoding) {
+            return "{\"profiles\":{\"chrome\":[{\"browser\":\"chrome\", \"resolution\":\"1280x1024\"}],\"chromeV2\":[{\"browser\":\"chrome\", \"resolution\":\"1280x1024\"}],\"firefox\":[{\"browser\":\"firefox\", \"resolution\":\"1280x1024\"}]}}";
+          }
+        };
+      };
+
+      runOpts.margs.argv.profile = "http://some_fake_url#chromeV2,firefox";
+
+      return profile
+        .detectFromCLI(runOpts)
+        .then((resolvedprofiles) => {
+          expect(resolvedprofiles.length).to.equal(2);
+          expect(resolvedprofiles[0].browser).to.equal("chrome");
+          expect(resolvedprofiles[0].resolution).to.equal("1280x1024");
+          expect(resolvedprofiles[1].browser).to.equal("firefox");
+          expect(resolvedprofiles[1].resolution).to.equal("1280x1024");
+        });
+    });
+
+    it("three unique profiles should return same three profiles", () => {
+      runOpts.syncRequest = (method, url) => {
+        return {
+          getBody(encoding) {
+            return "{\"profiles\":{\"chrome\":[{\"browser\":\"chrome\", \"resolution\":\"1280x1024\"}],\"chromeV2\":[{\"browser\":\"chrome\", \"resolution\":\"1200x1024\"}],\"firefox\":[{\"browser\":\"firefox\", \"resolution\":\"1280x1024\"}]}}";
+          }
+        };
+      };
+
+      runOpts.margs.argv.profile = "http://some_fake_url#chrome,chromeV2,firefox";
+
+      return profile
+        .detectFromCLI(runOpts)
+        .then((resolvedprofiles) => {
+          expect(resolvedprofiles.length).to.equal(3);
+          expect(resolvedprofiles[0].browser).to.equal("chrome");
+          expect(resolvedprofiles[0].resolution).to.equal("1280x1024");
+          expect(resolvedprofiles[1].browser).to.equal("chrome");
+          expect(resolvedprofiles[1].resolution).to.equal("1200x1024");
+          expect(resolvedprofiles[2].browser).to.equal("firefox");
+          expect(resolvedprofiles[2].resolution).to.equal("1280x1024");
         });
     });
 
@@ -235,7 +377,6 @@ describe("handleProfiles", () => {
           });
         }
       };
-
 
       return profile
         .detectFromCLI(runOpts)
