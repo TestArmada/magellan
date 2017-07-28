@@ -38,7 +38,7 @@ class BailStrategy {
       return "";
     }
     // prints out strategy's bail Reason
-    return this.bailReason;
+    return typeof this.bailReason === "function" ? this.bailReason() : this.bailReason;
   }
 
   // info format
@@ -47,7 +47,6 @@ class BailStrategy {
    *  totalTests: [] // total tests
    *  passedTests: [] // successful tests 
    *  failedTests: [] // failed tests
-   *  runtime: int // running time
    * }
    */
 

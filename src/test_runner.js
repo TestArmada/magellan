@@ -28,22 +28,6 @@ const WORKER_STOP_DELAY = 1500;
 const WORKER_POLL_INTERVAL = 250;
 const FINAL_CLEANUP_DELAY = 2500;
 
-// const strictness = {
-//   BAIL_NEVER: 1,     // never bail
-//   BAIL_TIME_ONLY: 2, // kill tests that run too slow early, but not the build
-//   BAIL_EARLY: 3,     // bail somewhat early, but within a threshold (see below), apply time rules
-//   BAIL_FAST: 4,      // bail as soon as a test fails, apply time rules
-
-//   // Ratio of tests that need to fail before we abandon the build in BAIL_EARLY mode
-//   THRESHOLD: settings.bailThreshold,
-//   // Minimum number of tests that need to run before we test threshold rules
-//   THRESHOLD_MIN_ATTEMPTS: settings.bailMinAttempts,
-
-//   // Running length after which we abandon and fail a test in any mode except BAIL_NEVER
-//   // Specified in milliseconds.
-//   LONG_RUNNING_TEST: settings.bailTime
-// };
-
 //
 // A parallel test runner with retry logic and port allocation
 //
@@ -70,39 +54,17 @@ class TestRunner {
       analytics
     }, opts);
 
-    // Allow for bail time to be set "late" (eg: unit tests)
-    // strictness.LONG_RUNNING_TEST = this.settings.bailTime;
-
     this.buildId = this.settings.buildId;
 
     this.busyCount = 0;
 
     this.retryCount = 0;
 
-    // FIXME: remove these eslint disables when this is simplified and has a test
-    /*eslint-disable no-nested-ternary*/
-    /*eslint-disable no-extra-parens*/
-    // this.strictness = options.bailFast
-    //   ? strictness.BAIL_FAST
-    //   : (options.bailOnThreshold
-    //     ? strictness.BAIL_EARLY
-    //     : (this.settings.bailTimeExplicitlySet
-    //       ? strictness.BAIL_TIME_ONLY
-    //       : strictness.BAIL_NEVER
-    //     )
-    //   );
     this.bailStrategy = options.bailStrategy;
-
 
     this.MAX_WORKERS = options.maxWorkers;
 
-    // Attempt tests once only if we're in fast bail mode
     this.MAX_TEST_ATTEMPTS = options.maxTestAttempts;
-    // this.MAX_TEST_ATTEMPTS = this.strictness === strictness.BAIL_FAST
-    //   ? 1
-    //   : options.maxTestAttempts;
-
-    // this.hasBailed = false;
 
     this.profiles = options.profiles;
     this.executors = options.executors;
@@ -423,7 +385,7 @@ class TestRunner {
           deferred.resolve({
             error: (code === 0) ? null : "Child test run process exited with code " + code,
             stderr,
-            stdout: stdout + 
+            stdout: stdout +
               (additionalLog && typeof additionalLog === "string" ? additionalLog : "")
           });
         });
@@ -498,28 +460,30 @@ class TestRunner {
 
     handler.on("close", workerClosed);
 
-    // A sentry monitors how long a given worker has been working. In every
-    // strictness level except BAIL_NEVER, we kill a worker process and its
+    // A sentry monitors how long a given worker has been working. 
+    // If bail strategy calls a bail, we kill a worker process and its
     // process tree if its been running for too long.
     test.startClock();
     sentry = this.setInterval(() => {
       const runtime = test.getRuntime();
 
-      if (this.bailStrategy.shouldBail({
-        totalTests: this.tests,
-        passedTests: this.passedTests,
-        failedTests: this.failedTests,
-        runtime
-      })) {
+      if (this.bailStrategy.hasBailed || runtime > settings.testTimeout) {
+        // Suite won't be bailed if test is killed by exceeding settings.testTimeout
         // Stop the sentry now because we are going to yield for a moment before
         // calling workerClosed(), which is normally responsible for stopping
         // the sentry from monitoring.
         this.clearInterval(sentry);
 
+        let customMessage = `Killed by Magellan because of ${this.bailStrategy.getBailReason()}`;
+
         // Tell the child to shut down the running test immediately
+        if (runtime > settings.testTimeout) {
+          customMessage = `Killed by Magellan after ${settings.testTimeout}ms (long running test)`;
+        }
+
         handler.send({
           signal: "bail",
-          customMessage: "Killed by magellan because of " + this.bailStrategy.getBailReason()
+          customMessage
         });
 
         this.setTimeout(() => {
@@ -530,34 +494,6 @@ class TestRunner {
       } else {
         return;
       }
-      // if (this.strictness === strictness.BAIL_NEVER) {
-      //   return;
-      // }
-
-
-
-      // Kill a running test under one of two conditions:
-      //   1. We've been asked to bail with this.hasBailed
-      //   2. the runtime for this test exceeds the limit.
-      //
-      // if (this.hasBailed || runtime > strictness.LONG_RUNNING_TEST) {
-      //   // Stop the sentry now because we are going to yield for a moment before
-      //   // calling workerClosed(), which is normally responsible for stopping
-      //   // the sentry from monitoring.
-      //   this.clearInterval(sentry);
-
-      //   // Tell the child to shut down the running test immediately
-      //   handler.send({
-      //     signal: "bail",
-      //     customMessage: "Killed by magellan after " + strictness.LONG_RUNNING_TEST
-      //     + "ms (long running test)"
-      //   });
-
-      //   this.setTimeout(() => {
-      //     // We pass code 1 to simulate a failure return code from fork()
-      //     workerClosed(1);
-      //   }, WORKER_STOP_DELAY);
-      // }
     }, WORKER_POLL_INTERVAL);
 
     return deferred.promise;
@@ -569,7 +505,7 @@ class TestRunner {
     const deferred = Q.defer();
 
     // do not report test starts if we've bailed.
-    if (!this.hasBailed) {
+    if (!this.bailStrategy.hasBailed) {
       const msg = [];
 
       msg.push("-->");
@@ -709,8 +645,6 @@ class TestRunner {
 
     let status;
 
-    // if (this.hasBailed) {
-    //   status = clc.redBright("BAILED EARLY (due to failures)");
     if (this.bailStrategy.hasBailed) {
       status = clc.redBright(this.bailStrategy.getBailReason());
     } else {
@@ -806,7 +740,7 @@ class TestRunner {
     if (this.bailStrategy.hasBailed) {
       // Ignore results from this test if we've bailed. This is likely a test that
       // was killed when the build went into bail mode.
-      logger.log("\u2716 " + clc.redBright("KILLED ") + " " + test.toString()
+      logger.warn("\u2716 " + clc.redBright("KILLED ") + " " + test.toString()
         + (this.serial ? "\n" : ""));
       return;
     }
@@ -877,64 +811,7 @@ class TestRunner {
 
       this.buildFinished();
     }
-
-    // if (!this.hasBailed && this.THRESHOLD_MIN_ATTEMPTS) {
-    //   // Kill the rest of the queue, preventing any new tests from running and shutting
-    //   // down buildFinished
-    //   this.q.kill();
-
-    //   // Set a bail flag. Effects:
-    //   //   1. Ignore results from any remaining tests that are still running.
-    //   //   2. Signal to any running sentries that we should kill any running tests.
-    //   this.hasBailed = true;
-
-    //   this.buildFinished();
-    // }
   }
-
-  // Return true if this build should stop running and fail immediately.
-  // shouldBail() {
-  //   if (this.strictness === strictness.BAIL_NEVER
-  //     || this.strictness === strictness.BAIL_TIME_ONLY) {
-  //     // BAIL_NEVER means we don't apply any strictness rules at all
-  //     return false;
-  //   } else if (this.strictness === strictness.BAIL_EARLY) {
-  //     // --bail_early
-  //     // Bail on a threshold. By default, if we've run at least 10 tests
-  //     // and at least 10% of them (1) have failed, we bail out early.
-  //     // This allows for useful data-gathering for debugging or trend
-  //     // analysis if we don't want to just bail on the first failed test.
-
-  //     const sumAttempts = (memo, test) => memo + test.attempts;
-  //     const totalAttempts = _.reduce(this.passedTests, sumAttempts, 0)
-  //       + _.reduce(this.failedTests, sumAttempts, 0);
-
-  //     // Failed attempts are not just the sum of all failed attempts but also
-  //     // of successful tests that eventually passed (i.e. total attempts - 1).
-  //     const sumExtraAttempts = (memo, test) => memo + Math.max(test.attempts - 1, 0);
-  //     const failedAttempts = _.reduce(this.failedTests, sumAttempts, 0)
-  //       + _.reduce(this.passedTests, sumExtraAttempts, 0);
-
-  //     // Fail to total work ratio.
-  //     const ratio = failedAttempts / totalAttempts;
-
-  //     if (totalAttempts > strictness.THRESHOLD_MIN_ATTEMPTS) {
-  //       if (ratio > strictness.THRESHOLD) {
-  //         logger.log("Magellan has seen at least " + (strictness.THRESHOLD * 100) + "% of "
-  //           + " tests fail after seeing at least " + strictness.THRESHOLD_MIN_ATTEMPTS
-  //           + " tests run. Bailing early.");
-  //         return true;
-  //       }
-  //     }
-  //     return false;
-  //   } else if (this.strictness === strictness.BAIL_FAST) {
-  //     // --bail_fast
-  //     // Bail as soon as a test has failed.
-  //     return this.failedTests.length > 0;
-  //   } else {
-  //     return false;
-  //   }
-  // }
-}
+};
 
 module.exports = TestRunner;

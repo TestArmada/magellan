@@ -102,6 +102,6 @@ module.exports = {
       });
     }
 
-    logger.log("magellan v" + project.version);
+    logger.log("Magellan@" + project.version);
   }
 };

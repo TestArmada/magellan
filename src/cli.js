@@ -59,7 +59,7 @@ module.exports = (opts) => {
 
   const debug = runOpts.margs.argv.debug || false;
   const useSerialMode = runOpts.margs.argv.serial;
-  const MAX_TEST_ATTEMPTS = parseInt(runOpts.margs.argv.max_test_attempts) || 3;
+  let MAX_TEST_ATTEMPTS = parseInt(runOpts.margs.argv.max_test_attempts) || 3;
   let targetProfiles;
   let workerAllocator;
   let MAX_WORKERS;
@@ -203,22 +203,52 @@ module.exports = (opts) => {
   const testExecutors = runOpts.settings.testExecutors;
 
   //
+  // Initialize Strategy
+  // ====================
+
+  if (!runOpts.settings.strategies) {
+    runOpts.settings.strategies = {};
+  }
+
+
+  //
   // Initialize Bail Strategy
   // ====================
   //
   // There is only one bail strategy allowed per magellan instance. Bail strategy is configured via --strategy_bail.
-  // If no --strategy_bail passed in, ./strategies/bail_never is enabled by default
-  const bail_rule = runOpts.margs.argv.strategy_bail ? runOpts.margs.argv.strategy_bail : "./strategies/bail_never";
-  if (!runOpts.settings.strategies) {
-    runOpts.settings.strategies = {};
+  // If no --strategy_bail , enable ./strategies/bail_never by default
+  let bail_rule = runOpts.margs.argv.strategy_bail ? runOpts.margs.argv.strategy_bail : "./strategies/bail_never";
+
+  // --------------------
+  // ALERT!!!!! Will be deprecated in next release
+  //
+  // To backward support magellan's bail command line arguments
+  // The bail strategy will be for the whole suite, so if --bail_time is set explicitly
+  // the bail_never strategy will be used for whole suite and --bail_time will be applied 
+  // to test only
+
+  if (runOpts.margs.argv.bail_fast) {
+    bail_rule = "./strategies/bail_fast";
+  } else if (runOpts.margs.argv.bail_early) {
+    bail_rule = "./strategies/bail_early";
+  } else if (runOpts.margs.argv.bail_time) {
+    bail_rule = "./strategies/bail_never";
   }
+
+  // --------------------
 
   try {
     runOpts.settings.strategies.bail = new BailStrategy(bail_rule);
     runOpts.settings.strategies.bail.configure(runOpts.margs.argv);
 
+    if (runOpts.settings.strategies.bail.MAX_TEST_ATTEMPTS) {
+      // backward support
+      // bail strategy can define its own test attempts
+      MAX_TEST_ATTEMPTS = runOpts.settings.strategies.bail.MAX_TEST_ATTEMPTS;
+    }
+
     logger.log("Enabled bail strategy: ");
-    logger.log("  " + runOpts.settings.strategies.bail.getDescription());
+    logger.log(`  ${runOpts.settings.strategies.bail.name}: ${runOpts.settings.strategies.bail.getDescription()}`);
   } catch (e) {
     logger.err("Error: bail strategy: " + bail_rule + " cannot be loaded because of error [" + e + "]");
     defer.reject({ error: "Couldn't start Magellan" });
@@ -385,8 +415,6 @@ module.exports = (opts) => {
 
             listeners,
 
-            // bailFast: runOpts.margs.argv.bail_fast ? true : false,
-            // bailOnThreshold: runOpts.margs.argv.bail_early ? true : false,
             bailStrategy: runOpts.settings.strategies.bail,
 
             serial: useSerialMode,

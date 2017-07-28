@@ -47,6 +47,14 @@ try {
   throw new Error("Magellan cannot write to or create the temporary directory: " + TEMP_DIR);
 }
 
+const testTimeout =
+  argv.test_timeout ? argv.test_timeout
+    // --------------------
+    // ALERT!!!!! Will be deprecated in next release
+    //
+    // backward compatible
+    : argv.bail_time ? argv.bail_time : 8 * 60 * 1000;
+    // --------------------
 
 module.exports = {
 
@@ -72,17 +80,7 @@ module.exports = {
   aggregateScreenshots: argv.aggregate_screenshots,
   tempDir: TEMP_DIR,
 
-  // By default, kill time of long running tests is 8 minutes *only if bail options are set*
-  // Otherwise bailTime is only explicitly used if explicitly set -- tests are otherwise allowed
-  // to run "forever".
-  // bailTime: argv.bail_time || 8 * 60 * 1000,
-  // bailTimeExplicitlySet: typeof argv.bail_time !== "undefined",
-
-  // // For --bail_early, we have two settings:
-  // // threshold: the ratio (out of 1) of how many tests we need to see fail before we bail early.
-  // // min attempts: how many tests we need to see first before we apply the threshold
-  // bailThreshold: parseFloat(argv.early_bail_threshold) || 0.1,
-  // bailMinAttempts: parseInt(argv.early_bail_min_attempts) || 10,
+  testTimeout,
 
   buildId,
 

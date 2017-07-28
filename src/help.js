@@ -29,35 +29,41 @@ module.exports = {
       "visible": true,
       "description": "Retry tests N times (default: 3)."
     },
-    "strategy_bail": {
+    "test_timeout": {
       "category": "Parallelism, Workflow and Filtering",
-      "example": "strategy_neverBail",
+      "example": "80000",
+      "visible": true,
+      "description": "Set test kill time in milliseconds (default: 480000ms)."
+    },
+    "strategy_bail": {
+      "category": "Strategy",
+      "example": "./strategy/fast_bail",
       "visible": true,
       "description": "The strategy magellan uses to decide when to terminate current test suite if failure happens."
     },
     "bail_early": {
-      "category": "Parallelism, Workflow and Filtering",
-      "visible": false,
+      "category": "Bail Strategy [Be deprecated soon, please migrate to --strategy_bail]",
+      "visible": true,
       "description": "Kill builds that have failed at least 10% of tests, after 10 or more test runs."
     },
     "bail_fast": {
-      "category": "Parallelism, Workflow and Filtering",
-      "visible": false,
+      "category": "Bail Strategy [Be deprecated soon, please migrate to --strategy_bail]",
+      "visible": true,
       "description": "Kill builds that fail any test."
     },
     "bail_time": {
-      "category": "Parallelism, Workflow and Filtering",
-      "visible": false,
+      "category": "Bail Strategy [Be deprecated soon, please migrate to --strategy_bail]",
+      "visible": true,
       "description": "Set test kill time in milliseconds. *CAN* be used without bail_early/bail_fast."
     },
     "early_bail_threshold": {
-      "category": "Parallelism, Workflow and Filtering",
-      "visible": false,
+      "category": "Bail Strategy [Be deprecated soon, please migrate to --strategy_bail]",
+      "visible": true,
       "description": "A decimal ratio (eg 0.25 for 25%) how many tests to fail before bail_early"
     },
     "early_bail_min_attempts": {
-      "category": "Parallelism, Workflow and Filtering",
-      "visible": false,
+      "category": "Bail Strategy [Be deprecated soon, please migrate to --strategy_bail]",
+      "visible": true,
       "description": "How many test runs to run before applying bail_early rule."
     },
     "debug": {
