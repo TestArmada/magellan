@@ -47,14 +47,16 @@ try {
   throw new Error("Magellan cannot write to or create the temporary directory: " + TEMP_DIR);
 }
 
-const testTimeout =
-  argv.test_timeout ? argv.test_timeout
-    // --------------------
-    // ALERT!!!!! Will be deprecated in next release
-    //
-    // backward compatible
-    : argv.bail_time ? argv.bail_time : 8 * 60 * 1000;
-    // --------------------
+let testTimeout = 8 * 60 * 1000;
+if (argv.test_timeout) {
+  testTimeout = argv.test_timeout;
+} else if (argv.bail_time) {
+  // --------------------
+  // ALERT!!!!! Will be deprecated in next release
+  //
+  // backward compatible
+  testTimeout = argv.bail_time;
+}
 
 module.exports = {
 

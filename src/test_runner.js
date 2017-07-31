@@ -323,7 +323,7 @@ class TestRunner {
           test: test.locator.toString(),
           profile: test.profile.id,
           // NOTE: attempt numbers are 1-indexed
-          attemptNumber: (test.attempts + 1)
+          attemptNumber: test.attempts + 1
         }
       }
     });
@@ -383,7 +383,7 @@ class TestRunner {
         (additionalLog) => {
           // Resolve the promise
           deferred.resolve({
-            error: (code === 0) ? null : "Child test run process exited with code " + code,
+            error: code === 0 ? null : "Child test run process exited with code " + code,
             stderr,
             stdout: stdout +
               (additionalLog && typeof additionalLog === "string" ? additionalLog : "")
@@ -412,7 +412,7 @@ class TestRunner {
     });
 
     handler.stdout.on("data", (data) => {
-      let text = ("" + data);
+      let text = "" + data;
       if (text.trim() !== "") {
         text = text
           .split("\n")
@@ -436,7 +436,7 @@ class TestRunner {
     });
 
     handler.stderr.on("data", (data) => {
-      let text = ("" + data);
+      let text = "" + data;
       if (text.trim() !== "") {
         text = text
           .split("\n")
@@ -460,7 +460,7 @@ class TestRunner {
 
     handler.on("close", workerClosed);
 
-    // A sentry monitors how long a given worker has been working. 
+    // A sentry monitors how long a given worker has been working.
     // If bail strategy calls a bail, we kill a worker process and its
     // process tree if its been running for too long.
     test.startClock();
@@ -648,7 +648,7 @@ class TestRunner {
     if (this.bailStrategy.hasBailed) {
       status = clc.redBright(this.bailStrategy.getBailReason());
     } else {
-      status = (this.failedTests.length > 0 ? clc.redBright("FAILED") : clc.greenBright("PASSED"));
+      status = this.failedTests.length > 0 ? clc.redBright("FAILED") : clc.greenBright("PASSED");
     }
 
     if (this.failedTests.length > 0) {
@@ -812,6 +812,6 @@ class TestRunner {
       this.buildFinished();
     }
   }
-};
+}
 
 module.exports = TestRunner;

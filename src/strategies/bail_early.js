@@ -1,6 +1,9 @@
+"use strict";
+
 const _ = require("lodash");
 const logger = require("testarmada-logger");
 
+/* eslint-disable no-magic-numbers */
 const settings = {
   FAILURE_RATIO: 0.1,
   MIN_TEST_ATTEMPTS: 10,
@@ -8,10 +11,10 @@ const settings = {
 };
 
 module.exports = {
-  name: "testarmada-magellan-eaily-bail-strategy",
+  name: "testarmada-magellan-early-bail-strategy",
   description: "Magellan will bail if failure ratio exceeds a threshold within a given period",
-  bailReason: () => `At least ${settings.FAILURE_RATIO * 100}% of tests have been failed after seeing at least`
-    + ` ${settings.MIN_TEST_ATTEMPTS} tests run`,
+  bailReason: () => `At least ${settings.FAILURE_RATIO * 100}% of tests have `
+    + `been failed after seeing at least ${settings.MIN_TEST_ATTEMPTS} tests run`,
 
   help: {
     "early_bail_threshold": {
@@ -25,7 +28,7 @@ module.exports = {
       "type": "string",
       "example": "10",
       "description": "Minimum number of tests that need to run before we apply the bail strategy"
-    },
+    }
   },
 
   setConfiguration(argv) {
@@ -43,15 +46,15 @@ module.exports = {
   },
 
   // info format
-  /**
+  /*
    * {
    *  totalTests: [] // total tests
-   *  passedTests: [] // successful tests 
+   *  passedTests: [] // successful tests
    *  failedTests: [] // failed tests
    * }
    */
   decide(info) {
-    // Bail on a threshold. 
+    // Bail on a threshold.
     // By default, if we've run at least ${settings.minTestAttempts} tests
     // and at least ${settings.failureRatio} of them have failed, we bail out early.
     // This allows for useful data-gathering for debugging or trend

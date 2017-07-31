@@ -7,15 +7,19 @@ const _ = require("lodash");
 const TestRunner = require("../src/test_runner");
 const logger = require("../src/logger");
 
+const BailStrategy = require("../src/bail");
+
+const BAIL_FAST = process.cwd() + "/src/strategies/bail_fast";
+const BAIL_NEVER = process.cwd() + "/src/strategies/bail_never";
+const BAIL_EARLY = process.cwd() + "/src/strategies/bail_early";
+
 chai.use(chaiAsPromise);
 
 const expect = chai.expect;
 const assert = chai.assert;
 
 const settings = {
-  bailTime: 1,
   buildId: "FADSFASDF_ASDFSADF2",
-  bailTimeExplicitlySet: true,
   gatherTrends: true,
   testFramework: {
     TestRun: function () {
@@ -100,8 +104,6 @@ const allocator = {
 
 const options = {
   debug: true,
-  bailFast: false,
-  bailOnThreshold: false,
   maxWorkers: 1,
   maxTestAttempts: 1,
   serial: true,
@@ -138,6 +140,7 @@ describe("test_runner", () => {
     optionsMock.profiles = _.cloneDeep(profiles);
     optionsMock.executors = _.cloneDeep(executors);
     optionsMock.allocator = _.cloneDeep(allocator);
+    optionsMock.bailStrategy = new BailStrategy(BAIL_NEVER);
   });
 
   describe("initialize", () => {
@@ -145,25 +148,23 @@ describe("test_runner", () => {
       const tr = new TestRunner(tests, optionsMock, optsMock);
       expect(tr.numTests).to.equal(4);
       expect(tr.profiles.length).to.equal(2);
-      expect(tr.strictness).to.equal(2);
     });
 
-    it("should pass with bail fast", () => {
-      optionsMock.bailFast = true;
+    it("[backward compatibility] should pass with bail fast", () => {
+      optionsMock.bailStrategy = new BailStrategy(BAIL_FAST);
       const tr = new TestRunner(tests, optionsMock, optsMock);
-      expect(tr.strictness).to.equal(4);
+      expect(tr.bailStrategy.name).to.equal(optionsMock.bailStrategy.name);
     });
 
-    it("should pass with bail early", () => {
-      optionsMock.bailOnThreshold = true;
+    it("[backward compatibility] should pass with bail early", () => {
+      optionsMock.bailStrategy = new BailStrategy(BAIL_EARLY);
       const tr = new TestRunner(tests, optionsMock, optsMock);
-      expect(tr.strictness).to.equal(3);
+      expect(tr.bailStrategy.name).to.equal(optionsMock.bailStrategy.name);
     });
 
-    it("should pass with bail never", () => {
-      optsMock.settings.bailTimeExplicitlySet = false;
+    it("[backward compatibility] should pass with bail never", () => {
       const tr = new TestRunner(tests, optionsMock, optsMock);
-      expect(tr.strictness).to.equal(1);
+      expect(tr.bailStrategy.name).to.equal(optionsMock.bailStrategy.name);
     });
   });
 
@@ -200,58 +201,6 @@ describe("test_runner", () => {
     tr.gatherTrends();
   });
 
-  describe("shouldBail", () => {
-    it("should not bail if bail never", () => {
-      const tr = new TestRunner(tests, optionsMock, optsMock);
-      expect(tr.shouldBail()).to.equal(false);
-    });
-
-    it("should not bail if bail time only", () => {
-      optsMock.settings.bailTimeExplicitlySet = false;
-      const tr = new TestRunner(tests, optionsMock, optsMock);
-      expect(tr.shouldBail()).to.equal(false);
-    });
-
-    it("bail fast with 1 failure", () => {
-      optionsMock.bailFast = true;
-      const tr = new TestRunner(tests, optionsMock, optsMock);
-      tr.failedTests = [{}];
-      expect(tr.shouldBail()).to.equal(true);
-    });
-
-    it("bail fast with 0 failure", () => {
-      optionsMock.bailFast = true;
-      const tr = new TestRunner(tests, optionsMock, optsMock);
-      tr.failedTests = [];
-      expect(tr.shouldBail()).to.equal(false);
-    });
-
-    it("should not bail if unknown bail setup", () => {
-      const tr = new TestRunner(tests, optionsMock, optsMock);
-      tr.failedTests = [];
-      tr.strictness = 10;
-      expect(tr.shouldBail()).to.equal(false);
-    });
-
-    it("should bail on threshold", () => {
-      optionsMock.bailOnThreshold = true;
-      const tr = new TestRunner(tests, optionsMock, optsMock);
-
-      tr.passedTests = [{ attempts: 1 }, { attempts: 1 }, { attempts: 1 }, { attempts: 1 }];
-      tr.failedTests = [{ attempts: 3 }, { attempts: 3 }, { attempts: 3 }];
-      expect(tr.shouldBail()).to.equal(true);
-    });
-
-    it("should not bail if threshold isn't meet", () => {
-      optionsMock.bailOnThreshold = true;
-      const tr = new TestRunner(tests, optionsMock, optsMock);
-
-      tr.passedTests = [{ attempts: 1 }, { attempts: 1 }, { attempts: 1 }, { attempts: 1 }];
-      tr.failedTests = [{ attempts: 3 }];
-      expect(tr.shouldBail()).to.equal(false);
-    });
-  });
-
   describe("summarizeCompletedBuild", () => {
     it("no failed test", () => {
       const tr = new TestRunner(tests, optionsMock, optsMock);
@@ -260,8 +209,9 @@ describe("test_runner", () => {
     });
 
     it("two failed tests, bail", () => {
+      optionsMock.bailStrategy = new BailStrategy(BAIL_FAST);
       const tr = new TestRunner(tests, optionsMock, optsMock);
-      tr.hasBailed = true;
+      tr.bailStrategy.hasBailed = true;
       tr.tests[0].status = 3;
       tr.tests[0].getRetries = () => 3;
       tr.failedTests = [{ attempts: 3 }];
@@ -270,8 +220,9 @@ describe("test_runner", () => {
     });
 
     it("two failed tests, bail with existing retries", () => {
+      optionsMock.bailStrategy = new BailStrategy(BAIL_FAST);
       const tr = new TestRunner(tests, optionsMock, optsMock);
-      tr.hasBailed = true;
+      tr.bailStrategy.hasBailed = true;
       tr.tests[0].status = 3;
       tr.tests[0].getRetries = () => 3;
       tr.tests[1].status = 3;
@@ -330,9 +281,9 @@ describe("test_runner", () => {
   });
 
   it("checkBuild", () => {
+    optionsMock.bailStrategy = new BailStrategy(BAIL_EARLY);
     const tr = new TestRunner(tests, optionsMock, optsMock);
-    tr.hasBailed = false;
-    tr.THRESHOLD_MIN_ATTEMPTS = 1;
+    tr.bailStrategy.setConfiguration({ "early_bail_min_attempts": 1 });
     tr.startTime = (new Date()).getTime() - 300000;
     tr.checkBuild();
   });
@@ -370,7 +321,7 @@ describe("test_runner", () => {
 
     it("has bailed", () => {
       const tr = new TestRunner(tests, optionsMock, optsMock);
-      tr.hasBailed = true;
+      tr.bailStrategy.hasBailed = true;
       tr.onTestComplete(null, failedTest);
     });
 
@@ -411,7 +362,6 @@ describe("test_runner", () => {
 
     it("no bail", () => {
       const tr = new TestRunner(tests, optionsMock, optsMock);
-      tr.hasBailed = false;
       return tr.runTest(tr.tests[0], worker).then();
     });
 
@@ -421,7 +371,7 @@ describe("test_runner", () => {
       };
 
       const tr = new TestRunner(tests, optionsMock, optsMock);
-      tr.hasBailed = false;
+      tr.bailStrategy.hasBailed = false;
       return tr.runTest(tr.tests[0], worker)
         .then()
         .catch(err => expect(err.message).to.equal("FAKE_ERROR"));
@@ -492,10 +442,9 @@ describe("test_runner", () => {
         }
       }
 
-
+      optionsMock.bailStrategy = new BailStrategy(BAIL_FAST);
       const tr = new TestRunner(tests, optionsMock, optsMock);
-      tr.strictness = 4;
-      tr.hasBailed = true;
+      tr.bailStrategy.hasBailed = true;
       return tr.execute(testRun, successfulTest)
         .then(result => expect(result.error).to.equal("Child test run process exited with code 1"));
     });
@@ -531,9 +480,9 @@ describe("test_runner", () => {
         }
       };
 
+      optionsMock.bailStrategy = new BailStrategy(BAIL_NEVER);
       const tr = new TestRunner(tests, optionsMock, optsMock);
-      tr.strictness = 1;
-      tr.hasBailed = false;
+      
       return tr.execute(testRun, successfulTest)
         .then(result => expect(result.error).to.equal("Child test run process exited with code 1"));
     });
