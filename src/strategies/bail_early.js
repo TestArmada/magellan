@@ -1,7 +1,7 @@
 "use strict";
 
 const _ = require("lodash");
-const logger = require("testarmada-logger");
+const logger = require("../logger");
 
 /* eslint-disable no-magic-numbers */
 const settings = {
@@ -10,6 +10,7 @@ const settings = {
   TEST_TIMEOUT: 8 * 60 * 1000
 };
 
+/* istanbul ignore next */
 module.exports = {
   name: "testarmada-magellan-early-bail-strategy",
   description: "Magellan will bail if failure ratio exceeds a threshold within a given period",

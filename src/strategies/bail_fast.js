@@ -1,5 +1,6 @@
 "use strict";
 
+/* istanbul ignore next */
 module.exports = {
   name: "testarmada-magellan-fast-bail-strategy",
   description: "Magellan will bail immediately if one test has been failed",

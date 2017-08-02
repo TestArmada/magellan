@@ -31,7 +31,7 @@
     "integration": "eslint src/** bin/** && ./bin/magellan",
     "lint": "eslint src/** bin/**",
     "coverage": "istanbul cover _mocha -- --recursive",
-    "check-coverage": "istanbul check-coverage --statement 95 --function 95 --branch 90"
+    "check-coverage": "istanbul check-coverage --statement 95 --function 95 --branch 85"
   },
   "dependencies": {
     "async": "^2.1.4",

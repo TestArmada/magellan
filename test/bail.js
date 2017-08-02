@@ -66,4 +66,10 @@ describe("Bail Strategy", () => {
     bailStrategy = new BailStrategy(BAIL_NEVER);
     expect(bailStrategy.shouldBail()).to.equal(false);
   });
+
+  it("call shouldBail if suite should bail", () => {
+    bailStrategy = new BailStrategy(BAIL_NEVER);
+    bailStrategy.decide = (info) => true;
+    expect(bailStrategy.shouldBail()).to.equal(true);
+  });
 });

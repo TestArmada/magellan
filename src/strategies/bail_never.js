@@ -1,5 +1,6 @@
 "use strict";
 
+/* istanbul ignore next */
 module.exports = {
   name: "testarmada-magellan-never-bail-strategy",
   description: "Magellan never bails, all tests will be executed at least once",
