@@ -63,6 +63,22 @@ module.exports = {
       });
     }
 
+    // load desire strategy help
+    if (runOpts.settings.strategies) {
+      _.forEach(runOpts.settings.strategies, (v) => {
+        if (v.help) {
+          help[" Strategy-specific (" + v.name + ")"] = {};
+
+          _.forEach(v.help, (itemValue, itemKey) => {
+            if (itemValue.visible === undefined || itemValue.visible) {
+              help[" Strategy-specific (" + v.name + ")"][itemKey] = itemValue;
+            }
+          });
+        }
+      });
+    }
+
+
     if (help) {
       _.forEach(help, (helpValue, helpKey) => {
         logger.loghelp(" " + helpKey);
@@ -86,6 +102,6 @@ module.exports = {
       });
     }
 
-    logger.log("magellan v" + project.version);
+    logger.log("Magellan@" + project.version);
   }
 };
