@@ -42,27 +42,27 @@ module.exports = {
       "description": "The strategy magellan uses to decide when to terminate current test suite if failure happens."
     },
     "bail_early": {
-      "category": "Bail Strategy [Be deprecated soon, please migrate to --strategy_bail]",
+      "category": "Bail Strategy [Will be deprecated soon, please migrate to --strategy_bail]",
       "visible": true,
       "description": "Kill builds that have failed at least 10% of tests, after 10 or more test runs."
     },
     "bail_fast": {
-      "category": "Bail Strategy [Be deprecated soon, please migrate to --strategy_bail]",
+      "category": "Bail Strategy [Will be deprecated soon, please migrate to --strategy_bail]",
       "visible": true,
       "description": "Kill builds that fail any test."
     },
     "bail_time": {
-      "category": "Bail Strategy [Be deprecated soon, please migrate to --strategy_bail]",
+      "category": "Bail Strategy [Will be deprecated soon, please migrate to --strategy_bail]",
       "visible": true,
       "description": "Set test kill time in milliseconds. *CAN* be used without bail_early/bail_fast."
     },
     "early_bail_threshold": {
-      "category": "Bail Strategy [Be deprecated soon, please migrate to --strategy_bail]",
+      "category": "Bail Strategy [Will be deprecated soon, please migrate to --strategy_bail]",
       "visible": true,
       "description": "A decimal ratio (eg 0.25 for 25%) how many tests to fail before bail_early"
     },
     "early_bail_min_attempts": {
-      "category": "Bail Strategy [Be deprecated soon, please migrate to --strategy_bail]",
+      "category": "Bail Strategy [Will be deprecated soon, please migrate to --strategy_bail]",
       "visible": true,
       "description": "How many test runs to run before applying bail_early rule."
     },
