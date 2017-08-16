@@ -34,11 +34,7 @@ const _fakeRequire = (overrides) => {
         help: () => { }
       };
     }
-    if (name === "./reporters/slack/settings") {
-      return {};
-    }
-    if (name === "./reporters/slack/slack" ||
-      name === "./reporters/screenshot_aggregator/reporter" ||
+    if (name === "./reporters/screenshot_aggregator/reporter" ||
       name === "./reporters/stdout/reporter") {
       return new FakeReporter();
     }

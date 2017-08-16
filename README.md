@@ -20,7 +20,6 @@ Features
     - Run many different parallel **remote** (SauceLabs, Browserstack, etc.) browsers.
   - **Integration Support**
     - Status reporter API with events streamed from workers, with some included reporters.
-    - Slack reporting support.
     - [Admiral](https://github.com/TestArmada/admiral) reporting support.
     - Plays well with CI (Jenkins, etc).
     - Runs test over the cloud like saucelabs via magellan executor (configurable and in parallel)
