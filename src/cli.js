@@ -257,42 +257,6 @@ module.exports = (opts) => {
     defer.reject({ error: "Couldn't start Magellan" });
   }
 
-  // finish processing all params ===========================
-
-  // Show help and exit if it's asked for
-  if (runOpts.margs.argv.help) {
-    const help = runOpts.require("./cli_help");
-    help.help();
-    defer.resolve(0);
-    return defer.promise;
-  }
-
-  // handle executor specific params
-  const executorParams = _.omit(runOpts.margs.argv, _.keys(magellanArgs));
-
-  // ATTENTION: there should only be one executor param matched for the function call
-  _.forEach(runOpts.settings.testExecutors, (v, k) => {
-    _.forEach(executorParams, (epValue, epKey) => {
-      if (v.help[epKey] && v.help[epKey].type === "function") {
-        // we found a match in current executor
-        // method name convention for an executor: PREFIX_string_string_string_...
-        let names = epKey.split("_");
-        names = names.slice(1, names.length);
-        const executorMethodName = _.camelCase(names.join(" "));
-
-        if (_.has(v, executorMethodName)) {
-          // method found in current executor
-          v[executorMethodName](runOpts, () => {
-            defer.resolve();
-          });
-        } else {
-          logger.err("Error: executor" + k + " doesn't has method " + executorMethodName + ".");
-          defer.resolve();
-        }
-      }
-    });
-  });
-
   //
   // Initialize Listeners
   // ====================
@@ -337,15 +301,44 @@ module.exports = (opts) => {
     );
   }
 
-  //
-  // Slack integration (enabled if settings exist)
-  //
-  const slackSettings = runOpts.require("./reporters/slack/settings");
-  if (slackSettings.enabled) {
-    const Slack = runOpts.require("./reporters/slack/slack");
-    const slackReporter = new Slack(slackSettings);
-    listeners.push(slackReporter);
+  runOpts.settings.listeners = listeners
+
+  // finish processing all params ===========================
+
+  // Show help and exit if it's asked for
+  if (runOpts.margs.argv.help) {
+    const help = runOpts.require("./cli_help");
+    help.help();
+    defer.resolve(0);
+    return defer.promise;
   }
+
+  // handle executor specific params
+  const executorParams = _.omit(runOpts.margs.argv, _.keys(magellanArgs));
+
+  // ATTENTION: there should only be one executor param matched for the function call
+  _.forEach(runOpts.settings.testExecutors, (v, k) => {
+    _.forEach(executorParams, (epValue, epKey) => {
+      if (v.help[epKey] && v.help[epKey].type === "function") {
+        // we found a match in current executor
+        // method name convention for an executor: PREFIX_string_string_string_...
+        let names = epKey.split("_");
+        names = names.slice(1, names.length);
+        const executorMethodName = _.camelCase(names.join(" "));
+
+        if (_.has(v, executorMethodName)) {
+          // method found in current executor
+          v[executorMethodName](runOpts, () => {
+            defer.resolve();
+          });
+        } else {
+          logger.err("Error: executor" + k + " doesn't has method " + executorMethodName + ".");
+          defer.resolve();
+        }
+      }
+    });
+  });
+
 
   //
   // Serial Mode Reporter (enabled with --serial)

@@ -78,6 +78,21 @@ module.exports = {
       });
     }
 
+    // load desire reporter/listener help
+    if (runOpts.settings.listeners) {
+      _.forEach(runOpts.settings.listeners, (v) => {
+        if (v.help) {
+          help[" Reporter-specific (" + v.name + ")"] = {};
+
+          _.forEach(v.help, (itemValue, itemKey) => {
+            if (itemValue.visible === undefined || itemValue.visible) {
+              help[" Reporter-specific (" + v.name + ")"][itemKey] = itemValue;
+            }
+          });
+        }
+      });
+    }
+
 
     if (help) {
       _.forEach(help, (helpValue, helpKey) => {
