@@ -386,7 +386,7 @@ class TestRunner {
             error: code === 0 ? null : "Child test run process exited with code " + code,
             stderr,
             stdout: stdout +
-              (additionalLog && typeof additionalLog === "string" ? additionalLog : "")
+            (additionalLog && typeof additionalLog === "string" ? additionalLog : "")
           });
         });
     });
@@ -696,7 +696,11 @@ class TestRunner {
         if (typeof listener.flush === "function") {
           // This listener implements flush. Run it and check if the result is a promise
           // in case we need to wait on the listener to finish a long-running task first.
-          const promise = listener.flush();
+          const promise = listener.flush({
+            totalTests: this.tests,
+            passedTests: this.passedTests,
+            failedTests: this.failedTests
+          });
           if (promise && typeof promise.then === "function") {
             // This is a listener that returns a promise. Wait and then flush.
             promise

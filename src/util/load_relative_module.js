@@ -2,6 +2,7 @@
 
 const path = require("path");
 const _ = require("lodash");
+const yargs = require("yargs");
 const logger = require("../logger");
 
 module.exports = (mPath, moduleIsOptional, opts) => {
@@ -34,5 +35,5 @@ module.exports = (mPath, moduleIsOptional, opts) => {
     }
   }
 
-  return RequiredModule ? new RequiredModule() : null;
+  return RequiredModule ? new RequiredModule({ argv: yargs.argv }) : null;
 };

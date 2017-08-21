@@ -301,7 +301,7 @@ module.exports = (opts) => {
     );
   }
 
-  runOpts.settings.listeners = listeners
+  runOpts.settings.listeners = listeners;
 
   // finish processing all params ===========================
 
