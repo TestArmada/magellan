@@ -2,6 +2,8 @@
 
 [![Build Status](https://travis-ci.org/TestArmada/magellan.svg?branch=master)](https://travis-ci.org/TestArmada/magellan)
 [![Codecov](https://img.shields.io/codecov/c/github/codecov/example-python.svg)]()
+[![Downloads](http://img.shields.io/npm/dm/magellan.svg?style=flat)](https://npmjs.org/package/testarmada-magellan)
+
 
 ![image](https://cloud.githubusercontent.com/assets/12995/9419235/e2fbb4f2-480e-11e5-9de8-c6c4871890b9.png)
 
