@@ -60,7 +60,7 @@
     "magellan_": "./bin/magellan"
   },
   "devDependencies": {
-    "babel-eslint": "^7.1.1",
+    "babel-eslint": "^8.0.0",
     "chai": "^3.4.1",
     "chai-as-promised": "^6.0.0",
     "eslint": "^3.12.2",
