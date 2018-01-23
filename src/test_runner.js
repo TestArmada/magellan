@@ -630,7 +630,7 @@ class TestRunner {
       logger.log(passedTest.stdout);
       logger.log(passedTest.stderr);
     });
-  },
+  }
 
   logFailedTests() {
     logger.log(clc.redBright("============= Failed Tests:  ============="));

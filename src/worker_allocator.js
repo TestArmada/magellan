@@ -17,7 +17,7 @@ class Allocator {
       setTimeout,
       checkPorts: portUtil.checkPorts,
       getNextPort: portUtil.getNextPort,
-      debug: settings.debug
+      debug: settings.debug,
       showPassedTests: settings.showPassedTests // Is this needed ?
     }, opts);
 
