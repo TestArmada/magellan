@@ -58,6 +58,7 @@ module.exports = (opts) => {
   //   runOpts.margs.argv.framework.indexOf("mocha") > -1;
 
   const debug = runOpts.margs.argv.debug || false;
+  const showPassedTests = runOpts.margs.argv.show_passed_tests || false;
   const useSerialMode = runOpts.margs.argv.serial;
   let MAX_TEST_ATTEMPTS = parseInt(runOpts.margs.argv.max_test_attempts) || 3;
   let targetProfiles;
@@ -408,6 +409,7 @@ module.exports = (opts) => {
 
           const testRunner = new runOpts.TestRunner(tests, {
             debug,
+            showPassedTests,
 
             maxWorkers: MAX_WORKERS,
 

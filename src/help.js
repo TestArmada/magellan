@@ -71,6 +71,11 @@ module.exports = {
       "visible": true,
       "description": "Enable debugging magellan messages (dev mode)."
     },
+    "show_passed_tests": {
+      "category": "Parallelism, Workflow and Filtering",
+      "visible": true,
+      "description": "Show passed tests output."
+    },
     "config": {
       "category": "Configuration",
       "visible": true,

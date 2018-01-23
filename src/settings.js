@@ -76,6 +76,7 @@ module.exports = {
   environment: env,
 
   debug: argv.debug,
+  showPassedTests: argv.show_passed_tests,
 
   gatherTrends: argv.gather_trends,
 

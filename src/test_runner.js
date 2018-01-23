@@ -37,6 +37,7 @@ const FINAL_CLEANUP_DELAY = 2500;
 //   getEnvironment      - function(worker, test) that returns a key value object to use as the
 //                         process environment
 //   debug               - true/false flag for magellan debugging mode
+//   showPassedTests     - true/false flag for magellan show passed tests mode
 //   onSuccess           - function() callback
 //   onFailure           - function(failedTests) callback
 // opts: testing options
@@ -69,6 +70,7 @@ class TestRunner {
     this.profiles = options.profiles;
     this.executors = options.executors;
     this.debug = options.debug;
+    this.showPassedTests = options.showPassedTests;
 
     this.serial = options.serial || false;
 
@@ -617,17 +619,16 @@ class TestRunner {
     }
   }
 
-  logPassedTests: function () {
-    console.log(clc.greenBright("\n============= Passed Tests:  =============\n"));
+  logPassedTests() {
+    logger.log(clc.greenBright("============= Passed Tests:  ============="));
 
-    this.passedTests.forEach(function (passedTest) {
-      console.log("\n- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -"
-        + " - - - - - - - - - - - - - - - ");
-      console.log("Passed Test: " + passedTest.toString());
-      console.log(" # attempts: " + passedTest.attempts);
-      console.log("     output: ");
-      console.log(passedTest.stdout);
-      console.log(passedTest.stderr);
+    this.passedTests.forEach((passedTest) => {
+      logger.log("- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -");
+      logger.log("Passed Test: " + passedTest.toString());
+      logger.log(" # attempts: " + passedTest.attempts);
+      logger.log("     output: ");
+      logger.log(passedTest.stdout);
+      logger.log(passedTest.stderr);
     });
   },
 
@@ -653,7 +654,7 @@ class TestRunner {
 
     this.gatherTrends();
 
-    if (this.debug) {
+    if (this.showPassedTests) {
       if (this.passedTests.length > 0) {
         this.logPassedTests();
       }
