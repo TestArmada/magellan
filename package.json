@@ -47,7 +47,7 @@
     "request": "^2.55.0",
     "sanitize-filename": "^1.5.3",
     "slugify": "^1.0.2",
-    "sync-request": "^4.0.1",
+    "sync-request": "^5.0.0",
     "testarmada-tree-kill": "^2.0.0",
     "yargs": "6.5.0"
   },
