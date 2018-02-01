@@ -228,11 +228,14 @@ module.exports = (opts) => {
   // the bail_never strategy will be used for whole suite and --bail_time will be applied
   // to test only
 
-  if (runOpts.margs.argv.bail_fast) {
+  if (Boolean(runOpts.margs.argv.bail_fast)
+    && runOpts.margs.argv.bail_fast !== "false") {
     bailRule = "./strategies/bail_fast";
-  } else if (runOpts.margs.argv.bail_early) {
+  } else if (Boolean(runOpts.margs.argv.bail_early)
+    && runOpts.margs.argv.bail_early !== "false") {
     bailRule = "./strategies/bail_early";
-  } else if (runOpts.margs.argv.bail_time) {
+  } else if (Boolean(runOpts.margs.argv.bail_time)
+    && runOpts.margs.argv.bail_time !== "false") {
     bailRule = "./strategies/bail_never";
   }
 
