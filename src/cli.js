@@ -28,7 +28,9 @@ const loadRelativeModule = require("./util/load_relative_module");
 const processCleanup = require("./util/process_cleanup");
 const magellanArgs = require("./help").help;
 const logger = require("./logger");
-const BailStrategy = require("./bail");
+
+const BailStrategy = require("./strategy/bail");
+const ResourceStrategy = require("./strategy/resource");
 
 module.exports = (opts) => {
   const defer = Q.defer();
@@ -239,8 +241,7 @@ module.exports = (opts) => {
     bailRule = "./strategies/bail/never";
   }
 
-  // --------------------
-
+  // Strategy - bail --------------------
   try {
     runOpts.settings.strategies.bail = new BailStrategy(bailRule);
     runOpts.settings.strategies.bail.configure(runOpts.margs.argv);
@@ -255,8 +256,26 @@ module.exports = (opts) => {
     logger.log(`  ${runOpts.settings.strategies.bail.name}: `
       + `${runOpts.settings.strategies.bail.getDescription()}`);
   } catch (e) {
-    logger.err("Error: bail strategy: " + bailRule
-      + " cannot be loaded because of error [" + e + "]");
+    logger.err(`Error: bail strategy: ${bailRule}`
+      + `cannot be loaded because of error [${e}]`);
+    defer.reject({ error: "Couldn't start Magellan" });
+  }
+
+  // Strategy - resource --------------------
+  let resourceRule = runOpts.margs.argv.strategy_resource ?
+    runOpts.margs.argv.strategy_resource : "./strategies/resource/never";
+
+  try {
+    runOpts.settings.strategies.resource = new ResourceStrategy(resourceRule);
+    runOpts.settings.strategies.resource.configure(runOpts.margs.argv);
+
+    logger.log("Enabled resource strategy: ");
+    logger.log(`  ${runOpts.settings.strategies.resource.name}: `
+      + `${runOpts.settings.strategies.resource.getDescription()}`);
+  }
+  catch (e) {
+    logger.err(`Resource strategy: ${resourceRule}`
+      + ` cannot be loaded because of error [${e}]`);
     defer.reject({ error: "Couldn't start Magellan" });
   }
 
@@ -403,7 +422,7 @@ module.exports = (opts) => {
 
             listeners,
 
-            bailStrategy: runOpts.settings.strategies.bail,
+            strategies: runOpts.settings.strategies,
 
             serial: useSerialMode,
 

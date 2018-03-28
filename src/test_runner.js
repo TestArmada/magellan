@@ -60,9 +60,7 @@ class TestRunner {
 
     this.retryCount = 0;
 
-    this.strategy = {
-      bail: options.bailStrategy
-    };
+    this.strategies = options.strategies;
 
     this.MAX_WORKERS = options.maxWorkers;
 
