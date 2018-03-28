@@ -218,7 +218,7 @@ module.exports = (opts) => {
   // Bail strategy is configured via --strategy_bail.
   // If no --strategy_bail , enable ./strategies/bail_never by default
   let bailRule = runOpts.margs.argv.strategy_bail ?
-    runOpts.margs.argv.strategy_bail : "./strategies/bail_never";
+    runOpts.margs.argv.strategy_bail : "./strategies/bail/never";
 
   // --------------------
   // ALERT!!!!! Will be deprecated in next release
@@ -230,13 +230,13 @@ module.exports = (opts) => {
 
   if (Boolean(runOpts.margs.argv.bail_fast)
     && runOpts.margs.argv.bail_fast !== "false") {
-    bailRule = "./strategies/bail_fast";
+    bailRule = "./strategies/bail/fast";
   } else if (Boolean(runOpts.margs.argv.bail_early)
     && runOpts.margs.argv.bail_early !== "false") {
-    bailRule = "./strategies/bail_early";
+    bailRule = "./strategies/bail/early";
   } else if (Boolean(runOpts.margs.argv.bail_time)
     && runOpts.margs.argv.bail_time !== "false") {
-    bailRule = "./strategies/bail_never";
+    bailRule = "./strategies/bail/never";
   }
 
   // --------------------
@@ -341,29 +341,11 @@ module.exports = (opts) => {
   }
 
   //
-  // Slack integration (enabled if settings exist)
-  //
-  const slackSettings = runOpts.require("./reporters/slack/settings");
-  if (slackSettings.enabled) {
-    const Slack = runOpts.require("./reporters/slack/slack");
-    const slackReporter = new Slack(slackSettings);
-    listeners.push(slackReporter);
-  }
-
-  //
   // Serial Mode Reporter (enabled with --serial)
   //
   if (useSerialMode) {
     const StdoutReporter = runOpts.require("./reporters/stdout/reporter");
     listeners.push(new StdoutReporter());
-  }
-
-  //
-  // Screenshot Aggregation (enabled with --aggregate_screenshots)
-  //
-  if (runOpts.settings.aggregateScreenshots) {
-    const ScreenshotAggregator = runOpts.require("./reporters/screenshot_aggregator/reporter");
-    listeners.push(new ScreenshotAggregator());
   }
 
   //
