@@ -467,14 +467,14 @@ class TestRunner {
     sentry = this.setInterval(() => {
       const runtime = test.getRuntime();
 
-      if (this.strategy.bail.hasBailed || runtime > settings.testTimeout) {
+      if (this.strategies.bail.hasBailed || runtime > settings.testTimeout) {
         // Suite won't be bailed if test is killed by exceeding settings.testTimeout
         // Stop the sentry now because we are going to yield for a moment before
         // calling workerClosed(), which is normally responsible for stopping
         // the sentry from monitoring.
         this.clearInterval(sentry);
 
-        let customMessage = `Killed by Magellan because of ${this.strategy.bail.getBailReason()}`;
+        let customMessage = `Killed by Magellan because of ${this.strategies.bail.getBailReason()}`;
 
         // Tell the child to shut down the running test immediately
         if (runtime > settings.testTimeout) {
@@ -505,7 +505,7 @@ class TestRunner {
     const deferred = Q.defer();
 
     // do not report test starts if we've bailed.
-    if (!this.strategy.bail.hasBailed) {
+    if (!this.strategies.bail.hasBailed) {
       const msg = [];
 
       msg.push("-->");
@@ -645,8 +645,8 @@ class TestRunner {
 
     let status;
 
-    if (this.strategy.bail.hasBailed) {
-      status = clc.redBright(this.strategy.bail.getBailReason());
+    if (this.strategies.bail.hasBailed) {
+      status = clc.redBright(this.strategies.bail.getBailReason());
     } else {
       status = this.failedTests.length > 0 ? clc.redBright("FAILED") : clc.greenBright("PASSED");
     }
@@ -682,7 +682,7 @@ class TestRunner {
     }
 
     const skipped = this.numTests - (this.passedTests.length + this.failedTests.length);
-    if (this.strategy.bail.hasBailed && skipped > 0) {
+    if (this.strategies.bail.hasBailed && skipped > 0) {
       logger.log("    Skipped: " + skipped);
     }
 
@@ -737,7 +737,7 @@ class TestRunner {
 
   // Completion callback called by async.queue when a test is completed
   onTestComplete(error, test) {
-    if (this.strategy.bail.hasBailed) {
+    if (this.strategies.bail.hasBailed) {
       // Ignore results from this test if we've bailed. This is likely a test that
       // was killed when the build went into bail mode.
       logger.warn("\u2716 " + clc.redBright("KILLED ") + " " + test.toString()
@@ -800,7 +800,7 @@ class TestRunner {
 
   // Check to see how the build is going and optionally fail the build early.
   checkBuild() {
-    if (this.strategy.bail.shouldBail({
+    if (this.strategies.bail.shouldBail({
       totalTests: this.tests,
       passedTests: this.passedTests,
       failedTests: this.failedTests

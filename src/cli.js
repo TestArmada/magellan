@@ -29,8 +29,8 @@ const processCleanup = require("./util/process_cleanup");
 const magellanArgs = require("./help").help;
 const logger = require("./logger");
 
-const BailStrategy = require("./strategy/bail");
-const ResourceStrategy = require("./strategy/resource");
+const BailStrategy = require("./strategies/bail");
+const ResourceStrategy = require("./strategies/resource");
 
 module.exports = (opts) => {
   const defer = Q.defer();
@@ -213,38 +213,13 @@ module.exports = (opts) => {
 
 
   //
-  // Initialize Bail Strategy
+  // Initialize Strategies
   // ====================
-  //
-  // There is only one bail strategy allowed per magellan instance.
-  // Bail strategy is configured via --strategy_bail.
-  // If no --strategy_bail , enable ./strategies/bail_never by default
-  let bailRule = runOpts.margs.argv.strategy_bail ?
-    runOpts.margs.argv.strategy_bail : "./strategies/bail/never";
-
-  // --------------------
-  // ALERT!!!!! Will be deprecated in next release
-  //
-  // To backward support magellan's bail command line arguments
-  // The bail strategy will be for the whole suite, so if --bail_time is set explicitly
-  // the bail_never strategy will be used for whole suite and --bail_time will be applied
-  // to test only
-
-  if (Boolean(runOpts.margs.argv.bail_fast)
-    && runOpts.margs.argv.bail_fast !== "false") {
-    bailRule = "./strategies/bail/fast";
-  } else if (Boolean(runOpts.margs.argv.bail_early)
-    && runOpts.margs.argv.bail_early !== "false") {
-    bailRule = "./strategies/bail/early";
-  } else if (Boolean(runOpts.margs.argv.bail_time)
-    && runOpts.margs.argv.bail_time !== "false") {
-    bailRule = "./strategies/bail/never";
-  }
 
   // Strategy - bail --------------------
   try {
-    runOpts.settings.strategies.bail = new BailStrategy(bailRule);
-    runOpts.settings.strategies.bail.configure(runOpts.margs.argv);
+    runOpts.settings.strategies.bail =
+      new BailStrategy(runOpts.margs.argv);
 
     if (runOpts.settings.strategies.bail.MAX_TEST_ATTEMPTS) {
       // backward support
@@ -262,12 +237,9 @@ module.exports = (opts) => {
   }
 
   // Strategy - resource --------------------
-  let resourceRule = runOpts.margs.argv.strategy_resource ?
-    runOpts.margs.argv.strategy_resource : "./strategies/resource/never";
-
   try {
-    runOpts.settings.strategies.resource = new ResourceStrategy(resourceRule);
-    runOpts.settings.strategies.resource.configure(runOpts.margs.argv);
+    runOpts.settings.strategies.resource =
+      new ResourceStrategy(runOpts.margs.argv);
 
     logger.log("Enabled resource strategy: ");
     logger.log(`  ${runOpts.settings.strategies.resource.name}: `

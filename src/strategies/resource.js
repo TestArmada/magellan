@@ -3,22 +3,28 @@
 const _ = require("lodash");
 const logger = require("../logger");
 
+const Factory = {
+  /* eslint-disable global-require */
+  // requires stragety on the fly
+  create(argv) {
+    let resourceRule = argv.strategy_resource ?
+      argv.strategy_resource : "./resource/never";
+
+    return require(resourceRule);
+  }
+};
+
 class ResourceStrategy {
-  constructor(strategy) {
+  constructor(argv) {
+
     try {
-      /* eslint-disable global-require */
-      // requires stragety on the fly
-      _.assign(this, require(strategy));
+      _.assign(this, Factory.create(argv));
+      // call configuration if set
+      if (this.setConfiguration) {
+        this.setConfiguration(argv);
+      }
     } catch (e) {
       throw new Error(e);
-    }
-  }
-
-  configure(argv) {
-    // set configuration if the strategy requires
-    // input from command line
-    if (this.setConfiguration) {
-      this.setConfiguration(argv);
     }
   }
 
