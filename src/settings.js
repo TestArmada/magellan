@@ -3,12 +3,27 @@
 /*eslint-disable no-magic-numbers, no-bitwise, no-console */
 
 const guid = require("./util/guid");
-const argv = require("marge").argv;
-const env = process.env;
+const yargs = require("yargs");
+const margs = require("marge");
 const fs = require("fs");
 const path = require("path");
 const logger = require("./logger");
 
+const configFilePath = yargs.argv.config;
+const DEFAULT_CONFIG = "./magellan.json";
+
+if (configFilePath) {
+  logger.log("Loading configuration from: " + configFilePath);
+} else {
+  logger.log("Loading configuration from default location: " + DEFAULT_CONFIG);
+}
+
+// NOTE: marge can throw an error here if --config points at a file that doesn't exist
+// FIXME: handle this error nicely instead of printing an ugly stack trace
+margs.init(DEFAULT_CONFIG, configFilePath);
+
+const argv = margs.argv;
+const env = process.env;
 // Allow an external build id (eg: from CI system, for example) to be used. If we're not given one,
 // we generate a random build id instead. NOTE: This build id must work as a part of a filename.
 // NOTE: The result of this line is that buildId is truthy so toString() should work
@@ -41,10 +56,10 @@ try {
   if (fs.accessSync) {
     fs.accessSync(TEMP_DIR, fs.R_OK | fs.W_OK);
   }
-  logger.log("Magellan is creating temporary files at: " + TEMP_DIR);
+  logger.log("Creating temporary files at: " + TEMP_DIR);
 } catch (e) {
   /* istanbul ignore next */
-  throw new Error("Magellan cannot write to or create the temporary directory: " + TEMP_DIR);
+  throw new Error("Cannot write to or create the temporary directory: " + TEMP_DIR);
 }
 
 let testTimeout = 8 * 60 * 1000;

@@ -44,8 +44,8 @@ class BailStrategy {
       if (this.setConfiguration) {
         this.setConfiguration(argv);
       }
-    } catch (e) {
-      throw new Error(e);
+    } catch (err) {
+      throw err;
     }
   }
 

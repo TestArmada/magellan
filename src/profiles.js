@@ -29,7 +29,7 @@ module.exports = {
 
     const argv = runOpts.margs.argv;
     const testExecutors = runOpts.settings.testExecutors;
-
+    
     return new Promise((resolve, reject) => {
       let profiles = [];
 
