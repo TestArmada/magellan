@@ -15,6 +15,7 @@ const path = require("path");
 const _ = require("lodash");
 const margs = require("marge");
 const async = require("async");
+const co = require("co");
 const Q = require("q");
 
 const analytics = require("./global_analytics");
@@ -351,108 +352,106 @@ module.exports = (opts) => {
   }
 
   const initializeListeners = () => {
-    const deferred = Q.defer();
     magellanGlobals.workerAmount = MAX_WORKERS;
 
-    async.each(listeners, (listener, done) => {
-      listener.initialize(magellanGlobals)
-        .then(() => done())
-        .catch((err) => done(err));
-    }, (err) => {
-      if (err) {
-        deferred.reject(err);
-      } else {
-        deferred.resolve();
-      }
+    return new Promise((resolve, reject) => {
+      async.each(listeners, (listener, done) => {
+        listener.initialize(magellanGlobals)
+          .then(() => done())
+          .catch((err) => done(err));
+      }, (err) => {
+        if (err) {
+          return reject(err);
+        } else {
+          return resolve();
+        }
+      });
     });
-    return deferred.promise;
   };
 
   const startSuite = () => {
-    const deferred = Q.defer();
+    return new Promise((resolve, reject) => {
 
-    Promise
-      .all(_.map(testExecutors, (executor) => executor.setupRunner()))
-      .then(() => {
-        workerAllocator.initialize((workerInitErr) => {
-          if (workerInitErr) {
-            logger.err("Could not start Magellan. Got error while initializing"
-              + " worker allocator");
-            deferred.reject(workerInitErr);
-            return defer.promise;
-          }
-
-          const testRunner = new runOpts.TestRunner(tests, {
-            debug,
-
-            maxWorkers: MAX_WORKERS,
-
-            maxTestAttempts: MAX_TEST_ATTEMPTS,
-
-            profiles: targetProfiles,
-            executors: testExecutors,
-
-            listeners,
-
-            strategies: runOpts.settings.strategies,
-
-            serial: useSerialMode,
-
-            allocator: workerAllocator,
-
-            onSuccess: () => {
-              /*eslint-disable max-nested-callbacks*/
-              workerAllocator.teardown(() => {
-                Promise
-                  .all(_.map(testExecutors, (executor) => executor.teardownRunner()))
-                  .then(() => {
-                    runOpts.processCleanup(() => {
-                      deferred.resolve();
-                    });
-                  })
-                  .catch((err) => {
-                    // we eat error here
-                    logger.warn("executor teardownRunner error: " + err);
-                    runOpts.processCleanup(() => {
-                      deferred.resolve();
-                    });
-                  });
-              });
-            },
-
-            onFailure: (/*failedTests*/) => {
-              /*eslint-disable max-nested-callbacks*/
-              workerAllocator.teardown(() => {
-                Promise
-                  .all(_.map(testExecutors, (executor) => executor.teardownRunner()))
-                  .then(() => {
-                    runOpts.processCleanup(() => {
-                      // Failed tests are not a failure in Magellan itself,
-                      // so we pass an empty error here so that we don't
-                      // confuse the user. Magellan already outputs a failure
-                      // report to the screen in the case of failed tests.
-                      deferred.reject(null);
-                    });
-                  })
-                  .catch((err) => {
-                    logger.warn("executor teardownRunner error: " + err);
-                    // we eat error here
-                    runOpts.processCleanup(() => {
-                      deferred.reject(null);
-                    });
-                  });
-              });
+      Promise
+        .all(_.map(testExecutors, (executor) => executor.setupRunner()))
+        .then(() => {
+          workerAllocator.initialize((workerInitErr) => {
+            if (workerInitErr) {
+              logger.err("Could not start Magellan. Got error while initializing"
+                + " worker allocator");
+              return reject(workerInitErr);
             }
+
+            const testRunner = new runOpts.TestRunner(tests, {
+              debug,
+
+              maxWorkers: MAX_WORKERS,
+
+              maxTestAttempts: MAX_TEST_ATTEMPTS,
+
+              profiles: targetProfiles,
+              executors: testExecutors,
+
+              listeners,
+
+              strategies: runOpts.settings.strategies,
+
+              serial: useSerialMode,
+
+              allocator: workerAllocator,
+
+              onSuccess: () => {
+                /*eslint-disable max-nested-callbacks*/
+                workerAllocator.teardown(() => {
+                  Promise
+                    .all(_.map(testExecutors, (executor) => executor.teardownRunner()))
+                    .then(() => {
+                      runOpts.processCleanup(() => {
+                        return resolve();
+                      });
+                    })
+                    .catch((err) => {
+                      // we eat error here
+                      logger.warn("executor teardownRunner error: " + err);
+                      runOpts.processCleanup(() => {
+                        return resolve();
+                      });
+                    });
+                });
+              },
+
+              onFailure: (/*failedTests*/) => {
+                /*eslint-disable max-nested-callbacks*/
+                workerAllocator.teardown(() => {
+                  Promise
+                    .all(_.map(testExecutors, (executor) => executor.teardownRunner()))
+                    .then(() => {
+                      runOpts.processCleanup(() => {
+                        // Failed tests are not a failure in Magellan itself,
+                        // so we pass an empty error here so that we don't
+                        // confuse the user. Magellan already outputs a failure
+                        // report to the screen in the case of failed tests.
+                        return reject(null);
+                      });
+                    })
+                    .catch((err) => {
+                      logger.warn("executor teardownRunner error: " + err);
+                      // we eat error here
+                      runOpts.processCleanup(() => {
+                        return reject(null);
+                      });
+                    });
+                });
+              }
+            });
+
+            testRunner.start();
           });
-
-          testRunner.start();
+        })
+        .catch((err) => {
+          return reject(err);
         });
-      })
-      .catch((err) => {
-        deferred.reject(err);
-      });
-
-    return deferred.promise;
+    });
   };
 
   const enableExecutors = (_targetProfiles) => {
@@ -460,58 +459,69 @@ module.exports = (opts) => {
     // is retrieved by --profile or --profiles
     targetProfiles = _targetProfiles;
 
-    const deferred = Q.defer();
-    try {
-      _.forEach(
-        _.uniq(_.map(_targetProfiles, (targetProfile) => targetProfile.executor)),
-        (shortname) => {
-          if (runOpts.settings.testExecutors[shortname]) {
-            runOpts.settings.testExecutors[shortname].validateConfig({ isEnabled: true });
-          }
-        });
+    console.log(targetProfiles)
 
-      deferred.resolve();
-    } catch (err) {
-      deferred.reject(err);
-    }
+    return new Promise((resolve, reject) => {
+      try {
+        _.forEach(
+          _.uniq(_.map(_targetProfiles, (targetProfile) => targetProfile.executor)),
+          (shortname) => {
+            if (runOpts.settings.testExecutors[shortname]) {
+              runOpts.settings.testExecutors[shortname].validateConfig({ isEnabled: true });
+            }
+          });
 
-    return deferred.promise;
+        return resolve();
+      } catch (err) {
+        return reject(err);
+      }
+    });
   };
 
-  runOpts.profiles
-    .detectFromCLI(runOpts)
-    .then(enableExecutors)
-    .then(() => {
-      //
-      // Worker Count:
-      // =============
-      //
-      //   Default to 3 workers in parallel mode (default).
-      //   Default to 1 worker in serial mode.
-      //
-      MAX_WORKERS = useSerialMode ? 1 : parseInt(runOpts.margs.argv.max_workers) || 3;
-      workerAllocator = new runOpts.WorkerAllocator(MAX_WORKERS);
-    })
-    .then(initializeListeners)
-    // NOTE: if we don't end up in catch() below, magellan exits with status code 0 naturally
-    .then(startSuite)
-    .then(() => {
-      defer.resolve();
-    })
-    .catch((err) => {
-      if (err) {
-        logger.err("Error initializing Magellan");
-        logger.err("Error description:");
-        logger.err(err.toString());
-        logger.err("Error stack trace:");
-        logger.err(err.stack);
-      } else {
-        // No err object means we didn't have an internal crash while setting up / tearing down
-      }
+  // runOpts.profiles
+  //   .detectFromCLI(runOpts)
+  //   .then(enableExecutors)
+  //   .then(() => {
+  //     //
+  //     // Worker Count:
+  //     // =============
+  //     //
+  //     //   Default to 3 workers in parallel mode (default).
+  //     //   Default to 1 worker in serial mode.
+  //     //
+  //     MAX_WORKERS = useSerialMode ? 1 : parseInt(runOpts.margs.argv.max_workers) || 3;
+  //     workerAllocator = new runOpts.WorkerAllocator(MAX_WORKERS);
+  //   })
+  //   .then(initializeListeners)
+  //   // NOTE: if we don't end up in catch() below, magellan exits with status code 0 naturally
+  //   .then(startSuite)
+  //   .then(() => {
+  //     defer.resolve();
+  //   })
+  //   .catch((err) => {
+  //     if (err) {
+  //       logger.err("Error initializing Magellan");
+  //       logger.err("Error description:");
+  //       logger.err(err.toString());
+  //       logger.err("Error stack trace:");
+  //       logger.err(err.stack);
+  //     } else {
+  //       // No err object means we didn't have an internal crash while setting up / tearing down
+  //     }
 
-      // Fail the test suite or fail because of an internal crash
-      defer.reject({ error: "Internal crash" });
-    });
+  //     // Fail the test suite or fail because of an internal crash
+  //     defer.reject({ error: "Internal crash" });
+  //   });
+
+  return co(function* () {
+    const targetProfile = yield runOpts.profiles.detectFromCLI(runOpts);
+    console.log(targetProfile)
+    // return targetProfile;
+    defer.resolve(targetProfile)
+  }).catch((err) => {
+    logger.warn(err);
+    defer.reject(err)
+  });
 
   return defer.promise;
 };

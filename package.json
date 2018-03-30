@@ -36,6 +36,7 @@
   "dependencies": {
     "async": "^2.1.4",
     "cli-color": "^1.1.0",
+    "co": "^4.6.0",
     "glob": "^7.1.1",
     "lodash": "^4.6.1",
     "marge": "^1.0.1",
