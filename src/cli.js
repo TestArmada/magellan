@@ -43,11 +43,16 @@ module.exports = {
     logger.log("Version: " + project.version);
   },
 
+  help(opts) {
+    // Show help
+    logger.log("Printing args");
+    require("./cli_help").help();
+  },
+
   loadFramework(opts) {
     //
     // Initialize Framework Plugins
     // ============================
-    // TODO: move to a function
 
     // We translate old names like "mocha" to the new module names for the
     // respective plugins that provide support for those frameworks. Officially,
@@ -124,7 +129,6 @@ module.exports = {
   loadExecutors(opts) {
     // Initialize Executor
     // ============================
-    // let formalExecutor = ["local"];
     let formalExecutors = ["testarmada-magellan-local-executor"];
 
     // executors is as array from magellan.json by default
@@ -181,7 +185,6 @@ module.exports = {
     //
     // Initialize Strategy
     // ====================
-
     if (!settings.strategies) {
       settings.strategies = {};
     }
@@ -224,6 +227,101 @@ module.exports = {
 
       return resolve();
     });
+  },
+
+  loadListeners(opts) {
+    //
+    // Initialize Listeners
+    // ====================
+    //
+    // All listener/reporter types are optional and either activated through the existence
+    // of configuration (i.e environment vars), CLI switches, or magellan.json config.
+    let listeners = [];
+
+    //
+    // Setup / Teardown
+    // ================
+    //
+    // This is merely a listener like any other reporter, but with a developer-friendly name.
+    if (opts.argv.setup_teardown) {
+      // NOTE: loadRelativeModule can throw an error here if the setup module doesn't exist
+      // FIXME: handle this error nicely instead of printing an ugly stack trace
+      listeners.push(loadRelativeModule(opts.argv.setup_teardown));
+    }
+
+    //
+    // Load reporters from magellan.json
+    // =================================
+    //
+    // Reporters that conform to the reporter API and inherit from src/reporter
+    // can be loaded in magellan.json through a reporters[] list. These can refer to
+    // either npm modules defined in package.json or to paths relative to the current
+    // working directory of the calling script or shell.
+    if (opts.argv.reporters
+      && _.isArray(opts.argv.reporters)) {
+      // NOTE: loadRelativeModule can throw an error here if any of the reporter modules don't exist
+      // FIXME: handle this error nicely instead of printing an ugly stack trace
+      listeners = listeners.concat(
+        opts.argv.reporters.map((reporterModule) =>
+          loadRelativeModule(reporterModule))
+      );
+    }
+
+    // optional_reporters are modules we want to load only if found. If not found, we
+    // still continue initializing Magellan and don't throw any errors or warnings
+    if (opts.argv.optional_reporters
+      && _.isArray(opts.argv.optional_reporters)) {
+      listeners = listeners.concat(
+        opts.argv.optional_reporters.map((reporterModule) =>
+          loadRelativeModule(reporterModule, true))
+      );
+    }
+
+    //
+    // Serial Mode Reporter (enabled with --serial)
+    //
+    if (opts.argv.serial) {
+      const SerialReporter = require("./reporters/stdout/reporter");
+      listeners.push(new SerialReporter());
+    }
+
+    // intiialize listeners
+
+    return new Promise((resolve, reject) => {
+
+      async.each(listeners, (listener, done) => {
+        listener.initialize({
+          analytics,
+          workerAmount: settings.MAX_WORKERS
+        })
+          .then(() => done())
+          .catch((err) => done(err));
+      }, (err) => {
+        if (err) {
+          return reject(err);
+        } else {
+          return resolve();
+        }
+      });
+    });
+  },
+
+  loadTests(opts) {
+    //
+    // Find Tests, Start Worker Allocator
+    //
+    logger.log("Searching for tests...");
+    const tests = getTests(testFilters.detectFromCLI(opts.argv));
+
+    logger.log(`Total tests found: ${tests.length}`);
+
+    if (_.isEmpty(tests)) {
+      return Promise.reject("No tests found");
+    }
+
+    _.map(tests, (t) => logger.log(`  -> ${t.filename}`));
+
+    return Promise.resolve(tests);
   },
 
 
@@ -276,13 +374,7 @@ module.exports = {
 
   // // finish processing all params ===========================
 
-  // // Show help and exit if it's asked for
-  // if (runOpts.margs.argv.help) {
-  //   const help = runOpts.require("./cli_help");
-  //   help.help();
-  //   defer.resolve(0);
-  //   return defer.promise;
-  // }
+
 
   // // handle executor specific params
   // const executorParams = _.omit(runOpts.margs.argv, _.keys(magellanArgs));
@@ -310,57 +402,6 @@ module.exports = {
   //   });
   // });
 
-  // //
-  // // Initialize Listeners
-  // // ====================
-  // //
-  // // All listener/reporter types are optional and either activated through the existence
-  // // of configuration (i.e environment vars), CLI switches, or magellan.json config.
-  // let listeners = [];
-
-  // //
-  // // Setup / Teardown
-  // // ================
-  // //
-  // // This is merely a listener like any other reporter, but with a developer-friendly name.
-
-  // if (runOpts.margs.argv.setup_teardown) {
-  //   // NOTE: loadRelativeModule can throw an error here if the setup module doesn't exist
-  //   // FIXME: handle this error nicely instead of printing an ugly stack trace
-  //   listeners.push(runOpts.loadRelativeModule(runOpts.margs.argv.setup_teardown));
-  // }
-
-  // //
-  // // Load reporters from magellan.json
-  // // =================================
-  // //
-  // // Reporters that conform to the reporter API and inherit from src/reporter
-  // // can be loaded in magellan.json through a reporters[] list. These can refer to
-  // // either npm modules defined in package.json or to paths relative to the current
-  // // working directory of the calling script or shell.
-  // if (runOpts.margs.argv.reporters && _.isArray(runOpts.margs.argv.reporters)) {
-  //   // NOTE: loadRelativeModule can throw an error here if any of the reporter modules don't exist
-  //   // FIXME: handle this error nicely instead of printing an ugly stack trace
-  //   listeners = listeners.concat(runOpts.margs.argv.reporters.map(runOpts.loadRelativeModule));
-  // }
-
-  // // optional_reporters are modules we want to load only if found. If not found, we
-  // // still continue initializing Magellan and don't throw any errors or warnings
-  // if (runOpts.margs.argv.optional_reporters && _.isArray(runOpts.margs.argv.optional_reporters)) {
-  //   listeners = listeners.concat(
-  //     runOpts.margs.argv.optional_reporters.map((reporterModule) => {
-  //       return runOpts.loadRelativeModule(reporterModule, true);
-  //     })
-  //   );
-  // }
-
-  // //
-  // // Serial Mode Reporter (enabled with --serial)
-  // //
-  // if (useSerialMode) {
-  //   const StdoutReporter = runOpts.require("./reporters/stdout/reporter");
-  //   listeners.push(new StdoutReporter());
-  // }
 
   // //
   // // Find Tests, Start Worker Allocator
@@ -373,23 +414,6 @@ module.exports = {
   //   return defer.promise;
   // }
 
-  // const initializeListeners = () => {
-  //   magellanGlobals.workerAmount = MAX_WORKERS;
-
-  //   return new Promise((resolve, reject) => {
-  //     async.each(listeners, (listener, done) => {
-  //       listener.initialize(magellanGlobals)
-  //         .then(() => done())
-  //         .catch((err) => done(err));
-  //     }, (err) => {
-  //       if (err) {
-  //         return reject(err);
-  //       } else {
-  //         return resolve();
-  //       }
-  //     });
-  //   });
-  // };
 
   // const startSuite = () => {
   //   return new Promise((resolve, reject) => {
