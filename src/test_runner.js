@@ -62,23 +62,24 @@ class TestRunner {
 
     this.strategies = options.strategies;
 
-    this.MAX_WORKERS = options.maxWorkers;
+    this.MAX_WORKERS = this.settings.MAX_WORKERS;
 
-    this.MAX_TEST_ATTEMPTS = options.maxTestAttempts;
+    this.MAX_TEST_ATTEMPTS = this.settings.MAX_TEST_ATTEMPTS;
 
     this.profiles = options.profiles;
     this.executors = options.executors;
-    this.debug = options.debug;
+    this.debug = this.settings.debug;
 
-    this.serial = options.serial || false;
+    this.serial = this.settings.serial;
 
     this.listeners = options.listeners || [];
 
-    this.onFailure = options.onFailure;
-    this.onSuccess = options.onSuccess;
+    // this.onFailure = options.onFailure;
+    // this.onSuccess = options.onSuccess;
+
+    this.onFinish = options.onFinish;
 
     this.allocator = options.allocator;
-
     // For each actual test path, split out
     this.tests = _.flatten(tests.map((testLocator) => {
       return options.profiles.map((profile) => {
@@ -119,7 +120,7 @@ class TestRunner {
     }
 
     if (this.tests.length === 0) {
-      this.q.drain();
+      return this.q.drain();
     } else {
       // Queue up tests; this will cause them to actually start
       // running immediately.
@@ -727,9 +728,11 @@ class TestRunner {
     this.setTimeout(() => {
       this.summarizeCompletedBuild().then(() => {
         if (this.failedTests.length === 0) {
-          this.onSuccess();
+          // this.onSuccess();
+          this.onFinish();
         } else {
-          this.onFailure(this.failedTests);
+          // this.onFailure(this.failedTests);
+          this.onFinish(this.failedTests);
         }
       });
     }, FINAL_CLEANUP_DELAY, true);
@@ -795,7 +798,7 @@ class TestRunner {
       + (successful ? clc.greenBright("PASS ") : clc.redBright("FAIL ")) + requeueNote + " "
       + test.toString() + " " + suffix);
 
-    this.checkBuild();
+    return this.checkBuild();
   }
 
   // Check to see how the build is going and optionally fail the build early.
@@ -809,7 +812,7 @@ class TestRunner {
       // down buildFinished
       this.q.kill();
 
-      this.buildFinished();
+      return this.buildFinished();
     }
   }
 }

@@ -15,7 +15,7 @@ const path = require("path");
 const _ = require("lodash");
 const async = require("async");
 const co = require("co");
-const Q = require("q");
+const clc = require("cli-color");
 
 const analytics = require("./global_analytics");
 const TestRunner = require("./test_runner");
@@ -40,13 +40,19 @@ module.exports = {
 
   version(opts) {
     const project = require("../package.json");
-    logger.log("Version: " + project.version);
+    logger.log(`Version:  ${clc.greenBright(project.version)}`);
   },
 
   help(opts) {
     // Show help
-    logger.log("Printing args");
+    logger.log("Printing magellan command line arguments with --help");
     require("./cli_help").help();
+
+    // exit process with exit code 0
+    const e = new Error("end of help");
+    e.code = 999;
+
+    return Promise.reject(e);
   },
 
   loadFramework(opts) {
@@ -120,8 +126,8 @@ module.exports = {
         return reject("Couldn't start Magellan");
       }
 
-      logger.log("Loaded test framework: ");
-      logger.log(` ${settings.framework}`);
+      logger.log("Loaded test framework from magellan.json: ");
+      logger.log(` ${clc.greenBright(settings.framework)}`);
       return resolve();
     });
   },
@@ -153,7 +159,7 @@ module.exports = {
       const executorLoadExceptions = [];
       settings.testExecutors = {};
 
-      logger.log("Loaded test executors: ");
+      logger.log("Loaded test executors from magellan.json: ");
 
       _.forEach(settings.executors, (executor) => {
         try {
@@ -202,7 +208,7 @@ module.exports = {
         }
 
         logger.log("Enabled bail strategy: ");
-        logger.log(`  ${settings.strategies.bail.name}:`);
+        logger.log(`  ${clc.greenBright(settings.strategies.bail.name)}:`);
         logger.log(`  -> ${settings.strategies.bail.getDescription()}`);
       } catch (err) {
         logger.err(`Cannot load bail strategy due to ${err}`);
@@ -216,7 +222,7 @@ module.exports = {
           new ResourceStrategy(opts.argv);
 
         logger.log("Enabled resource strategy: ");
-        logger.log(`  ${settings.strategies.resource.name}:`);
+        logger.log(`  ${clc.greenBright(settings.strategies.resource.name)}:`);
         logger.log(`  -> ${settings.strategies.resource.getDescription()}`);
       }
       catch (err) {
@@ -225,7 +231,7 @@ module.exports = {
         return reject("Couldn't start Magellan");
       }
 
-      return resolve();
+      return resolve(settings.strategies);
     });
   },
 
@@ -300,7 +306,7 @@ module.exports = {
         if (err) {
           return reject(err);
         } else {
-          return resolve();
+          return resolve(listeners);
         }
       });
     });
@@ -313,12 +319,16 @@ module.exports = {
     logger.log("Searching for tests...");
     const tests = getTests(testFilters.detectFromCLI(opts.argv));
 
-    logger.log(`Total tests found: ${tests.length}`);
+    const testAmount = tests.length > 0 ?
+      clc.greenBright(tests.length) : clc.yellowBright(tests.length);
+
+    logger.log(`Total tests found: ${testAmount}`);
 
     if (_.isEmpty(tests)) {
-      return Promise.reject("No tests found");
+      return Promise.reject(new Error("No tests found, please make sure test filter is set correctly,"
+        + " or test path is configured correctly in nightwatch.json"));
     }
-
+    // print out test amount and each test name
     _.map(tests, (t) => logger.log(`  -> ${t.filename}`));
 
     return Promise.resolve(tests);
@@ -327,249 +337,90 @@ module.exports = {
 
   detectProfiles(opts) {
     return profiles.detectFromCLI({ margs, settings });
+  },
+
+  enableExecutors(opts) {
+    // this is to allow magellan to double check profile that
+    // is retrieved by --profile or --profiles
+    const enabledExecutors = {};
+
+    return new Promise((resolve, reject) => {
+
+      try {
+        _.forEach(
+          _.uniq(_.map(opts.profiles, (profile) => profile.executor)),
+          (shortname) => {
+            if (settings.testExecutors[shortname]) {
+              settings.testExecutors[shortname].validateConfig({ isEnabled: true });
+              enabledExecutors[shortname] = settings.testExecutors[shortname];
+            }
+          });
+
+        // for logging purpose
+        if (!_.isEmpty(enabledExecutors)) {
+
+          logger.log("Enabled executors:");
+          _.forEach(enabledExecutors,
+            (sn) => logger.log(`  ${clc.greenBright(sn.name)}`));
+        }
+
+        return resolve(enabledExecutors);
+      } catch (err) {
+        return reject(err);
+      }
+    });
+  },
+
+  startTestSuite(opts) {
+    return new Promise((resolve, reject) => {
+
+      const workerAllocator = new WorkerAllocator(settings.MAX_WORKERS);
+
+      Promise
+        .all(_.map(opts.enabledExecutors,
+          (executor) => executor.setupRunner()))
+        .then(() => workerAllocator.setup())
+        .then(() =>
+          new Promise((resolve, reject) => {
+            return new TestRunner(opts.tests, {
+              profiles: opts.profiles,
+              executors: opts.executors,
+              listeners: opts.listeners,
+              strategies: opts.strategies,
+              allocator: workerAllocator,
+              onFinish: (failedTests) => {
+
+                if (failedTests) {
+                  const e = new Error("Test suite failed due to test failure");
+                  e.code = 998;
+                  return reject(e);
+                }
+
+                return resolve();
+              }
+            }).start();
+          }))
+        //  workerAllocator.teardown is guaranteed to execute 
+        .then(
+        () => workerAllocator.teardown(),
+        (err) => workerAllocator.teardown(err)
+        )
+        // executor.teardownRunner is guaranteed to execute 
+        .then(
+        () => Promise
+          .all(_.map(opts.enabledExecutors,
+            (executor) => executor.teardownRunner())),
+        (err) => Promise
+          .all(_.map(opts.enabledExecutors,
+            (executor) => executor.teardownRunner()))
+          .then(() => Promise.reject(err))
+        )
+        //  processCleanup is guaranteed to execute 
+        .then(
+        () => processCleanup(),
+        (err) => processCleanup(err)
+        )
+        .catch(err => reject(err));
+    });
   }
-
-
-  // const defer = Q.defer();
-
-  // const runOpts = _.assign({
-  //   require,
-  //   analytics,
-  //   settings,
-  //   yargs,
-  //   margs,
-  //   WorkerAllocator,
-  //   TestRunner,
-  //   process,
-  //   getTests,
-  //   testFilters,
-  //   processCleanup,
-  //   profiles,
-  //   path,
-  //   loadRelativeModule
-  // }, opts);
-
-
-
-  // // const isNodeBased = runOpts.margs.argv.framework &&
-  // //   runOpts.margs.argv.framework.indexOf("mocha") > -1;
-
-  // const debug = runOpts.margs.argv.debug || false;
-  // const useSerialMode = runOpts.margs.argv.serial;
-  // let MAX_TEST_ATTEMPTS = parseInt(runOpts.margs.argv.max_test_attempts) || 3;
-  // let targetProfiles;
-  // let workerAllocator;
-  // let MAX_WORKERS;
-
-  // const magellanGlobals = {
-  //   analytics: runOpts.analytics
-  // };
-
-
-  // runOpts.analytics.push("magellan-run");
-  // runOpts.analytics.push("magellan-busy", undefined, "idle");
-
-
-
-
-  // // finish processing all params ===========================
-
-
-
-  // // handle executor specific params
-  // const executorParams = _.omit(runOpts.margs.argv, _.keys(magellanArgs));
-
-  // // ATTENTION: there should only be one executor param matched for the function call
-  // _.forEach(runOpts.settings.testExecutors, (v, k) => {
-  //   _.forEach(executorParams, (epValue, epKey) => {
-  //     if (v.help[epKey] && v.help[epKey].type === "function") {
-  //       // we found a match in current executor
-  //       // method name convention for an executor: PREFIX_string_string_string_...
-  //       let names = epKey.split("_");
-  //       names = names.slice(1, names.length);
-  //       const executorMethodName = _.camelCase(names.join(" "));
-
-  //       if (_.has(v, executorMethodName)) {
-  //         // method found in current executor
-  //         v[executorMethodName](runOpts, () => {
-  //           defer.resolve();
-  //         });
-  //       } else {
-  //         logger.err("Error: executor" + k + " doesn't has method " + executorMethodName + ".");
-  //         defer.resolve();
-  //       }
-  //     }
-  //   });
-  // });
-
-
-  // //
-  // // Find Tests, Start Worker Allocator
-  // //
-  // const tests = runOpts.getTests(runOpts.testFilters.detectFromCLI(runOpts.margs.argv));
-
-  // if (_.isEmpty(tests)) {
-  //   logger.log("Error: no tests found");
-  //   defer.reject({ error: "No tests found" });
-  //   return defer.promise;
-  // }
-
-
-  // const startSuite = () => {
-  //   return new Promise((resolve, reject) => {
-
-  //     Promise
-  //       .all(_.map(testExecutors, (executor) => executor.setupRunner()))
-  //       .then(() => {
-  //         workerAllocator.initialize((workerInitErr) => {
-  //           if (workerInitErr) {
-  //             logger.err("Could not start Magellan. Got error while initializing"
-  //               + " worker allocator");
-  //             return reject(workerInitErr);
-  //           }
-
-  //           const testRunner = new runOpts.TestRunner(tests, {
-  //             debug,
-
-  //             maxWorkers: MAX_WORKERS,
-
-  //             maxTestAttempts: MAX_TEST_ATTEMPTS,
-
-  //             profiles: targetProfiles,
-  //             executors: testExecutors,
-
-  //             listeners,
-
-  //             strategies: runOpts.settings.strategies,
-
-  //             serial: useSerialMode,
-
-  //             allocator: workerAllocator,
-
-  //             onSuccess: () => {
-  //               /*eslint-disable max-nested-callbacks*/
-  //               workerAllocator.teardown(() => {
-  //                 Promise
-  //                   .all(_.map(testExecutors, (executor) => executor.teardownRunner()))
-  //                   .then(() => {
-  //                     runOpts.processCleanup(() => {
-  //                       return resolve();
-  //                     });
-  //                   })
-  //                   .catch((err) => {
-  //                     // we eat error here
-  //                     logger.warn("executor teardownRunner error: " + err);
-  //                     runOpts.processCleanup(() => {
-  //                       return resolve();
-  //                     });
-  //                   });
-  //               });
-  //             },
-
-  //             onFailure: (/*failedTests*/) => {
-  //               /*eslint-disable max-nested-callbacks*/
-  //               workerAllocator.teardown(() => {
-  //                 Promise
-  //                   .all(_.map(testExecutors, (executor) => executor.teardownRunner()))
-  //                   .then(() => {
-  //                     runOpts.processCleanup(() => {
-  //                       // Failed tests are not a failure in Magellan itself,
-  //                       // so we pass an empty error here so that we don't
-  //                       // confuse the user. Magellan already outputs a failure
-  //                       // report to the screen in the case of failed tests.
-  //                       return reject(null);
-  //                     });
-  //                   })
-  //                   .catch((err) => {
-  //                     logger.warn("executor teardownRunner error: " + err);
-  //                     // we eat error here
-  //                     runOpts.processCleanup(() => {
-  //                       return reject(null);
-  //                     });
-  //                   });
-  //               });
-  //             }
-  //           });
-
-  //           testRunner.start();
-  //         });
-  //       })
-  //       .catch((err) => {
-  //         return reject(err);
-  //       });
-  //   });
-  // };
-
-  // const enableExecutors = (_targetProfiles) => {
-  //   // this is to allow magellan to double check with profile that
-  //   // is retrieved by --profile or --profiles
-  //   targetProfiles = _targetProfiles;
-
-  //   return new Promise((resolve, reject) => {
-  //     try {
-  //       logger.log("Enabled executors:");
-  //       _.forEach(
-  //         _.uniq(_.map(_targetProfiles, (targetProfile) => targetProfile.executor)),
-  //         (shortname) => {
-  //           if (runOpts.settings.testExecutors[shortname]) {
-  //             logger.log(`  ${runOpts.settings.testExecutors[shortname].name}`);
-  //             runOpts.settings.testExecutors[shortname].validateConfig({ isEnabled: true });
-  //           }
-  //         });
-
-  //       return resolve();
-  //     } catch (err) {
-  //       return reject(err);
-  //     }
-  //   });
-  // };
-
-  // runOpts.profiles
-  //   .detectFromCLI(runOpts)
-  //   .then(enableExecutors)
-  //   .then(() => {
-  //     //
-  //     // Worker Count:
-  //     // =============
-  //     //
-  //     //   Default to 3 workers in parallel mode (default).
-  //     //   Default to 1 worker in serial mode.
-  //     //
-  //     MAX_WORKERS = useSerialMode ? 1 : parseInt(runOpts.margs.argv.max_workers) || 3;
-  //     workerAllocator = new runOpts.WorkerAllocator(MAX_WORKERS);
-  //   })
-  //   .then(initializeListeners)
-  //   // NOTE: if we don't end up in catch() below, magellan exits with status code 0 naturally
-  //   .then(startSuite)
-  //   .then(() => {
-  //     defer.resolve();
-  //   })
-  //   .catch((err) => {
-  //     if (err) {
-  //       logger.err("Error initializing Magellan");
-  //       logger.err("Error description:");
-  //       logger.err(err.toString());
-  //       logger.err("Error stack trace:");
-  //       logger.err(err.stack);
-  //     } else {
-  //       // No err object means we didn't have an internal crash while setting up / tearing down
-  //     }
-
-  //     // Fail the test suite or fail because of an internal crash
-  //     defer.reject({ error: "Internal crash" });
-  //   });
-
-  // return co(function* () {
-  //   const targetProfile = yield runOpts.profiles.detectFromCLI(runOpts);
-
-  //   yield enableExecutors(targetProfile);
-
-  //   return targetProfile
-  // }).catch((err) => {
-  //   logger.warn(err);
-  //   // defer.reject(err)
-  //   throw err
-  // });
-
-  // return defer.promise;
 };

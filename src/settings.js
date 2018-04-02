@@ -88,9 +88,11 @@ module.exports = {
   BASE_PORT_RANGE: parseInt(argv.base_port_range) || 2000,
   BASE_PORT_SPACING: parseInt(argv.base_port_spacing) || 3,
   MAX_WORKERS: Boolean(argv.serial) ? 1 : parseInt(argv.max_workers) || 3,
+  MAX_TEST_ATTEMPTS: parseInt(argv.max_test_attempts) || 3,
 
   environment: env,
-  debug: argv.debug,
+  debug: Boolean(argv.debug),
+  serial: Boolean(argv.serial),
 
   gatherTrends: argv.gather_trends,
 

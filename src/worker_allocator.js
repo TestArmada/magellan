@@ -34,12 +34,17 @@ class Allocator {
     this.initializeWorkers(MAX_WORKERS);
   }
 
-  initialize(callback) {
-    callback();
+  setup() {
+    return Promise.resolve();
   }
 
-  teardown(callback) {
-    callback();
+  teardown(err) {
+    if (err) {
+      // something is happening before this step,
+      // we pass this error down
+      return Promise.reject(err);
+    }
+    return Promise.resolve();
   }
 
   initializeWorkers(numWorkers) {

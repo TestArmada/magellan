@@ -40,13 +40,13 @@ class ResourceStrategy {
   }
 
   getFailReason() {
-    // check if strategy has  bail Reason defined
+    // check if strategy has fail Reason defined
     if (!this.failReason) {
       logger.warn(`${this.name} doesn't have strategy fail reason.`
         + " You might want to add a failReason to it.");
       return "";
     }
-    // prints out strategy's bail Reason
+    // prints out strategy's fail Reason
     return typeof this.failReason === "function" ? this.failReason() : this.failReason;
   }
 
