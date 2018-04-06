@@ -9,6 +9,6 @@ module.exports = {
   // resource format
   decide(resources) {
     // never use resource manager
-    return new Promise((resolve, reject) => resolve(resources));
+    return Promise.resolve(resources);
   }
 };

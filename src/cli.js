@@ -13,7 +13,6 @@
 const margs = require("marge");
 const path = require("path");
 const _ = require("lodash");
-const async = require("async");
 const co = require("co");
 const clc = require("cli-color");
 
@@ -127,7 +126,7 @@ module.exports = {
       }
 
       logger.log("Loaded test framework from magellan.json: ");
-      logger.log(` ${clc.greenBright(settings.framework)}`);
+      logger.log(`  ${clc.greenBright(settings.framework)}`);
       return resolve();
     });
   },
@@ -292,23 +291,15 @@ module.exports = {
     }
 
     // intiialize listeners
-
     return new Promise((resolve, reject) => {
-
-      async.each(listeners, (listener, done) => {
-        listener.initialize({
-          analytics,
-          workerAmount: settings.MAX_WORKERS
-        })
-          .then(() => done())
-          .catch((err) => done(err));
-      }, (err) => {
-        if (err) {
-          return reject(err);
-        } else {
-          return resolve(listeners);
-        }
-      });
+      Promise
+        .all(_.map(listeners,
+          (listener) => listener.initialize({
+            analytics,
+            workerAmount: settings.MAX_WORKERS
+          })))
+        .then(() => resolve(listeners))
+        .catch(err => reject(err));
     });
   },
 
@@ -381,8 +372,8 @@ module.exports = {
           (executor) => executor.setupRunner()))
         .then(() => workerAllocator.setup())
         .then(() =>
-          new Promise((resolve, reject) => {
-            return new TestRunner(opts.tests, {
+          new Promise((resolve, reject) =>
+            new TestRunner(opts.tests, {
               profiles: opts.profiles,
               executors: opts.executors,
               listeners: opts.listeners,
@@ -398,27 +389,28 @@ module.exports = {
 
                 return resolve();
               }
-            }).start();
-          }))
+            }).enqueueAllTests()
+          )
+        )
         //  workerAllocator.teardown is guaranteed to execute 
         .then(
-        () => workerAllocator.teardown(),
-        (err) => workerAllocator.teardown(err)
+          () => workerAllocator.teardown(),
+          (err) => workerAllocator.teardown(err)
         )
         // executor.teardownRunner is guaranteed to execute 
         .then(
-        () => Promise
-          .all(_.map(opts.enabledExecutors,
-            (executor) => executor.teardownRunner())),
-        (err) => Promise
-          .all(_.map(opts.enabledExecutors,
-            (executor) => executor.teardownRunner()))
-          .then(() => Promise.reject(err))
+          () => Promise
+            .all(_.map(opts.enabledExecutors,
+              (executor) => executor.teardownRunner())),
+          (err) => Promise
+            .all(_.map(opts.enabledExecutors,
+              (executor) => executor.teardownRunner()))
+            .then(() => Promise.reject(err))
         )
         //  processCleanup is guaranteed to execute 
         .then(
-        () => processCleanup(),
-        (err) => processCleanup(err)
+          () => processCleanup(),
+          (err) => processCleanup(err)
         )
         .catch(err => reject(err));
     });

@@ -23,7 +23,6 @@ if (configFilePath) {
 margs.init(DEFAULT_CONFIG, configFilePath);
 
 const argv = margs.argv;
-const env = process.env;
 // Allow an external build id (eg: from CI system, for example) to be used. If we're not given one,
 // we generate a random build id instead. NOTE: This build id must work as a part of a filename.
 // NOTE: The result of this line is that buildId is truthy so toString() should work
@@ -90,7 +89,7 @@ module.exports = {
   MAX_WORKERS: Boolean(argv.serial) ? 1 : parseInt(argv.max_workers) || 3,
   MAX_TEST_ATTEMPTS: parseInt(argv.max_test_attempts) || 3,
 
-  environment: env,
+  environment: process.env,
   debug: Boolean(argv.debug),
   serial: Boolean(argv.serial),
 
