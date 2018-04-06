@@ -113,66 +113,80 @@ class TestRunner {
 
     const stageTest = (test, callback) => {
 
-      const analyticsGuid = guid();
-      this.analytics.push(`acquire-worker-${analyticsGuid}`);
+      // check resource strategy
+      this.strategies.resource
+        .proceed(test.profile)
+        .then(() => {
+          // resource is ready, proceed test execution
+          const analyticsGuid = guid();
 
-      test.executor.setupTest((setupTestErr, token) => {
-        if (setupTestErr) {
-          callback(setupTestErr, test);
-        }
+          test.executor.setupTest((setupTestErr, token) => {
+            if (setupTestErr) {
+              callback(setupTestErr, test);
+            }
 
-        this.allocator.get((getWorkerError, worker) => {
-          if (getWorkerError) {
-            callback(getWorkerError, test);
-          }
-
-          this.analytics.mark(`acquire-worker-${analyticsGuid}`);
-
-          this.runTest(test, worker)
-            .then((runResults) => {
-              // Give this worker back to the allocator
-              /*eslint-disable max-nested-callbacks*/
-              test.executor.teardownTest(token,
-                () => this.allocator.release(worker));
-
-              test.workerIndex = worker.index;
-              test.error = runResults.error;
-              test.stdout = runResults.stdout;
-              test.stderr = runResults.stderr;
-
-              // Pass or fail the test
-              if (runResults.error) {
-                test.fail();
-              } else {
-                test.pass();
+            this.analytics.push(`acquire-worker-${analyticsGuid}`);
+            this.allocator.get((getWorkerError, worker) => {
+              if (getWorkerError) {
+                callback(getWorkerError, test);
               }
 
-              callback(null, test);
-            })
-            .catch((runTestError) => {
-              // Catch a testing infrastructure error unrelated to the test itself failing.
-              // This indicates something went wrong with magellan itself. We still need
-              // to drain the queue, so we fail the test, even though the test itself may
-              // have not actually failed.
-              logger.err("Fatal internal error while running a test:" + runTestError);
-              logger.err(runTestError.stack);
+              this.analytics.mark(`acquire-worker-${analyticsGuid}`);
 
-              // Give this worker back to the allocator
-              /*eslint-disable max-nested-callbacks*/
-              test.executor.teardownTest(token,
-                () => this.allocator.release(worker));
+              this.runTest(test, worker)
+                .then((runResults) => {
+                  // Give this worker back to the allocator
+                  /*eslint-disable max-nested-callbacks*/
+                  test.executor.teardownTest(token,
+                    () => this.allocator.release(worker));
 
-              test.workerIndex = worker.index;
-              test.error = runTestError;
-              test.stdout = "";
-              test.stderr = runTestError;
+                  test.workerIndex = worker.index;
+                  _.merge(test, runResults);
 
-              test.fail();
-              callback(runTestError, test);
+                  // Pass or fail the test
+                  if (runResults.error) {
+                    test.fail();
+                  } else {
+                    test.pass();
+                  }
+
+                  callback(null, test);
+                })
+                .catch((runTestError) => {
+                  // Catch a testing infrastructure error unrelated to the test itself failing.
+                  // This indicates something went wrong with magellan itself. We still need
+                  // to drain the queue, so we fail the test, even though the test itself may
+                  // have not actually failed.
+                  logger.err("Fatal internal error while running a test:" + runTestError);
+                  logger.err(runTestError.stack);
+
+                  // Give this worker back to the allocator
+                  /*eslint-disable max-nested-callbacks*/
+                  test.executor.teardownTest(token,
+                    () => this.allocator.release(worker));
+
+                  test.workerIndex = worker.index;
+                  test.error = runTestError;
+                  test.stdout = "";
+                  test.stderr = runTestError;
+
+                  test.fail();
+                  callback(runTestError, test);
+                });
             });
+
+          });
+        })
+        .catch(err => {
+          // no resource is available for current test
+          // we put test back to the queue
+          logger.warn(`No available resource for ${test.toString()},` +
+            ` we'll put it back in the queue.`);
+
+          callback(err, test);
         });
 
-      });
+
     };
 
     // build a test queue to execute tests in parallel 
@@ -637,60 +651,69 @@ class TestRunner {
       return;
     }
 
-    const successful = test.status === Test.TEST_STATUS_SUCCESSFUL;
+    let status = clc.greenBright("PASS");
+    let enqueueNote = "";
 
-    if (successful) {
-      // Add this test to the passed test list, then remove it from the failed test
-      // list (just in case it's a test we just retried after a previous failure).
-      this.passedTests.push(test);
-      this.failedTests = _.difference(this.failedTests, this.passedTests);
-    } else {
+    switch (test.status) {
+      case Test.TEST_STATUS_SUCCESSFUL:
+        // Add this test to the passed test list, then remove it from the failed test
+        // list (just in case it's a test we just retried after a previous failure).
+        this.passedTests.push(test);
+        this.failedTests = _.difference(this.failedTests, this.passedTests);
+        break;
 
-      if (this.settings.gatherTrends) {
-        const key = test.toString();
+      case Test.TEST_STATUS_FAILED:
+        status = clc.redBright("FAIL");
+
+        if (this.settings.gatherTrends) {
+          const key = test.toString();
+          /*eslint-disable no-magic-numbers*/
+          this.trends.failures[key] = this.trends.failures[key] > -1
+            ? this.trends.failures[key] + 1 : 1;
+        }
+
         /*eslint-disable no-magic-numbers*/
-        this.trends.failures[key] = this.trends.failures[key] > -1
-          ? this.trends.failures[key] + 1 : 1;
-      }
+        if (this.failedTests.indexOf(test) === -1 && test.canRun()) {
+          this.failedTests.push(test);
+        }
 
-      /*eslint-disable no-magic-numbers*/
-      if (this.failedTests.indexOf(test) === -1) {
-        this.failedTests.push(test);
-      }
+        // if suite should bail due to failure
+        if (this.strategies.bail.shouldBail({
+          totalTests: this.tests,
+          passedTests: this.passedTests,
+          failedTests: this.failedTests
+        })) {
+          // Kill the rest of the queue, preventing any new tests from running and shutting
+          // down buildFinished
+          this.queue.kill();
+          return this.finishAllTests();
+        }
 
-      // if suite should bail due to failure
-      if (this.strategies.bail.shouldBail({
-        totalTests: this.tests,
-        passedTests: this.passedTests,
-        failedTests: this.failedTests
-      })) {
-        // Kill the rest of the queue, preventing any new tests from running and shutting
-        // down buildFinished
-        this.queue.kill();
-        return this.finishAllTests();
-      }
+        // Note: Tests that failed but can still run again are pushed back into the queue.
+        // This push happens before the queue is given back flow control (at the end of
+        // this callback), which means that the queue isn't given the chance to drain.
+        if (!test.canRun()) {
+          this.queue.push(test, this.onTestComplete.bind(this));
+          enqueueNote = clc.cyanBright(`(will retry, ${test.maxAttempts - test.attempts} time(s) left). Spent ${test.getRuntime()} ms`);
+        }
+        break;
 
-      // Note: Tests that failed but can still run again are pushed back into the queue.
-      // This push happens before the queue is given back flow control (at the end of
-      // this callback), which means that the queue isn't given the chance to drain.
-      if (!test.canRun()) {
+      case Test.TEST_STATUS_NEW:
+        // no available resource
+        status = clc.yellowBright("RETRY");
         this.queue.push(test, this.onTestComplete.bind(this));
-      }
+        enqueueNote = clc.cyanBright("(will retry). Resource not available");
+        break;
     }
 
     let prefix = `(${this.passedTests.length + this.failedTests.length} ` +
       `/ ${this.numTests})`;
 
-    if (!this.serial) {
+    if (!this.serial && test.workerIndex > 0) {
       prefix += ` <-- Worker ${test.workerIndex}`;
     }
 
-    const enqueueNote = !test.canRun() ?
-      clc.cyanBright(`(will retry). Spent ${test.getRuntime()} ms`) :
-      "";
-
-    logger.log(`${prefix} ${successful ? clc.greenBright("PASS") : clc.redBright("FAIL")}` +
-      ` ${enqueueNote} ${test.toString()}`);
+    logger.log(`${prefix} ${status} ${enqueueNote} ${test.toString()}`);
   }
 }
 
