@@ -13,7 +13,7 @@ const CLOSE = "close"
 
 module.exports = class ChildProcess {
   constructor(handler) {
-    this.stdout = clc.greenBright(`${logStamp()} Magellan child process start\n`);
+    this.stdout = `${clc.yellowBright(logStamp())} =====> Magellan child process start\n`;
     this.stderr = "";
     this.handler = handler;
     this.handler.stdout.on(DATA, this.onDataCallback.bind(this));
@@ -40,7 +40,7 @@ module.exports = class ChildProcess {
       text = text
         .split("\n")
         .filter(line => !_.isEmpty(line.trim()))
-        .map(line => `${logStamp()} ${line}`)
+        .map(line => `${clc.yellowBright(logStamp())} ${line}`)
         .join("\n");
 
       /* istanbul ignore else */

@@ -591,7 +591,7 @@ class TestRunner {
     }
 
     const status = this.strategies.bail.hasBailed ?
-      clc.redBright(this.strategies.bail.getBailReason()) :
+      clc.redBright(`Failed due to bail strategy: ${this.strategies.bail.getBailReason()}`) :
       this.failedTests.length > 0 ?
         clc.redBright("FAILED") :
         clc.greenBright("PASSED");
@@ -618,12 +618,12 @@ class TestRunner {
     });
 
     if (!_.isEmpty(this.failedTests)) {
-      logger.log(`   Failed:  ${this.failedTests.length} / ${this.numTests}`);
+      logger.log(`     Failed:  ${this.failedTests.length} / ${this.numTests}`);
     }
 
     const skipped = this.numTests - (this.passedTests.length + this.failedTests.length);
     if (this.strategies.bail.hasBailed && skipped > 0) {
-      logger.log(`  Skipped: ${skipped}`);
+      logger.log(`    Skipped:  ${skipped}`);
     }
   }
 

@@ -327,7 +327,10 @@ module.exports = {
 
 
   detectProfiles(opts) {
-    return profiles.detectFromCLI({ margs, settings });
+    return profiles.detectFromCLI({
+      argv: opts.argv,
+      settings: opts.settings
+    });
   },
 
   enableExecutors(opts) {
