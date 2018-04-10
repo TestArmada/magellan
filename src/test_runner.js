@@ -115,8 +115,8 @@ class TestRunner {
 
       // check resource strategy
       this.strategies.resource
-        .proceed(test.profile)
-        .then(() => {
+        .proceedTest(test.profile)
+        .then((profile) => {
           // resource is ready, proceed test execution
           const analyticsGuid = guid();
 
@@ -702,7 +702,7 @@ class TestRunner {
         // no available resource
         status = clc.yellowBright("RETRY");
         this.queue.push(test, this.onTestComplete.bind(this));
-        enqueueNote = clc.cyanBright("(will retry). Resource not available");
+        enqueueNote = clc.cyanBright("(will retry). ") + clc.redBright(error.message);
         break;
     }
 

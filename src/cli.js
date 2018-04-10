@@ -371,9 +371,20 @@ module.exports = {
       const workerAllocator = new WorkerAllocator(settings.MAX_WORKERS);
 
       Promise
-        .all(_.map(opts.enabledExecutors,
-          (executor) => executor.setupRunner()))
-        .then(() => workerAllocator.setup())
+        .all(_.map(
+          opts.executors,
+          (executor) => executor.setupRunner())
+        )
+        .then(() => opts.strategies.resource.proceedSuite({
+          profiles: opts.profiles,
+          tests: opts.tests
+        }))
+        .then(
+          () => workerAllocator.setup(),
+          // if resource strategy decline the suite due to resource limit,
+          // we fail test run
+          (err) => reject(err)
+        )
         .then(() =>
           new Promise((resolve, reject) =>
             new TestRunner(opts.tests, {

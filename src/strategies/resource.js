@@ -50,8 +50,12 @@ class ResourceStrategy {
     return typeof this.failReason === "function" ? this.failReason() : this.failReason;
   }
 
-  proceed(resources) {
-    return this.decide(resources);
+  proceedTest(resource) {
+    return this.decideTest(resource);
+  }
+
+  proceedSuite(resources) {
+    return this.decideSuite(resources);
   }
 };
 

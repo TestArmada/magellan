@@ -1,6 +1,8 @@
 "use strict";
 
-// let k = 1;
+const _ = require("lodash");
+
+let k = 1;
 
 /* istanbul ignore next */
 module.exports = {
@@ -9,12 +11,29 @@ module.exports = {
   failReason: "Magellan should not depend on any resource manager to control test run",
 
   // resource format
-  decide(resources) {
+  proceedTest(profile) {
     // never use resource manager
-    // if (k < 3) {
-    //   k++;
-    //   return Promise.reject(new Error("fake error simulation"));
-    // }
-    return Promise.resolve(resources);
+    if (k < 3) {
+      k++;
+      return Promise.reject(new Error("No available Sauce VM."));
+    }
+    return Promise.resolve(profile);
+  },
+
+  // resource format
+  proceedSuite(opts) {
+    const multiplier = opts.tests.length;
+
+    const reqBody = _.map(opts.profiles, (profile) => {
+      return {
+        gatekeeperinfo: {
+          id: profile.id,
+          quantity: multiplier
+        }
+      };
+    });
+    console.log(reqBody)
+    // return Promise.resolve(resources);
+    return Promise.reject(new Error("Available Sauce VM isn't enough to continue the test run"));
   }
 };
