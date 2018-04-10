@@ -115,7 +115,7 @@ class TestRunner {
 
       // check resource strategy
       this.strategies.resource
-        .proceedTest(test.profile)
+        .holdTestResource(test)
         .then((profile) => {
           // resource is ready, proceed test execution
           const analyticsGuid = guid();
@@ -197,6 +197,7 @@ class TestRunner {
   }
 
   finishAllTests() {
+
     this.setTimeout(() => {
 
       this.logTestsSummary();
@@ -538,6 +539,11 @@ class TestRunner {
 
         this.setTimeout(
           () => this.execute(testRun, test)
+            .then(testResult =>
+              this.strategies.resource
+                .releaseTestResource(test)
+                .then(() => Promise.resolve(testResult))
+            )
             .then(testResult => resolve(testResult))
             .catch(err => reject(err)),
           WORKER_START_DELAY);

@@ -9,14 +9,26 @@ module.exports = {
   failReason: "Magellan shouldn‘t depend on any resource manager to control test run",
 
   // resource format
-  proceedTest(profile) {
+  holdResourceForTest(profile) {
     // never use resource manager
     return Promise.resolve(profile);
   },
 
   // resource format
-  proceedSuite(opts) {
+  holdResourcesForSuite(opts) {
     // never use resource manager
     return Promise.resolve();
+  },
+
+  // resource format
+  releaseResourceForTest(profile) {
+    // never use resource manager
+    return Promise.resolve(profile);
+  },
+
+  // resource format
+  releaseResourcesForSuite(opts) {
+    // never use resource manager
+    return Promise.resolve(opts);
   }
 };

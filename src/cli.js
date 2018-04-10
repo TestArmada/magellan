@@ -375,7 +375,7 @@ module.exports = {
           opts.executors,
           (executor) => executor.setupRunner())
         )
-        .then(() => opts.strategies.resource.proceedSuite({
+        .then(() => opts.strategies.resource.holdSuiteResources({
           profiles: opts.profiles,
           tests: opts.tests
         }))
@@ -405,6 +405,17 @@ module.exports = {
               }
             }).enqueueAllTests()
           )
+        )
+        // resource.releaseSuiteResources is guaranteed to execute
+        .then(
+          () => opts.strategies.resource.releaseSuiteResources({
+            profiles: opts.profiles,
+            tests: opts.tests
+          }),
+          (err) => opts.strategies.resource.releaseSuiteResources({
+            profiles: opts.profiles,
+            tests: opts.tests
+          }).then(() => Promise.reject(err))
         )
         //  workerAllocator.teardown is guaranteed to execute 
         .then(

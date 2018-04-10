@@ -50,12 +50,57 @@ class ResourceStrategy {
     return typeof this.failReason === "function" ? this.failReason() : this.failReason;
   }
 
-  proceedTest(resource) {
-    return this.decideTest(resource);
+  holdTestResource(resource) {
+    if (_.isFunction(this.holdResourceForTest)) {
+      return this.holdResourceForTest(resource);
+    } else {
+      // no holdTest is defined in strategy
+      return Promise.resolve(resource);
+    }
+
   }
 
-  proceedSuite(resources) {
-    return this.decideSuite(resources);
+  holdSuiteResources(resources) {
+    if (_.isFunction(this.holdResourcesForSuite)) {
+      return this.holdResourcesForSuite(resources);
+    } else {
+      // no holdSuite is defined in strategy
+      return Promise.resolve(resources);
+    }
+  }
+
+  releaseTestResource(resource) {
+    if (_.isFunction(this.releaseResourceForTest)) {
+
+      return this.releaseResourceForTest(resource)
+        .then(() => Promise.resolve(resource))
+        .catch(err => {
+          // we log warning but eat the error here
+          logger.warn(`[${this.name}] Error in releasing resource for test.` +
+            ` This error doesn't impact test result.`);
+          return Promise.resolve(resource);
+        });
+    } else {
+      // no holdTest is defined in strategy
+      return Promise.resolve(resource);
+    }
+
+  }
+
+  releaseSuiteResources(resources) {
+    if (_.isFunction(this.releaseResourcesForSuite)) {
+      return this.releaseResourcesForSuite(resources)
+        .then(() => Promise.resolve(resources))
+        .catch(err => {
+          // we log warning but eat the error here
+          logger.warn(`[${this.name}] Error in releasing resources for suite.` +
+            ` This error doesn't impact suite result.`);
+          return Promise.resolve(resources);
+        });
+    } else {
+      // no holdSuite is defined in strategy
+      return Promise.resolve(resources);
+    }
   }
 };
 
