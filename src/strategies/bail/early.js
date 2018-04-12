@@ -1,7 +1,7 @@
 "use strict";
 
 const _ = require("lodash");
-const logger = require("../logger");
+const logger = require("../../logger");
 
 /* eslint-disable no-magic-numbers */
 const settings = {

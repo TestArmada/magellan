@@ -67,7 +67,9 @@ class TestRunner {
 
     this.profiles = options.profiles;
     this.executors = options.executors;
+
     this.debug = this.settings.debug;
+    this.debugVerbose = this.settings.debugVerbose;
 
     this.serial = this.settings.serial;
 
@@ -115,7 +117,7 @@ class TestRunner {
 
       // check resource strategy
       this.strategies.resource
-        .holdTestResource(test)
+        .holdTestResource({ test })
         .then((profile) => {
           // resource is ready, proceed test execution
           const analyticsGuid = guid();
@@ -405,7 +407,7 @@ class TestRunner {
         );
       });
 
-      if (this.debug) {
+      if (this.debugVerbose) {
         // For debugging purposes.
         childProcess.enableDebugMsg();
       }
@@ -541,7 +543,7 @@ class TestRunner {
           () => this.execute(testRun, test)
             .then(testResult =>
               this.strategies.resource
-                .releaseTestResource(test)
+                .releaseTestResource({ test, token: worker.token })
                 .then(() => Promise.resolve(testResult))
             )
             .then(testResult => resolve(testResult))

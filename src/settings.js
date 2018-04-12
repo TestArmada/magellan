@@ -90,7 +90,8 @@ module.exports = {
   MAX_TEST_ATTEMPTS: parseInt(argv.max_test_attempts) || 3,
 
   environment: process.env,
-  debug: Boolean(argv.debug),
+  debug: Boolean(argv.debug) || Boolean(argv.debugVerbose),
+  debugVerbose: Boolean(argv.debugVerbose),
   serial: Boolean(argv.serial),
 
   gatherTrends: argv.gather_trends,

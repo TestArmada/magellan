@@ -437,6 +437,7 @@ module.exports = {
           () => processCleanup(),
           (err) => processCleanup(err)
         )
+        .then(() => resolve())
         .catch(err => reject(err));
     });
   }

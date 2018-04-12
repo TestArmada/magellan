@@ -20,7 +20,7 @@ class ResourceStrategy {
     try {
       _.assign(this, Factory.create(argv));
       // call configuration if set
-      if (this.setConfiguration) {
+      if (_.isFunction(this.setConfiguration)) {
         this.setConfiguration(argv);
       }
     } catch (err) {
@@ -76,7 +76,7 @@ class ResourceStrategy {
         .then(() => Promise.resolve(resource))
         .catch(err => {
           // we log warning but eat the error here
-          logger.warn(`[${this.name}] Error in releasing resource for test.` +
+          logger.warn(`Error in releasing resource for test: ${err}.` +
             ` This error doesn't impact test result.`);
           return Promise.resolve(resource);
         });
@@ -93,7 +93,7 @@ class ResourceStrategy {
         .then(() => Promise.resolve(resources))
         .catch(err => {
           // we log warning but eat the error here
-          logger.warn(`[${this.name}] Error in releasing resources for suite.` +
+          logger.warn(`Error in releasing resources for suite: ${err}.` +
             ` This error doesn't impact suite result.`);
           return Promise.resolve(resources);
         });

@@ -69,7 +69,12 @@ module.exports = {
     "debug": {
       "category": "Parallelism, Workflow and Filtering",
       "visible": true,
-      "description": "Enable debugging magellan messages (dev mode)."
+      "description": "Enable magellan debug messages (dev mode)."
+    },
+    "debugVerbose": {
+      "category": "Parallelism, Workflow and Filtering",
+      "visible": true,
+      "description": "Enable magellan debug messages in verbose mode, this also enables debug log for nightwatch-extra if enabled(dev mode)."
     },
     "config": {
       "category": "Configuration",

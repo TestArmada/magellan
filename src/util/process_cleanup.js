@@ -14,7 +14,7 @@ module.exports = (err) => {
   
   return new Promise((resolve, reject) => {
     if (settings.debug) {
-      logger.log("Checking for zombie processes...");
+      logger.debug("Checking for zombie processes...");
     }
 
     treeUtil.getZombieChildren(pid, ZOMBIE_POLLING_MAX_TIME, (zombieChildren) => {
