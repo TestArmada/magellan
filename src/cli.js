@@ -40,11 +40,12 @@ module.exports = {
   version(opts) {
     const project = require("../package.json");
     logger.log(`Version:  ${clc.greenBright(project.version)}`);
+    logger.log(`Use --help to list out all options for Magellan@${project.version}`);
   },
 
   help(opts) {
     // Show help
-    logger.log("Printing magellan command line arguments with --help");
+    logger.log("Printing magellan command line arguments:");
     require("./cli_help").help();
 
     // exit process with exit code 0

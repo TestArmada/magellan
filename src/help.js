@@ -19,13 +19,13 @@ module.exports = {
     },
     "max_workers": {
       "category": "Parallelism, Workflow and Filtering",
-      "example": "N",
+      "example": "3",
       "visible": true,
       "description": "Set maximum number of parallel works to (see defaults below)."
     },
     "max_test_attempts": {
       "category": "Parallelism, Workflow and Filtering",
-      "example": "N",
+      "example": "3",
       "visible": true,
       "description": "Retry tests N times (default: 3)."
     },
@@ -37,34 +37,15 @@ module.exports = {
     },
     "strategy_bail": {
       "category": "Strategy",
-      "example": "./strategy/fast_bail",
+      "example": "testarmada-magellan-early-bail-strategy",
       "visible": true,
-      "description": "The strategy magellan uses to decide when to terminate current test suite if failure happens."
+      "description": "The strategy helps magellan decide when to terminate current test suite if failure happens."
     },
-    "bail_early": {
-      "category": "Bail Strategy [Will be deprecated soon, please migrate to --strategy_bail]",
+    "strategy_resource": {
+      "category": "Strategy",
+      "example": "testarmada-magellan-locks-resource-strategy",
       "visible": true,
-      "description": "Kill builds that have failed at least 10% of tests, after 10 or more test runs."
-    },
-    "bail_fast": {
-      "category": "Bail Strategy [Will be deprecated soon, please migrate to --strategy_bail]",
-      "visible": true,
-      "description": "Kill builds that fail any test."
-    },
-    "bail_time": {
-      "category": "Bail Strategy [Will be deprecated soon, please migrate to --strategy_bail]",
-      "visible": true,
-      "description": "Set test kill time in milliseconds. *CAN* be used without bail_early/bail_fast."
-    },
-    "early_bail_threshold": {
-      "category": "Bail Strategy [Will be deprecated soon, please migrate to --strategy_bail]",
-      "visible": true,
-      "description": "A decimal ratio (eg 0.25 for 25%) how many tests to fail before bail_early"
-    },
-    "early_bail_min_attempts": {
-      "category": "Bail Strategy [Will be deprecated soon, please migrate to --strategy_bail]",
-      "visible": true,
-      "description": "How many test runs to run before applying bail_early rule."
+      "description": "The strategy helps magellan hold/release resourcs for test when limit resources are available."
     },
     "debug": {
       "category": "Parallelism, Workflow and Filtering",

@@ -11,24 +11,9 @@ const Factory = {
     // There is only one bail strategy allowed per magellan instance.
     // Bail strategy is configured via --strategy_bail.
     // If no --strategy_bail , enable ./strategies/bail_never by default
-    let bailRule = argv.strategy_bail ?
+    const bailRule = argv.strategy_bail ?
       argv.strategy_bail : "./bail/never";
 
-    // --------------------
-    // ALERT!!!!! Will be deprecated in next release
-    //
-    // To backward support magellan's bail command line arguments
-    // The bail strategy will be for the whole suite, so if --bail_time is set explicitly
-    // the bail_never strategy will be used for whole suite and --bail_time will be applied
-    // to test only
-
-    if (Boolean(argv.bail_fast) && argv.bail_fast !== "false") {
-      bailRule = "./bail/fast";
-    } else if (Boolean(argv.bail_early) && argv.bail_early !== "false") {
-      bailRule = "./bail/early";
-    } else if (Boolean(argv.bail_time) && argv.bail_time !== "false") {
-      bailRule = "./bail/never";
-    }
     return require(bailRule);
   }
 };

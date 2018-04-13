@@ -213,7 +213,8 @@ class TestRunner {
                 .flush()
                 .then(() => innerResolve())
                 .catch(err => {
-                  logger.err(`Error when flushing listener output: ${err}`);
+                  logger.err(`Error when flushing listener output: ${err}. ` +
+                    `This error doesn't impact test result`);
                   // we eat this error and contiue the listner.flush()
                   return innerResolve();
                 });
