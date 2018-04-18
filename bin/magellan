@@ -18,7 +18,6 @@ co(function* () {
 
   const profiles = yield cli.detectProfiles({ argv, settings });
   const executors = yield cli.enableExecutors({ argv, profiles });
-
   const strategies = yield cli.loadStrategies({ argv });
   const listeners = yield cli.loadListeners({ argv });
 

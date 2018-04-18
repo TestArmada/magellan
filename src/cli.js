@@ -404,7 +404,7 @@ module.exports = {
 
                 return resolve();
               }
-            }).enqueueAllTests()
+            }).run()
           )
         )
         // resource.releaseSuiteResources is guaranteed to execute
