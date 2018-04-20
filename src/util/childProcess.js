@@ -9,7 +9,7 @@ const logStamp = require("./logstamp");
 
 const MESSAGE = "message";
 const DATA = "data";
-const CLOSE = "close"
+const CLOSE = "close";
 
 module.exports = class ChildProcess {
   constructor(handler) {
@@ -31,7 +31,7 @@ module.exports = class ChildProcess {
   }
 
   onMessage(callback) {
-    this.handler.on(MESSAGE, message => callback(message));
+    this.handler.on(MESSAGE, (message) => callback(message));
   }
 
   onDataCallback(data) {
@@ -39,8 +39,8 @@ module.exports = class ChildProcess {
     if (!_.isEmpty(text.trim())) {
       text = text
         .split("\n")
-        .filter(line => !_.isEmpty(line.trim()))
-        .map(line => `${clc.yellowBright(logStamp())} ${line}`)
+        .filter((line) => !_.isEmpty(line.trim()))
+        .map((line) => `${clc.yellowBright(logStamp())} ${line}`)
         .join("\n");
 
       /* istanbul ignore else */

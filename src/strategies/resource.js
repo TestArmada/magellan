@@ -7,7 +7,7 @@ const Factory = {
   /* eslint-disable global-require */
   // requires stragety on the fly
   create(argv) {
-    let resourceRule = argv.strategy_resource ?
+    const resourceRule = argv.strategy_resource ?
       argv.strategy_resource : "./resource/never";
 
     return require(resourceRule);
@@ -74,10 +74,10 @@ class ResourceStrategy {
 
       return this.releaseResourceForTest(resource)
         .then(() => Promise.resolve(resource))
-        .catch(err => {
+        .catch((err) => {
           // we log warning but eat the error here
           logger.warn(`Error in releasing resource for test: ${err}.` +
-            ` This error doesn't impact test result.`);
+            " This error doesn't impact test result.");
           return Promise.resolve(resource);
         });
     } else {
@@ -91,10 +91,10 @@ class ResourceStrategy {
     if (_.isFunction(this.releaseResourcesForSuite)) {
       return this.releaseResourcesForSuite(resources)
         .then(() => Promise.resolve(resources))
-        .catch(err => {
+        .catch((err) => {
           // we log warning but eat the error here
           logger.warn(`Error in releasing resources for suite: ${err}.` +
-            ` This error doesn't impact suite result.`);
+            " This error doesn't impact suite result.");
           return Promise.resolve(resources);
         });
     } else {
@@ -102,6 +102,6 @@ class ResourceStrategy {
       return Promise.resolve(resources);
     }
   }
-};
+}
 
 module.exports = ResourceStrategy;

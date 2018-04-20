@@ -69,7 +69,7 @@ class BailStrategy {
     if (!this.hasBailed) {
       // suite isn't bailed yet, let strategy decide
       this.hasBailed = this.decide(info);
-      
+
       if (this.hasBailed) {
         logger.warn("Test suite has bailed due to bail rule:");
         logger.warn(`  ${this.name}: ${this.getBailReason()}`);

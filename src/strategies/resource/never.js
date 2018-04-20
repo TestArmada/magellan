@@ -1,7 +1,5 @@
 "use strict";
 
-const _ = require("lodash");
-
 /* istanbul ignore next */
 module.exports = {
   name: "testarmada-magellan-no-resource-strategy",
@@ -17,7 +15,7 @@ module.exports = {
   // resource format
   holdResourcesForSuite(opts) {
     // never use resource manager
-    return Promise.resolve();
+    return Promise.resolve(opts);
   },
 
   // resource format

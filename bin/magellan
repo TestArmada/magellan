@@ -9,8 +9,9 @@ const argv = require("marge").argv;
 const logger = require("../src/logger");
 const cli = require("../src/cli");
 const settings = require("../src/settings");
+const constants = require("../src/constants");
 
-co(function* () {
+co(function *() {
   cli.version();
 
   yield cli.loadFramework({ argv });
@@ -44,20 +45,21 @@ co(function* () {
   // we exit magellan process by providing code directly
   process.exit(0);
 
-}).catch(err => {
+}).catch((err) => {
   switch (err.code) {
-    case 999:
+  case constants.ERROR_CODE.HELP:
       // hacky way to exit after help
-      process.exit(0);
-
-    case 998:
+    process.exit(0);
+    break;
+  case constants.ERROR_CODE.TEST_FAILURE:
       // test failure
-      process.exit(1);
-
-    default:
-      logger.err(`Error while running Magellan: ${err.message}`);
-      logger.err(err.stack);
+    process.exit(1);
+    break;
+  default:
+    logger.err(`Error while running Magellan: ${err.message}`);
+    logger.err(err.stack);
       // we exit magellan process by providing code directly
-      process.exit(1)
+    process.exit(1);
+    break;
   }
 });

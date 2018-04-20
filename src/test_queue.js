@@ -71,6 +71,6 @@ class TestQueue {
     this.priorityQueue.kill();
     return this.handlers.completeQueueHandler();
   }
-};
+}
 
 module.exports = TestQueue;

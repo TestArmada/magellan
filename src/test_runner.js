@@ -12,7 +12,6 @@ const once = require("once");
 const fs = require("fs");
 const mkdirSync = require("./util/mkdir_sync");
 const guid = require("./util/guid");
-const logStamp = require("./util/logstamp");
 const ChildProcessHandler = require("./util/childProcess");
 const sanitizeFilename = require("sanitize-filename");
 const analytics = require("./global_analytics");
@@ -101,7 +100,7 @@ class TestRunner {
       completeQueueHandler: this.completeQueueHandler.bind(this)
     });
   }
-
+  /* eslint-disable no-unused-vars,max-nested-callbacks */
   stageTestHandler(test, callback) {
     // check resource strategy
     this.strategies.resource
@@ -112,13 +111,13 @@ class TestRunner {
 
         test.executor.setupTest((setupTestErr, token) => {
           if (setupTestErr) {
-            callback(setupTestErr, test);
+            return callback(setupTestErr, test);
           }
 
           this.analytics.push(`acquire-worker-${analyticsGuid}`);
           this.allocator.get((getWorkerError, worker) => {
             if (getWorkerError) {
-              callback(getWorkerError, test);
+              return callback(getWorkerError, test);
             }
 
             this.analytics.mark(`acquire-worker-${analyticsGuid}`);
@@ -167,11 +166,11 @@ class TestRunner {
 
         });
       })
-      .catch(err => {
+      .catch((err) => {
         // no resource is available for current test
         // we put test back to the queue
         logger.warn(`No available resource for ${test.toString()},` +
-          ` we'll put it back in the queue.`);
+          " we'll put it back in the queue.");
 
         callback(err, test);
       });
@@ -187,13 +186,13 @@ class TestRunner {
       Promise
         .all(
           _.map(this.listeners,
-            listener => new Promise((innerResolve) => {
+            (listener) => new Promise((innerResolve) => {
               listener
                 .flush()
                 .then(() => innerResolve())
-                .catch(err => {
+                .catch((err) => {
                   logger.err(`Error when flushing listener output: ${err}. ` +
-                    `This error doesn't impact test result`);
+                    "This error doesn't impact test result");
                   // we eat this error and contiue the listner.flush()
                   return innerResolve();
                 });
@@ -208,7 +207,8 @@ class TestRunner {
     const profileStatement = this.profiles.map((b) => b.toString()).join(", ");
     const serialStatement = this.serial ? "in serial mode" : `with ${this.MAX_WORKERS} workers`;
 
-    logger.log(`Running ${this.queue.getTestAmount()} tests ${serialStatement} with [${profileStatement}]`);
+    logger.log(`Running ${this.queue.getTestAmount()} tests`
+      + ` ${serialStatement} with [${profileStatement}]`);
 
     return this.queue.proceed();
   }
@@ -366,10 +366,11 @@ class TestRunner {
       // Reporters and listeners can exploit this to tie certain runtime artifacts to the unique
       // identity of the test run.
       //
-      // FIXME: make it possible to receive this information from test frameworks not based on nodejs
+      // FIXME: make it possible to receive this information from test
+      //        frameworks not based on nodejs
       //
 
-      childProcess.onMessage(message => {
+      childProcess.onMessage((message) => {
         if (message.type === "test-meta-data") {
           testMetadata = message.metadata;
         }
@@ -392,11 +393,13 @@ class TestRunner {
           // the sentry from monitoring.
           this.clearInterval(sentry);
 
-          let customMessage = `Killed by Magellan because of ${this.strategies.bail.getBailReason()}`;
+          let customMessage = "Killed by Magellan because of"
+            + ` ${this.strategies.bail.getBailReason()}`;
 
           // Tell the child to shut down the running test immediately
           if (runtime > settings.testTimeout) {
-            customMessage = `Killed by Magellan after ${settings.testTimeout}ms (long running test)`;
+            customMessage = `Killed by Magellan after ${settings.testTimeout}ms`
+              + " (long running test)";
           }
 
           childProcess.send({
@@ -490,13 +493,13 @@ class TestRunner {
 
         this.setTimeout(
           () => this.execute(testRun, test)
-            .then(testResult =>
+            .then((testResult) =>
               this.strategies.resource
                 .releaseTestResource({ test, token: worker.token })
                 .then(() => Promise.resolve(testResult))
             )
-            .then(testResult => resolve(testResult))
-            .catch(err => reject(err)),
+            .then((testResult) => resolve(testResult))
+            .catch((err) => reject(err)),
           WORKER_START_DELAY);
       } catch (err) {
         return reject(err);
@@ -560,11 +563,13 @@ class TestRunner {
       this.analytics.mark("magellan-run", "passed");
     }
 
-    const status = this.strategies.bail.hasBailed ?
-      clc.redBright(`Failed due to bail strategy: ${this.strategies.bail.getBailReason()}`) :
-      failedTests.length > 0 ?
-        clc.redBright("FAILED") :
-        clc.greenBright("PASSED");
+    let status = failedTests.length > 0 ?
+      clc.redBright("FAILED") :
+      clc.greenBright("PASSED");
+
+    if (this.strategies.bail.hasBailed) {
+      status += clc.redBright(` due to bail strategy: ${this.strategies.bail.getBailReason()}`);
+    }
 
     this.queue.tests.forEach((test) => {
       if (test.status === Test.TEST_STATUS_SUCCESSFUL
@@ -603,10 +608,11 @@ class TestRunner {
     if (this.strategies.bail.hasBailed) {
       // Ignore results from this test if we've bailed by PREVIOUS tests. This is likely a test that
       // was killed when the build went into bail mode.
-      logger.warn(`\u2716 ${clc.redBright("KILLED")} ${test.toString()}
-        ${this.serial ? "\n" : ""}`);
+      logger.warn(`\u2716 ${clc.redBright("KILLED")} ${test.toString()} `
+        + `${this.serial ? "\n" : ""}`);
 
-      // if we land here current test should be marked as skipped even though nightwatch marks it as failed
+      // if we land here current test should be marked as skipped even though
+      // nightwatch marks it as failed
       test.status = Test.TEST_STATUS_SKIPPED;
       return;
     }
@@ -615,46 +621,46 @@ class TestRunner {
     let enqueueNote = "";
 
     switch (test.status) {
-      case Test.TEST_STATUS_SUCCESSFUL:
+    case Test.TEST_STATUS_SUCCESSFUL:
         // Add this test to the passed test list, then remove it from the failed test
         // list (just in case it's a test we just retried after a previous failure).
-        break;
+      break;
 
-      case Test.TEST_STATUS_FAILED:
-        status = clc.redBright("FAIL");
+    case Test.TEST_STATUS_FAILED:
+      status = clc.redBright("FAIL");
 
-        if (this.settings.gatherTrends) {
-          const key = test.toString();
+      if (this.settings.gatherTrends) {
+        const key = test.toString();
           /*eslint-disable no-magic-numbers*/
-          this.trends.failures[key] = this.trends.failures[key] > -1
+        this.trends.failures[key] = this.trends.failures[key] > -1
             ? this.trends.failures[key] + 1 : 1;
-        }
+      }
 
         // if suite should bail due to failure
-        this.strategies.bail.shouldBail({
-          totalTests: this.queue.tests,
-          passedTests: this.queue.getPassedTests(),
-          failedTests: this.queue.getFailedTests()
-        });
+      this.strategies.bail.shouldBail({
+        totalTests: this.queue.tests,
+        passedTests: this.queue.getPassedTests(),
+        failedTests: this.queue.getFailedTests()
+      });
 
         // Note: Tests that failed but can still run again are pushed back into the queue.
         // This push happens before the queue is given back flow control (at the end of
         // this callback), which means that the queue isn't given the chance to drain.
-        if (!test.canRun()) {
-          this.queue.enqueue(test, constants.TEST_PRIORITY.RETRY);
-
-          enqueueNote = clc.cyanBright(`(will retry, ${test.maxAttempts - test.attempts}` +
-            ` time(s) left). Spent ${test.getRuntime()} ms`);
-        }
-        break;
-
-      case Test.TEST_STATUS_NEW:
-        // no available resource
-        status = clc.yellowBright("RETRY");
+      if (!test.canRun()) {
         this.queue.enqueue(test, constants.TEST_PRIORITY.RETRY);
 
-        enqueueNote = clc.cyanBright("(will retry). ") + clc.redBright(error.message);
-        break;
+        enqueueNote = clc.cyanBright(`(will retry, ${test.maxAttempts - test.attempts}` +
+            ` time(s) left). Spent ${test.getRuntime()} ms`);
+      }
+      break;
+
+    case Test.TEST_STATUS_NEW:
+        // no available resource
+      status = clc.yellowBright("RETRY");
+      this.queue.enqueue(test, constants.TEST_PRIORITY.RETRY);
+
+      enqueueNote = clc.cyanBright("(will retry). ") + clc.redBright(error.message);
+      break;
     }
 
     const failedTests = this.queue.getFailedTests();
@@ -663,7 +669,7 @@ class TestRunner {
     let prefix = `(${failedTests.length + passedTests.length} ` +
       `/ ${this.queue.getTestAmount()})`;
 
-    if(test.attempts > 1){
+    if (test.attempts > 1) {
       // this is a retry
       prefix = "(retry)";
     }

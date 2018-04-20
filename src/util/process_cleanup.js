@@ -1,7 +1,6 @@
 "use strict";
 
 const treeUtil = require("testarmada-tree-kill");
-const _ = require("lodash");
 
 const pid = process.pid;
 const settings = require("../settings");
@@ -11,7 +10,7 @@ const logger = require("../logger");
 const ZOMBIE_POLLING_MAX_TIME = 15000;
 
 module.exports = (err) => {
-  
+
   return new Promise((resolve, reject) => {
     if (settings.debug) {
       logger.debug("Checking for zombie processes...");

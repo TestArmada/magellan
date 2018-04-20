@@ -10,10 +10,8 @@
 // configuration must either be explicitly specified relative to that directory
 // or absolutely (or exist implicitly in the default location)
 
-const margs = require("marge");
 const path = require("path");
 const _ = require("lodash");
-const co = require("co");
 const clc = require("cli-color");
 
 const analytics = require("./global_analytics");
@@ -25,7 +23,7 @@ const settings = require("./settings");
 const profiles = require("./profiles");
 const loadRelativeModule = require("./util/load_relative_module");
 const processCleanup = require("./util/process_cleanup");
-const magellanArgs = require("./help").help;
+const constants = require("./constants");
 const logger = require("./logger");
 
 const BailStrategy = require("./strategies/bail");
@@ -37,20 +35,20 @@ module.exports = {
 
   },
 
-  version(opts) {
+  version() {
     const project = require("../package.json");
     logger.log(`Version:  ${clc.greenBright(project.version)}`);
-    logger.log(`Use --help to list out all command options`);
+    logger.log("Use --help to list out all command options");
   },
 
   help(opts) {
     // Show help
     logger.log("Printing magellan command line arguments:");
-    require("./cli_help").help();
+    require("./cli_help").help(opts);
 
     // exit process with exit code 0
     const e = new Error("end of help");
-    e.code = 999;
+    e.code = constants.ERROR_CODE.HELP;
 
     return Promise.reject(e);
   },
@@ -93,7 +91,7 @@ module.exports = {
         settings.pluginOptions = null;
 
         if (settings.testFramework.getPluginOptions
-          && typeof settings.testFramework.getPluginOptions === "function") {
+          && _.isFunction(settings.testFramework.getPluginOptions)) {
           // backward support
           settings.pluginOptions
             = settings.testFramework.getPluginOptions(
@@ -114,12 +112,16 @@ module.exports = {
         logger.err("Could not start Magellan.");
 
         if (frameworkLoadException) {
-          logger.err(`Could not load the testing framework plugin: ${settings.framework}`);
-          logger.err(`Check and make sure your package.json includes module: ${settings.framework}`);
+          logger.err("Could not load the testing framework plugin:"
+            + ` ${settings.framework}`);
+          logger.err("Check and make sure your package.json includes module:"
+            + ` ${settings.framework}`);
           logger.err(frameworkLoadException);
         } else /* istanbul ignore else */ if (frameworkInitializationException) {
-          logger.err(`Could not initialize the testing framework plugin: ${settings.framework}`);
-          logger.err("This plugin was found and loaded, but an error occurred during initialization:");
+          logger.err("Could not initialize the testing framework plugin:"
+            + ` ${settings.framework}`);
+          logger.err("This plugin was found and loaded, but an error"
+            + " occurred during initialization:");
           logger.err(frameworkInitializationException);
         }
 
@@ -202,9 +204,8 @@ module.exports = {
           new BailStrategy(opts.argv);
 
         if (settings.strategies.bail.MAX_TEST_ATTEMPTS) {
-          // backward support
           // bail strategy can define its own test attempts
-          MAX_TEST_ATTEMPTS = settings.strategies.bail.MAX_TEST_ATTEMPTS;
+          settings.MAX_TEST_ATTEMPTS = settings.strategies.bail.MAX_TEST_ATTEMPTS;
         }
 
         logger.log("Enabled bail strategy: ");
@@ -224,8 +225,7 @@ module.exports = {
         logger.log("Enabled resource strategy: ");
         logger.log(`  ${clc.greenBright(settings.strategies.resource.name)}:`);
         logger.log(`  -> ${settings.strategies.resource.getDescription()}`);
-      }
-      catch (err) {
+      } catch (err) {
         logger.err(`Cannot load resource strategy due to ${err}`);
         logger.err("Please npm install and configure in magellan.json");
         return reject("Couldn't start Magellan");
@@ -300,7 +300,7 @@ module.exports = {
             workerAmount: settings.MAX_WORKERS
           })))
         .then(() => resolve(listeners))
-        .catch(err => reject(err));
+        .catch((err) => reject(err));
     });
   },
 
@@ -317,7 +317,8 @@ module.exports = {
     logger.log(`Total tests found: ${testAmount}`);
 
     if (_.isEmpty(tests)) {
-      return Promise.reject(new Error("No tests found, please make sure test filter is set correctly,"
+      return Promise.reject(new Error("No tests found, please make sure"
+        + " test filter is set correctly,"
         + " or test path is configured correctly in nightwatch.json"));
     }
     // print out test amount and each test name
@@ -387,7 +388,7 @@ module.exports = {
           (err) => reject(err)
         )
         .then(() =>
-          new Promise((resolve, reject) =>
+          new Promise((innerResolve, innerReject) =>
             new TestRunner(opts.tests, {
               profiles: opts.profiles,
               executors: opts.executors,
@@ -398,11 +399,11 @@ module.exports = {
 
                 if (failedTests) {
                   const e = new Error("Test suite failed due to test failure");
-                  e.code = 998;
-                  return reject(e);
+                  e.code = constants.ERROR_CODE.TEST_FAILURE;
+                  return innerReject(e);
                 }
 
-                return resolve();
+                return innerResolve();
               }
             }).run()
           )
@@ -418,12 +419,12 @@ module.exports = {
             tests: opts.tests
           }).then(() => Promise.reject(err))
         )
-        //  workerAllocator.teardown is guaranteed to execute 
+        //  workerAllocator.teardown is guaranteed to execute
         .then(
           () => workerAllocator.teardown(),
           (err) => workerAllocator.teardown(err)
         )
-        // executor.teardownRunner is guaranteed to execute 
+        // executor.teardownRunner is guaranteed to execute
         .then(
           () => Promise
             .all(_.map(opts.enabledExecutors,
@@ -433,13 +434,13 @@ module.exports = {
               (executor) => executor.teardownRunner()))
             .then(() => Promise.reject(err))
         )
-        //  processCleanup is guaranteed to execute 
+        //  processCleanup is guaranteed to execute
         .then(
           () => processCleanup(),
           (err) => processCleanup(err)
         )
         .then(() => resolve())
-        .catch(err => reject(err));
+        .catch((err) => reject(err));
     });
   }
 };
