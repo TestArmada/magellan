@@ -6,6 +6,9 @@ const _ = require("lodash");
 const constants = require("./constants");
 const Test = require("./test");
 
+// TODO: document this file
+// Test to be retried has higher priority than new tests
+
 class TestQueue {
   constructor(options) {
     this.tests = options.tests;

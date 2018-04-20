@@ -29,7 +29,7 @@ const argv = margs.argv;
 const buildId = (argv.external_build_id || "magellan-" + guid()).toString();
 
 // Create a temporary directory for child build assets like configuration, screenshots, etc.
-const mkdirSync = require("./mkdir_sync");
+const mkdirSync = require("./util/mkdir_sync");
 const TEMP_DIR = path.resolve(argv.temp_dir || "./temp");
 
 try {

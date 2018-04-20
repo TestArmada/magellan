@@ -1,7 +1,7 @@
 "use strict";
 
 const TEST_PRIORITY = {
-  FIRST_RUN: 1,
+  FIRST_RUN: 10,
   RETRY: 2
 };
 

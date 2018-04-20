@@ -10,7 +10,7 @@ const prettyMs = require("pretty-ms");
 const path = require("path");
 const once = require("once");
 const fs = require("fs");
-const mkdirSync = require("./mkdir_sync");
+const mkdirSync = require("./util/mkdir_sync");
 const guid = require("./util/guid");
 const logStamp = require("./util/logstamp");
 const ChildProcessHandler = require("./util/childProcess");
@@ -599,6 +599,7 @@ class TestRunner {
 
   // Completion callback called by async.queue when a test is completed
   completeTestHandler(error, test) {
+
     if (this.strategies.bail.hasBailed) {
       // Ignore results from this test if we've bailed by PREVIOUS tests. This is likely a test that
       // was killed when the build went into bail mode.
@@ -661,6 +662,11 @@ class TestRunner {
 
     let prefix = `(${failedTests.length + passedTests.length} ` +
       `/ ${this.queue.getTestAmount()})`;
+
+    if(test.attempts > 1){
+      // this is a retry
+      prefix = "(retry)";
+    }
 
     if (!this.serial && test.workerIndex > 0) {
       prefix += ` <-- Worker ${test.workerIndex}`;
