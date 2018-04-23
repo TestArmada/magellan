@@ -26,7 +26,7 @@
   ],
   "license": "MIT",
   "scripts": {
-    "test": "eslint src/** bin/** && mocha --recursive && npm run coverage && npm run check-coverage",
+    "test": "eslint src/** bin/** && jest",
     "dev-test": "mocha --recursive && eslint src/** bin/**",
     "integration": "eslint src/** bin/** && ./bin/magellan",
     "lint": "eslint src/** bin/**",
@@ -60,14 +60,23 @@
   },
   "devDependencies": {
     "babel-eslint": "^7.1.1",
-    "chai": "^3.4.1",
-    "chai-as-promised": "^6.0.0",
     "eslint": "^3.12.2",
     "eslint-config-walmart": "^1.1.0",
     "eslint-plugin-filenames": "^1.1.0",
     "istanbul": "^0.4.5",
-    "mocha": "^3.2.0",
+    "jest": "^22.4.3",
     "sinon": "^1.17.6",
     "testarmada-magellan-mocha-plugin": "^7.0.1"
+  },
+  "jest": {
+    "verbose": true,
+    "collectCoverage": true,
+    "coverageDirectory": "./coverage",
+    "coverageReporters": [
+      "lcov"
+    ],
+    "testMatch": [
+      "**/test/**/**test.js"
+    ]
   }
 }

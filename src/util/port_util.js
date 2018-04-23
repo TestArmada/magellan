@@ -1,8 +1,6 @@
 /* eslint operator-assignment: 0 */
 "use strict";
 
-const _ = require("lodash");
-
 const settings = require("../settings");
 const checkPorts = require("./check_ports");
 
@@ -33,14 +31,11 @@ const util = {
   //
   // 1) an Error object, if we couldnt' find a port
   // 2) null and a foundPort as the second argument
-  acquirePort: (callback, opts) => {
-    const runOpts = _.assign({
-      checkPorts
-    }, opts);
-
+  acquirePort: (callback) => {
     let attempts = 0;
+
     const acquire = () => {
-      runOpts.checkPorts([util.getNextPort()], (result) => {
+      checkPorts([util.getNextPort()], (result) => {
         if (result[0].available) {
           return callback(null, result[0].port);
         } else {

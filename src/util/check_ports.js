@@ -8,16 +8,12 @@ const logger = require("../logger");
 const PORT_STATUS_IN_USE = 0;
 const PORT_STATUS_AVAILABLE = 1;
 
-const checkPortStatus = (desiredPort, callback, opts) => {
-  const runOpts = _.assign({
-    request,
-    portscanner
-  }, opts);
+const checkPortStatus = (desiredPort, callback) => {
 
-  runOpts.request("http://127.0.0.1:" + desiredPort +
+  request("http://127.0.0.1:" + desiredPort +
     "/wd/hub/static/resource/hub.html", (seleniumErr) => {
     if (seleniumErr && seleniumErr.code === "ECONNREFUSED") {
-      runOpts.portscanner.checkPortStatus(desiredPort, "127.0.0.1", (error, portStatus) => {
+      portscanner.checkPortStatus(desiredPort, "127.0.0.1", (error, portStatus) => {
         if (portStatus === "open") {
           return callback(PORT_STATUS_IN_USE);
         } else {
@@ -26,7 +22,7 @@ const checkPortStatus = (desiredPort, callback, opts) => {
       });
     } else {
       logger.log(
-        "Found selenium HTTP server at port " + desiredPort + ", port is in use.");
+          "Found selenium HTTP server at port " + desiredPort + ", port is in use.");
       return callback(PORT_STATUS_IN_USE);
     }
   });
@@ -41,7 +37,7 @@ const checkPortStatus = (desiredPort, callback, opts) => {
 //
 // [{ port: number, available: boolean }]
 //
-const checkPortRange = (portNumbers, callback, opts) => {
+const checkPortRange = (portNumbers, callback) => {
   portNumbers = _.cloneDeep(portNumbers);
   const statuses = [];
 
@@ -55,7 +51,7 @@ const checkPortRange = (portNumbers, callback, opts) => {
           available: portStatus === PORT_STATUS_AVAILABLE
         });
         checkNextPort();
-      }, opts);
+      });
     } else {
       return callback(statuses);
     }

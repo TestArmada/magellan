@@ -46,15 +46,18 @@ co(function *() {
   process.exit(0);
 
 }).catch((err) => {
+
   switch (err.code) {
   case constants.ERROR_CODE.HELP:
       // hacky way to exit after help
     process.exit(0);
     break;
+
   case constants.ERROR_CODE.TEST_FAILURE:
       // test failure
     process.exit(1);
     break;
+
   default:
     logger.err(`Error while running Magellan: ${err.message}`);
     logger.err(err.stack);
