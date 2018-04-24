@@ -26,7 +26,7 @@
   ],
   "license": "MIT",
   "scripts": {
-    "test": "eslint src/** bin/** && jest",
+    "test": "jest",
     "dev-test": "mocha --recursive && eslint src/** bin/**",
     "integration": "eslint src/** bin/** && ./bin/magellan",
     "lint": "eslint src/** bin/**",
@@ -76,7 +76,7 @@
       "lcov"
     ],
     "testMatch": [
-      "**/test/**/**test.js"
+      "**/test/**/**.test.js"
     ]
   }
 }
