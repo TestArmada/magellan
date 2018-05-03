@@ -75,6 +75,7 @@
     "coverageReporters": [
       "lcov"
     ],
+    "resetMocks": true,
     "testMatch": [
       "**/test/**/**.test.js"
     ]

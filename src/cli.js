@@ -54,6 +54,9 @@ module.exports = {
   },
 
   loadFramework(opts) {
+    if (opts.mockFramework) {
+      settings.framework = opts.mockFramework;
+    }
     //
     // Initialize Framework Plugins
     // ============================
@@ -90,7 +93,8 @@ module.exports = {
 
         settings.pluginOptions = null;
 
-        if (settings.testFramework.getPluginOptions
+        if (settings.testFramework
+          && settings.testFramework.getPluginOptions
           && _.isFunction(settings.testFramework.getPluginOptions)) {
           // backward support
           settings.pluginOptions

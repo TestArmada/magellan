@@ -20,7 +20,6 @@ module.exports = {
   },
 
   getProfilesAtURL: (url, opts) => {
-
     const res = syncRequest("GET", url);
     let data;
 
