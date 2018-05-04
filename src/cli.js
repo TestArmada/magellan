@@ -343,7 +343,6 @@ module.exports = {
     // this is to allow magellan to double check profile that
     // is retrieved by --profile or --profiles
     const enabledExecutors = {};
-
     return new Promise((resolve, reject) => {
 
       try {
@@ -363,7 +362,7 @@ module.exports = {
           _.forEach(enabledExecutors,
             (sn) => logger.log(`  ${clc.greenBright(sn.name)}`));
         }
-
+        
         return resolve(enabledExecutors);
       } catch (err) {
         return reject(err);

@@ -5,10 +5,17 @@ const _ = require("lodash");
 const cli = require("../src/cli.js");
 const profiles = require("../src/profiles");
 const settings = require('../src/settings');
+const syncRequest = require('sync-request');
 
 jest.mock("../src/profiles");
+jest.mock('../src/settings');
+jest.mock('sync-request');
 
 describe("cli", () => {
+  afterEach(() => {
+    jest.clearAllMocks();
+  });
+
   test("should initialize", () => {
     cli.initialize();
   });
@@ -43,333 +50,200 @@ describe("cli", () => {
     });
   });
 
-  // it("get help", () => {
-  //   return cli(_testConfig({
-  //     margs: {
-  //       argv: {
-  //         help: true
-  //       }
-  //     }
-  //   }))
-  //     .then()
-  //     .catch(err => assert(false, "shouldn't be here"));
-  // });
 
-  // it("setup_teardown", () => {
-  //   return cli(_testConfig({
-  //     margs: {
-  //       argv: {
-  //         setup_teardown: "something"
-  //       }
-  //     }
-  //   }))
-  //     .then()
-  //     .catch(err => assert(false, "shouldn't be here"));
-  // });
+  describe('resolve listener', () => {
+    test('should load setup_teardown', () => {
+      expect(cli.loadListeners({
+        argv: {
+          setup_teardown: './test/mock/mockSetupTeardownListener.js'
+        }
+      })).resolves.toHaveLength(1);
+    });
 
+    test('should load serial reporter', () => {
+      expect(cli.loadListeners({
+        argv: {
+          serial: true
+        }
+      })).resolves.toHaveLength(1);
+    });
 
+    test('should load reporters as array', () => {
+      expect(cli.loadListeners({
+        argv: {
+          reporters: [
+            './src/reporters/stdout/reporter'
+          ]
+        }
+      })).resolves.toHaveLength(1);
+    });
 
-  // describe("resolve executor", () => {
-  //   it("as string", () => {
-  //     return cli(_testConfig({
-  //       margs: {
-  //         argv: {
-  //           executors: "testarmada-magellan-local-executor"
-  //         }
-  //       }
-  //     }))
-  //       .then()
-  //       .catch(err => assert(false, "shouldn't be here"));
-  //   });
+    test('should load optional reporters as array', () => {
+      expect(cli.loadListeners({
+        argv: {
+          optional_reporters: [
+            './test/mock/mockOptionalReporter.js'
+          ]
+        }
+      })).rejects.toBeInstanceOf(Error);
+    });
+  });
 
-  //   it("as array", () => {
-  //     return cli(_testConfig({
-  //       margs: {
-  //         argv: {
-  //           executors: ["testarmada-magellan-local-executor"]
-  //         }
-  //       }
-  //     }))
-  //       .then()
-  //       .catch(err => assert(false, "shouldn't be here"));
-  //   });
+  test('should detect profile', () => {
+    profiles.detectFromCLI.mockImplementation(() => Promise.resolve('haha'));
 
-  //   it("malformed", () => {
-  //     return cli(_testConfig({
-  //       margs: {
-  //         argv: {
-  //           executors: {}
-  //         }
-  //       }
-  //     }))
-  //       .then()
-  //       .catch(err => assert(false, "shouldn't be here"));
-  //   });
+    expect(cli.detectProfiles({
+      argv: {
+        profile: 'http://some_fake_url#chrome'
+      },
+      settings: {
+        testExecutors: {
+          'sauce': {
+            getProfiles: (opts) => Promise.resolve(opts.profiles),
+            getCapabilities: (profile, opts) => Promise.resolve(profile)
+          }
+        }
+      }
+    })).resolves.toEqual('haha')
+  });
 
-  //   it("executor method", () => {
-  //     return cli(_testConfig({
-  //       margs: {
-  //         argv: {
-  //           executors: ["testarmada-magellan-local-executor"],
-  //           local_list_browsers: true
-  //         }
-  //       }
-  //     }))
-  //       .then()
-  //       .catch(err => assert(false, "shouldn't be here"));
-  //   });
+  describe('resolve executor', () => {
+    afterEach(() => {
+      delete settings.testExecutors;
+    });
 
-  //   it("executor method no matches", () => {
-  //     return cli(_testConfig({
-  //       margs: {
-  //         argv: {
-  //           executors: ["testarmada-magellan-local-executor"],
-  //           local_list_fakes: true
-  //         }
-  //       }
-  //     }))
-  //       .then()
-  //       .catch(err => assert(false, "shouldn't be here"));
-  //   });
+    test('should enable executor', (done) => {
+      settings.testExecutors = {
+        local: {
+          name: 'fake executor',
+          validateConfig() { }
+        }
+      };
 
-  //   it("executor load exception", () => {
-  //     return cli(_testConfig({
-  //       margs: {
-  //         argv: {
-  //           executors: ["testarmada-magellan-local-executor"]
-  //         }
-  //       },
-  //       require: _fakeRequire((name) => {
-  //         if (name === "testarmada-magellan-local-executor") {
-  //           throw new Error("FAKE EXECUTOR INIT ERROR");
-  //         }
-  //       })
-  //     }))
-  //       .then(() => assert(false, "shouldn't be here"))
-  //       .catch(err => { });
-  //   });
-  // });
+      cli.enableExecutors({
+        profiles: [{
+          executor: 'local'
+        }]
+      })
+        .then(es => {
+          expect(es.local.name).toEqual('fake executor');
+          done();
+        });
+    });
 
-  // it("enable slack", () => {
-  //   return cli(_testConfig({
-  //     require: _fakeRequire((name) => {
-  //       if (name === "./reporters/slack/settings") {
-  //         return {
-  //           enabled: true
-  //         };
-  //       }
-  //       if (name === "./reporters/slack/slack") {
-  //         return FakeReporter;
-  //       }
-  //     })
-  //   }))
-  //     .then()
-  //     .catch(err => assert(false, "shouldn't be here"));
-  // });
+    test('should not enable executor if no match', (done) => {
+      settings.testExecutors = {
+        sauce: {
+          validateConfig() { }
+        }
+      };
 
-  // it("reporter as array", () => {
-  //   return cli(_testConfig({
-  //     margs: {
-  //       argv: {
-  //         reporters: ["a", "b", "c"]
-  //       }
-  //     },
-  //     loadRelativeModule: () => {
-  //       return new FakeReporter();
-  //     }
-  //   }))
-  //     .then()
-  //     .catch(err => assert(false, "shouldn't be here"));
-  // });
+      cli.enableExecutors({
+        profiles: [{
+          executor: 'local'
+        }]
+      })
+        .then(es => {
+          expect(es.local).toBeUndefined();
+          done();
+        });
+    });
 
-  // it("allow optional reporter", () => {
-  //   return cli(_testConfig({
-  //     margs: {
-  //       argv: {
-  //         optional_reporters: ["a", "b", "c"]
-  //       }
-  //     },
-  //     loadRelativeModule: () => {
-  //       return new FakeReporter();
-  //     }
-  //   }))
-  //     .then()
-  //     .catch(err => assert(false, "shouldn't be here"));
-  // });
+    test('should reject if validateConfig throws error', (done) => {
+      settings.testExecutors = {
+        local: {
+          validateConfig() { throw new Error('on purpose'); }
+        }
+      };
 
-  // it("enable serial", () => {
-  //   return cli(_testConfig({
-  //     margs: {
-  //       argv: {
-  //         serial: true
-  //       }
-  //     },
-  //     require: _fakeRequire((name) => {
-  //       if (name === "./reporters/stdout/reporter") {
-  //         return FakeReporter;
-  //       }
-  //     })
-  //   }))
-  //     .then()
-  //     .catch(err => assert(false, "shouldn't be here"));
-  // });
+      cli.enableExecutors({
+        profiles: [{
+          executor: 'local'
+        }]
+      })
+        .catch(e => {
+          expect(e).toBeInstanceOf(Error);
+          expect(e.message).toEqual('on purpose');
+          done();
+        });
+    });
+  });
 
-  // it("enable screenshot", () => {
-  //   return cli(_testConfig({
-  //     settings: {
-  //       aggregateScreenshots: true
-  //     },
-  //     require: _fakeRequire((name) => {
-  //       if (name === "./reporters/screenshot_aggregator/reporter") {
-  //         return FakeReporter;
-  //       }
-  //     })
-  //   }))
-  //     .then()
-  //     .catch(err => assert(false, "shouldn't be here"));
-  // });
+  describe('resolve strategies', () => {
+    afterEach(() => {
+      delete settings.strategies;
+    });
 
-  // it("allow no test", () => {
-  //   return cli(_testConfig({
-  //     getTests: () => {
-  //       return [];
-  //     }
-  //   }))
-  //     .then(() => assert(false, "shouldn't be here"))
-  //     .catch(err => { });
-  // });
+    test('should resolve bail strategy', (done) => {
+      cli.loadStrategies({ argv: {} })
+        .then(strategies => {
+          expect(strategies.bail.hasBailed).toEqual(false);
+          done();
+        });
+    });
 
-  // it("allow worker error", () => {
-  //   return cli(_testConfig({
-  //     WorkerAllocator: class InvalidWorkerAllocator {
-  //       constructor() {
-  //       }
-  //       initialize(cb) {
-  //         cb("FAKE_ERROR");
-  //       }
-  //       teardown(cb) {
-  //         cb();
-  //       }
-  //     }
-  //   }))
-  //     .then(() => assert(false, "shouldn't be here"))
-  //     .catch(err => { });
-  // });
+    test('should reject if fails in loading bail strategy', (done) => {
+      cli.loadStrategies({ argv: { strategy_bail: 'error' } })
+        .catch(err => {
+          expect(err).toEqual("Couldn't start Magellan");
+          done();
+        });
+    });
 
-  // it("executor teardownRunner error", () => {
-  //   return cli(_testConfig({
-  //     margs: {
-  //       argv: {
-  //         executors: ["testarmada-magellan-local-executor"]
-  //       }
-  //     },
-  //     require: _fakeRequire((name) => {
-  //       if (name === "testarmada-magellan-local-executor") {
-  //         return {
-  //           name: "testarmada-magellan-local-executor",
-  //           shortName: "local",
-  //           help: {
-  //             "local_list_browsers": {
-  //               "visible": true,
-  //               "type": "function",
-  //               "description": "List the available browsers configured."
-  //             },
-  //             "local_list_fakes": {
-  //               "visible": true,
-  //               "type": "function",
-  //               "description": "List the available browsers configured."
-  //             }
-  //           },
-  //           validateConfig() { },
-  //           setupRunner() {
-  //             return new Promise((resolve) => {
-  //               resolve();
-  //             });
-  //           },
-  //           teardownRunner() {
-  //             return new Promise((resolve, reject) => {
-  //               reject("FAKE_ERROR");
-  //             });
-  //           },
-  //           listBrowsers(param, callback) {
-  //             callback();
-  //           }
-  //         }
-  //       }
-  //     })
-  //   }))
-  //     .then(() => assert(false, "shouldn't be here"))
-  //     .catch(err => { });
-  // });
+    test('should resolve resource strategy', (done) => {
+      cli.loadStrategies({ argv: {} })
+        .then(strategies => {
+          expect(strategies.resource.name).toEqual('testarmada-magellan-no-resource-strategy');
+          done();
+        });
+    });
 
-  // it("runner on failure", () => {
-  //   return cli(_testConfig({
-  //     TestRunner: class InvalidRunner {
-  //       constructor(tests, opts) {
-  //         this.tests = tests;
-  //         this.opts = opts;
-  //       }
-  //       start() {
-  //         this.opts.onFailure();
-  //       }
-  //     }
-  //   }))
-  //     .then(() => assert(false, "shouldn't be here"))
-  //     .catch(err => { });
-  // });
+    test('should reject if fails in loading resouorce strategy', (done) => {
+      cli.loadStrategies({ argv: { strategy_resource: 'error' } })
+        .catch(err => {
+          expect(err).toEqual("Couldn't start Magellan");
+          done();
+        });
+    });
+  });
 
-  // it("executor teardownRunner error with onFailure", () => {
-  //   return cli(_testConfig({
-  //     TestRunner: class InvalidRunner {
-  //       constructor(tests, opts) {
-  //         this.tests = tests;
-  //         this.opts = opts;
-  //       }
-  //       start() {
-  //         this.opts.onFailure();
-  //       }
-  //     },
-  //     margs: {
-  //       argv: {
-  //         executors: ["testarmada-magellan-local-executor"]
-  //       }
-  //     },
-  //     require: _fakeRequire((name) => {
-  //       if (name === "testarmada-magellan-local-executor") {
-  //         return {
-  //           name: "testarmada-magellan-local-executor",
-  //           shortName: "local",
-  //           help: {
-  //             "local_list_browsers": {
-  //               "visible": true,
-  //               "type": "function",
-  //               "description": "List the available browsers configured."
-  //             },
-  //             "local_list_fakes": {
-  //               "visible": true,
-  //               "type": "function",
-  //               "description": "List the available browsers configured."
-  //             }
-  //           },
-  //           validateConfig() { },
-  //           setupRunner() {
-  //             return new Promise((resolve) => {
-  //               resolve();
-  //             });
-  //           },
-  //           teardownRunner() {
-  //             return new Promise((resolve, reject) => {
-  //               reject("FAKE_ERROR");
-  //             });
-  //           },
-  //           listBrowsers(param, callback) {
-  //             callback();
-  //           }
-  //         }
-  //       }
-  //     })
-  //   }))
-  //     .then(() => assert(false, "shouldn't be here"))
-  //     .catch(err => { });
-  // });
+  describe('resolve executors', () => {
+
+    test('should load executors', (done) => {
+      cli.loadExecutors({ argv: { executors: ['testarmada-magellan-local-executor'] } })
+        .then(() => {
+          done();
+        });
+    });
+
+    test('should convert executor to array and load', (done) => {
+      cli.loadExecutors({ argv: { executors: 'testarmada-magellan-local-executor' } })
+        .then(() => {
+          done();
+        });
+    });
+
+    test('should alert if no string or array provided and use default', (done) => {
+      cli.loadExecutors({ argv: { executors: { a: 'testarmada-magellan-local-executor' } } })
+        .then(() => {
+          done();
+        });
+    });
+
+    test('should alert if executor is given and use default', (done) => {
+      cli.loadExecutors({ argv: {} })
+        .then(() => {
+          done();
+        });
+    });
+
+    test('should reject if fails in loading one executor', (done) => {
+      cli.loadExecutors({ argv: {executors: ['testarmada-magellan-local-executor', 'err']} })
+        .catch((e) => {
+          expect(e).toEqual("Couldn't start Magellan");
+          done();
+        });
+    });
+  });
+
 });

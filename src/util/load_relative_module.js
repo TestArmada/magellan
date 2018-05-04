@@ -8,7 +8,11 @@ module.exports = (mPath, moduleIsOptional, opts) => {
   mPath = mPath.trim();
 
   // hacky solution, cannot find a good way to mock it
-  const inRequire = opts.require || require;
+  let inRequire = require;
+
+  if (opts && opts.require) {
+    inRequire = opts.require;
+  }
 
   if (mPath.charAt(0) === ".") {
     resolvedRequire = path.resolve(process.cwd() + "/" + mPath);
