@@ -79,6 +79,13 @@
     "resetMocks": true,
     "testMatch": [
       "**/test/**/**.test.js"
-    ]
+    ],
+    "coverageThreshold": {
+      "global": {
+        "statements": 90,
+        "branches": 85,
+        "functions": 85
+      }
+    }
   }
 }
