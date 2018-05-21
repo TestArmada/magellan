@@ -9,7 +9,7 @@
 // the package.json that contains magellan resides. In addition
 // configuration must either be explicitly specified relative to that directory
 // or absolutely (or exist implicitly in the default location)
-
+const async = require("async");
 const path = require("path");
 const _ = require("lodash");
 const clc = require("cli-color");
@@ -297,14 +297,20 @@ module.exports = {
 
     // intiialize listeners
     return new Promise((resolve, reject) => {
-      Promise
-        .all(_.map(listeners,
-          (listener) => listener.initialize({
-            analytics,
-            workerAmount: settings.MAX_WORKERS
-          })))
-        .then(() => resolve(listeners))
-        .catch((err) => reject(err));
+      async.each(listeners, (listener, done) => {
+        listener.initialize({
+          analytics,
+          workerAmount: settings.MAX_WORKERS
+        })
+          .then(() => done())
+          .catch((err) => done(err));
+      }, (err) => {
+        if (err) {
+          return reject(err);
+        } else {
+          return resolve(listeners);
+        }
+      });
     });
   },
 
