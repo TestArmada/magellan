@@ -368,7 +368,7 @@ module.exports = {
           _.forEach(enabledExecutors,
             (sn) => logger.log(`  ${clc.greenBright(sn.name)}`));
         }
-        
+
         return resolve(enabledExecutors);
       } catch (err) {
         return reject(err);
@@ -436,12 +436,13 @@ module.exports = {
         // executor.teardownRunner is guaranteed to execute
         .then(
           () => Promise
-            .all(_.map(opts.enabledExecutors,
+            .all(_.map(opts.executors,
               (executor) => executor.teardownRunner())),
           (err) => Promise
-            .all(_.map(opts.enabledExecutors,
+            .all(_.map(opts.executors,
               (executor) => executor.teardownRunner()))
             .then(() => Promise.reject(err))
+            .catch((otherErr) => Promise.reject(err))
         )
         //  processCleanup is guaranteed to execute
         .then(
