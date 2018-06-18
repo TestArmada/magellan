@@ -42,14 +42,10 @@ const FINAL_CLEANUP_DELAY = 2500;
 class TestRunner {
   constructor(tests, options, opts) {
     _.assign(this, {
-      fs,
-      mkdirSync,
       settings,
       setTimeout,
       clearInterval,
       setInterval,
-      prettyMs,
-      path,
       analytics
     }, opts);
 
@@ -443,10 +439,10 @@ class TestRunner {
         const childBuildId = guid();
 
         // Note: we must sanitize the buildid because it might contain slashes or "..", etc
-        const tempAssetPath = this.path.resolve(this.settings.tempDir + "/build-"
+        const tempAssetPath = path.resolve(this.settings.tempDir + "/build-"
           + sanitizeFilename(this.buildId) + "_" + childBuildId + "__temp_assets");
 
-        this.mkdirSync(tempAssetPath);
+        mkdirSync(tempAssetPath);
 
         // magellan default port rule
         let ports = {
@@ -514,7 +510,7 @@ class TestRunner {
       let existingTrends;
 
       try {
-        existingTrends = JSON.parse(this.fs.readFileSync("./trends.json"));
+        existingTrends = JSON.parse(fs.readFileSync("./trends.json"));
       } catch (e) {
         existingTrends = { failures: {} };
       }
@@ -526,7 +522,7 @@ class TestRunner {
           ? existingTrends.failures[key] + localFailureCount : localFailureCount;
       });
 
-      this.fs.writeFileSync("./trends.json", JSON.stringify(existingTrends, null, 2));
+      fs.writeFileSync("./trends.json", JSON.stringify(existingTrends, null, 2));
 
       logger.log("Updated trends at ./trends.json");
     }
@@ -584,7 +580,7 @@ class TestRunner {
 
     logger.log(clc.greenBright("============= Suite Complete ============="));
     logger.log(`     Status:  ${status}`);
-    logger.log(`    Runtime:  ${this.prettyMs((new Date()).getTime() - this.startTime)}`);
+    logger.log(`    Runtime:  ${prettyMs((new Date()).getTime() - this.startTime)}`);
     logger.log(`Total tests:  ${this.queue.getTestAmount()}`);
     logger.log(`     Passed:  ${passedTests.length} / ${this.queue.getTestAmount()}`);
 
