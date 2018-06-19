@@ -406,7 +406,7 @@ module.exports = {
               allocator: workerAllocator,
               onFinish: (failedTests) => {
 
-                if (failedTests) {
+                if (failedTests.length > 0) {
                   const e = new Error("Test suite failed due to test failure");
                   e.code = constants.ERROR_CODE.TEST_FAILURE;
                   return innerReject(e);
