@@ -1,36 +1,46 @@
 "use strict";
 'use strict';
 
+const analytics = require("../src/global_analytics");
 const TestRunner = require('../src/test_runner');
 
-describe('test_runner', () => {
-  describe('constructor', () => {
-    let tests = [];
-    let options = {};
+jest.mock('../src/global_analytics', () => {
+  return {
+    push: () => { },
+    mark: () => { }
+  };
+});
 
-    beforeEach(() => {
-      tests = [{ filename: 'tests/demo-web.js' }];
-      options = {
-        debug: false,
-        maxWorkers: 1,
-        maxTestAttempts: 3,
-        profiles:
-          [{
-            desiredCapabilities: {},
-            nightwatchEnv: 'invisible_chrome',
-            id: 'invisible_chrome',
-            executor: 'local'
-          }],
-        executors:
+
+describe('test_runner', () => {
+  let tests = [];
+  let options = {};
+
+  beforeEach(() => {
+    tests = [{ filename: 'tests/demo-web.js' }];
+
+    options = {
+      debug: false,
+      maxWorkers: 1,
+      maxTestAttempts: 3,
+      profiles:
+        [{
+          desiredCapabilities: {},
+          nightwatchEnv: 'invisible_chrome',
+          id: 'invisible_chrome',
+          executor: 'local'
+        }],
+      executors:
+      {
+        local:
         {
-          local:
-          {
-            name: 'testarmada-magellan-local-executor',
-            shortName: 'local'
-          }
-        },
-        listeners: [],
-        bailStrategy:
+          name: 'testarmada-magellan-local-executor',
+          shortName: 'local'
+        }
+      },
+      listeners: [],
+      strategies: {
+        bail:
         {
           hasBailed: false,
           name: 'testarmada-magellan-fast-bail-strategy',
@@ -38,19 +48,75 @@ describe('test_runner', () => {
           bailReason: 'At least one test has failed',
           decide: () => false
         },
-        serial: true,
-        allocator: {
-        },
-        onFinish: () => Promise.resolve()
+        resource: {
+          holdTestResource: (opts) => Promise.resolve()
+        }
+      },
+      serial: true,
+      allocator: {
+        get: (cb) => cb(null, { index: 1 }),
+        release: (worker) => true
+      },
+      onFinish: () => Promise.resolve()
+    }
+  })
+  test('constructor', () => {
+
+    const t = new TestRunner(tests, options, {
+      settings: {
+        gatherTrends: true
       }
-    })
-    test('happy path', () => {
+    });
+  });
+
+  describe('stageTestHandler', () => {
+    test('should stage test properly', (done) => {
       const t = new TestRunner(tests, options, {
         settings: {
           gatherTrends: true
         }
       });
+
+      let test = {
+        executor: {
+          setupTest: (cb) => cb(null, "FAKE_TOKEN"),
+          teardownTest: (token, cb) => cb()
+        },
+        pass: () => true,
+        fail: () => false
+      };
+
+      t.runTest = (test, worker) => Promise.resolve({ error: false });
+
+      t.stageTestHandler(test, (err, test) => {
+        expect(err).toBeNull();
+        expect(test.error).toBe(false);
+        done();
+      });
     });
 
+    test('should have error in cb test setup errors out', (done)=>{
+      const t = new TestRunner(tests, options, {
+        settings: {
+          gatherTrends: true
+        }
+      });
+
+      let test = {
+        executor: {
+          setupTest: (cb) => cb("FAKE_ERROR", "FAKE_TOKEN"),
+          teardownTest: (token, cb) => cb()
+        },
+        pass: () => true,
+        fail: () => false
+      };
+
+      t.runTest = (test, worker) => Promise.resolve({ error: false });
+
+      t.stageTestHandler(test, (err, test) => {
+        expect(err).toBe("FAKE_ERROR");
+        done();
+      });
+    });
   });
 });

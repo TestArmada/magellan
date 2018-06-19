@@ -45,8 +45,7 @@ class TestRunner {
       settings,
       setTimeout,
       clearInterval,
-      setInterval,
-      analytics
+      setInterval
     }, opts);
 
     this.buildId = this.settings.buildId;
@@ -104,19 +103,18 @@ class TestRunner {
       .then((profile) => {
         // resource is ready, proceed test execution
         const analyticsGuid = guid();
-
         test.executor.setupTest((setupTestErr, token) => {
           if (setupTestErr) {
             return callback(setupTestErr, test);
           }
 
-          this.analytics.push(`acquire-worker-${analyticsGuid}`);
+          analytics.push(`acquire-worker-${analyticsGuid}`);
           this.allocator.get((getWorkerError, worker) => {
             if (getWorkerError) {
               return callback(getWorkerError, test);
             }
 
-            this.analytics.mark(`acquire-worker-${analyticsGuid}`);
+            analytics.mark(`acquire-worker-${analyticsGuid}`);
 
             this.runTest(test, worker)
               .then((runResults) => {
@@ -246,7 +244,7 @@ class TestRunner {
 
         if (!this.queue.isIdle()) {
           // we transitioned from being idle to being busy
-          this.analytics.mark("magellan-busy", "busy");
+          analytics.mark("magellan-busy", "busy");
         }
       } catch (err) {
         return reject(err);
@@ -306,7 +304,7 @@ class TestRunner {
 
         if (this.queue.isIdle()) {
           // we transitioned from being busy into being idle
-          this.analytics.mark("magellan-busy", "idle");
+          analytics.mark("magellan-busy", "idle");
         }
 
         childProcess.emitMessage({
@@ -539,7 +537,7 @@ class TestRunner {
     this.gatherTrends();
 
     if (!_.isEmpty(failedTests)) {
-      this.analytics.mark("magellan-run", "failed");
+      analytics.mark("magellan-run", "failed");
 
       if (!this.serial) {
         // only output failed test logs in non-serial mode
@@ -556,7 +554,7 @@ class TestRunner {
       }
 
     } else {
-      this.analytics.mark("magellan-run", "passed");
+      analytics.mark("magellan-run", "passed");
     }
 
     let status = failedTests.length > 0 ?
