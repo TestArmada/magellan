@@ -1,8 +1,11 @@
 "use strict";
-'use strict';
+
+const _ = require("lodash")
 
 const analytics = require("../src/global_analytics");
 const TestRunner = require('../src/test_runner');
+const Test = require("../src/test");
+const TestQueue = require("../src/test_queue");
 
 jest.mock('../src/global_analytics', () => {
   return {
@@ -46,6 +49,7 @@ describe('test_runner', () => {
           name: 'testarmada-magellan-fast-bail-strategy',
           description: 'Magellan will bail as long as one test fails',
           bailReason: 'At least one test has failed',
+          shouldBail: () => { },
           decide: () => false
         },
         resource: {
@@ -68,6 +72,7 @@ describe('test_runner', () => {
       }
     });
   });
+
 
   describe('stageTestHandler', () => {
     test('should stage test properly', (done) => {
@@ -95,7 +100,7 @@ describe('test_runner', () => {
       });
     });
 
-    test('should have error in cb test setup errors out', (done)=>{
+    test('should have error in cb test setup errors out', (done) => {
       const t = new TestRunner(tests, options, {
         settings: {
           gatherTrends: true
@@ -117,6 +122,39 @@ describe('test_runner', () => {
         expect(err).toBe("FAKE_ERROR");
         done();
       });
+    });
+  });
+
+  describe('completeTestHandler', () => {
+    test('failed test', (done) => {
+      options.strategies.bail.hasBailed = false;
+      options.strategies.bail.shouldBail = function () { this.hasBailed = true; };
+      options.strategies.bail.shouldBail = function () { this.hasBailed = true; };
+
+      const t = new TestRunner(tests, options, {
+        settings: {
+          gatherTrends: true
+        }
+      });
+
+      t.queue = new TestQueue({
+        tests: [],
+        workerAmount: 1,
+        completeQueueHandler: () => Promise.resolve(1)
+      });
+
+      t.completeTestHandler(null, {
+        status: Test.TEST_STATUS_FAILED,
+        canRun: () => true,
+        maxAttempts: 3,
+        attempts: 2,
+        workerIndex: 1,
+        getRuntime: () => 3
+      })
+        .then((v) => {
+          expect(v).toBe(1);
+          done();
+        });
     });
   });
 });
