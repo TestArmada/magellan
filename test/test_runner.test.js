@@ -73,7 +73,6 @@ describe('test_runner', () => {
     });
   });
 
-
   describe('stageTestHandler', () => {
     test('should stage test properly', (done) => {
       const t = new TestRunner(tests, options, {
@@ -129,18 +128,17 @@ describe('test_runner', () => {
     test('failed test', (done) => {
       options.strategies.bail.hasBailed = false;
       options.strategies.bail.shouldBail = function () { this.hasBailed = true; };
-      options.strategies.bail.shouldBail = function () { this.hasBailed = true; };
 
       const t = new TestRunner(tests, options, {
         settings: {
           gatherTrends: true
         }
       });
-
       t.queue = new TestQueue({
         tests: [],
         workerAmount: 1,
-        completeQueueHandler: () => Promise.resolve(1)
+        completeQueueHandler: () => Promise.resolve(1),
+        stageTestHandler: (test, cb) => cb()
       });
 
       t.completeTestHandler(null, {
