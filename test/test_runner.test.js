@@ -3,6 +3,7 @@
 const _ = require("lodash")
 
 const analytics = require("../src/global_analytics");
+const logger = require("../src/logger");
 const TestRunner = require('../src/test_runner');
 const Test = require("../src/test");
 const TestQueue = require("../src/test_queue");
@@ -13,7 +14,6 @@ jest.mock('../src/global_analytics', () => {
     mark: () => { }
   };
 });
-
 
 describe('test_runner', () => {
   let tests = [];
@@ -122,6 +122,53 @@ describe('test_runner', () => {
         done();
       });
     });
+    
+    test('should catch runtime test error', (done) => {
+      const t = new TestRunner(tests, options, {
+        settings: {
+          gatherTrends: true
+        }
+      });
+
+      let test = {
+        executor: {
+          setupTest: (cb) => cb(null, "FAKE_TOKEN"),
+          teardownTest: (token, cb) => cb()
+        },
+        pass: () => true,
+        fail: () => false
+      };
+
+      t.runTest = (test, worker) => Promise.reject(new Error('FAILURE'));
+
+      t.stageTestHandler(test, (err, test) => {
+        expect(err.message).toBe("FAILURE");
+        done();
+      });
+    });
+    
+    test('should catch runtime resource error', (done) => {
+      options.strategies.resource.holdTestResource = (opts) => Promise.reject(new Error('FAILURE'));
+      
+      const t = new TestRunner(tests, options, {
+        settings: {
+          gatherTrends: true
+        }
+      });
+
+      let test = {
+        executor: {
+          setupTest: (cb) => cb(null, "FAKE_TOKEN"),
+          teardownTest: (token, cb) => cb()
+        },
+        pass: () => true,
+        fail: () => false
+      };
+      
+      t.stageTestHandler(test, (err, test) => {
+        done();
+      });
+    });
   });
 
   describe('completeTestHandler', () => {
@@ -153,6 +200,22 @@ describe('test_runner', () => {
           expect(v).toBe(1);
           done();
         });
+    });
+  });
+  
+  describe('completeQueueHandler', () => {
+    test('run', (done) => {
+      const t = new TestRunner(tests, options, {
+        settings: {
+          gatherTrends: true
+        },
+        listeners: [
+          () => {}
+        ]
+      });
+      
+      t.completeQueueHandler();
+      done();
     });
   });
 });
