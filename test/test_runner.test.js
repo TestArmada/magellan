@@ -218,4 +218,87 @@ describe('test_runner', () => {
       done();
     });
   });
+  
+  describe('logTestsSummary', () => {    
+    test('empty test print no warning', (done) => {
+      const warnSpy = jest.spyOn(logger, "warn");
+      
+      const t = new TestRunner(tests, options, {
+        settings: {
+          gatherTrends: true
+        },
+        startTime: (new Date()).getTime()
+      });
+      
+      t.queue = new TestQueue({
+        tests: [],
+        workerAmount: 1,
+        stageTestHandler: (test, cb) => cb()
+      });
+
+      t.logTestsSummary();
+      
+      expect(warnSpy).toHaveBeenCalledTimes(0);
+      done();
+    });
+    
+    test('passed 1 test and failed 1 test print 4 warnings', (done) => {
+      const warnSpy = jest.spyOn(logger, "warn");
+      
+      const t = new TestRunner(tests, options, {
+        settings: {
+          gatherTrends: true
+        },
+        startTime: (new Date()).getTime()
+      });
+      
+      t.queue = new TestQueue({
+        tests: [{
+          status: Test.TEST_STATUS_SUCCESSFUL,
+          getRetries: () => true
+        },{
+          status: Test.TEST_STATUS_FAILED
+        }],
+        workerAmount: 1,
+        stageTestHandler: (test, cb) => cb()
+      });
+
+      t.logTestsSummary();
+      
+      expect(warnSpy).toHaveBeenCalledTimes(4);
+      done();
+    });
+    
+    test('failed 1 test with bail print 4 warnings with bail reason', (done) => {
+      options.strategies.bail.hasBailed = true;
+      options.strategies.bail.getBailReason = () => "Some bail reason";
+      
+      const warnSpy = jest.spyOn(logger, "warn");
+      const bailReason = jest.spyOn(options.strategies.bail, "getBailReason");
+      
+      const t = new TestRunner(tests, options, {
+        settings: {
+          gatherTrends: true
+        },
+        startTime: (new Date()).getTime()
+      });
+      
+      t.queue = new TestQueue({
+        tests: [{
+          status: Test.TEST_STATUS_SUCCESSFUL,
+          getRetries: () => true
+        },{
+          status: Test.TEST_STATUS_FAILED
+        }],
+        workerAmount: 1,
+        stageTestHandler: (test, cb) => cb()
+      });
+
+      t.logTestsSummary();
+      
+      expect(warnSpy).toHaveBeenCalledTimes(4);
+      expect(bailReason).toHaveBeenCalledTimes(1);
+      done();
+    });
+  });
 });
