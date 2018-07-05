@@ -2,7 +2,6 @@
 
 const syncRequest = require("sync-request");
 const URL = require("url");
-const _ = require("lodash");
 
 module.exports = {
   // Return a profile name from an URL if one is referenced with a #fragment.
@@ -18,13 +17,9 @@ module.exports = {
       return url.hash.split("#")[1];
     }
   },
-
+  /*eslint no-unused-vars: 0 */
   getProfilesAtURL: (url, opts) => {
-    const runOpts = _.assign({
-      syncRequest
-    }, opts);
-
-    const res = runOpts.syncRequest("GET", url);
+    const res = syncRequest("GET", url);
     let data;
 
     try {

@@ -3,19 +3,33 @@
 /*eslint-disable no-magic-numbers, no-bitwise, no-console */
 
 const guid = require("./util/guid");
-const argv = require("marge").argv;
-const env = process.env;
+const yargs = require("yargs");
+const margs = require("marge");
 const fs = require("fs");
 const path = require("path");
 const logger = require("./logger");
 
+const configFilePath = yargs.argv.config;
+const DEFAULT_CONFIG = "./magellan.json";
+
+if (configFilePath) {
+  logger.log("Loading configuration from: " + configFilePath);
+} else {
+  logger.log("Loading configuration from default location: " + DEFAULT_CONFIG);
+}
+
+// NOTE: marge can throw an error here if --config points at a file that doesn't exist
+// FIXME: handle this error nicely instead of printing an ugly stack trace
+margs.init(DEFAULT_CONFIG, configFilePath);
+
+const argv = margs.argv;
 // Allow an external build id (eg: from CI system, for example) to be used. If we're not given one,
 // we generate a random build id instead. NOTE: This build id must work as a part of a filename.
 // NOTE: The result of this line is that buildId is truthy so toString() should work
 const buildId = (argv.external_build_id || "magellan-" + guid()).toString();
 
 // Create a temporary directory for child build assets like configuration, screenshots, etc.
-const mkdirSync = require("./mkdir_sync");
+const mkdirSync = require("./util/mkdir_sync");
 const TEMP_DIR = path.resolve(argv.temp_dir || "./temp");
 
 try {
@@ -41,10 +55,10 @@ try {
   if (fs.accessSync) {
     fs.accessSync(TEMP_DIR, fs.R_OK | fs.W_OK);
   }
-  logger.log("Magellan is creating temporary files at: " + TEMP_DIR);
+  logger.log("Creating temporary files at: " + TEMP_DIR);
 } catch (e) {
   /* istanbul ignore next */
-  throw new Error("Magellan cannot write to or create the temporary directory: " + TEMP_DIR);
+  throw new Error("Cannot write to or create the temporary directory: " + TEMP_DIR);
 }
 
 let testTimeout = 8 * 60 * 1000;
@@ -72,10 +86,16 @@ module.exports = {
   BASE_PORT_START: parseInt(argv.base_port_start) || 12000,
   BASE_PORT_RANGE: parseInt(argv.base_port_range) || 2000,
   BASE_PORT_SPACING: parseInt(argv.base_port_spacing) || 3,
+  MAX_WORKERS: argv.serial ? 1 : parseInt(argv.max_workers) || 3,
+  MAX_TEST_ATTEMPTS: parseInt(argv.max_test_attempts) || 3,
 
-  environment: env,
+  MAX_ALLOCATION_ATTEMPTS: 120,
+  WORKER_START_DELAY: 1000,
 
-  debug: argv.debug,
+  environment: process.env,
+  debug: Boolean(argv.debug) || Boolean(argv.debugVerbose),
+  debugVerbose: Boolean(argv.debugVerbose),
+  serial: Boolean(argv.serial),
 
   gatherTrends: argv.gather_trends,
 

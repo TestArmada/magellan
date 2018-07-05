@@ -3,6 +3,7 @@
 const TEST_STATUS_NEW = 1;
 const TEST_STATUS_FAILED = 2;
 const TEST_STATUS_SUCCESSFUL = 3;
+const TEST_STATUS_SKIPPED = 4;
 
 class Test {
   constructor(locator, profile, executor, maxAttempts) {
@@ -76,5 +77,6 @@ class Test {
 Test.TEST_STATUS_NEW = TEST_STATUS_NEW;
 Test.TEST_STATUS_FAILED = TEST_STATUS_FAILED;
 Test.TEST_STATUS_SUCCESSFUL = TEST_STATUS_SUCCESSFUL;
+Test.TEST_STATUS_SKIPPED = TEST_STATUS_SKIPPED;
 
 module.exports = Test;

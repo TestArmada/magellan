@@ -3,23 +3,66 @@
 
 "use strict";
 
-const yargs = require("yargs");
+const co = require("co");
+const argv = require("marge").argv;
+
 const logger = require("../src/logger");
-const margs = require("marge");
+const cli = require("../src/cli");
+const settings = require("../src/settings");
+const constants = require("../src/constants");
 
-const defaultConfigFilePath = "./magellan.json";
-const configFilePath = yargs.argv.config;
+co(function *() {
+  cli.version();
 
-if (configFilePath) {
-  logger.log("Will try to load configuration from " + configFilePath);
-} else {
-  logger.log("Will try to load configuration from default of " + defaultConfigFilePath);
-}
+  yield cli.loadFramework({ argv });
+  yield cli.loadExecutors({ argv });
 
-// NOTE: marge can throw an error here if --config points at a file that doesn't exist
-// FIXME: handle this error nicely instead of printing an ugly stack trace
-margs.init(defaultConfigFilePath, configFilePath);
+  const profiles = yield cli.detectProfiles({ argv, settings });
+  const executors = yield cli.enableExecutors({ argv, profiles });
+  const strategies = yield cli.loadStrategies({ argv });
+  const listeners = yield cli.loadListeners({ argv });
 
-require("../src/cli")()
-  .then(() => process.exit(0))
-  .catch(() => process.exit(1));
+  if (argv.help) {
+    yield cli.help({ argv });
+  }
+  // console.log(profiles)
+  // console.log(strategies)
+  // console.log(listeners)
+  // console.log(executors);
+
+  const tests = yield cli.loadTests({ argv });
+  // console.log(tests);
+
+  yield cli.startTestSuite({
+    argv,
+    tests,
+    profiles,
+    executors,
+    strategies,
+    listeners
+  });
+
+  // we exit magellan process by providing code directly
+  process.exit(0);
+
+}).catch((err) => {
+
+  switch (err.code) {
+  case constants.ERROR_CODE.HELP:
+      // hacky way to exit after help
+    process.exit(0);
+    break;
+
+  case constants.ERROR_CODE.TEST_FAILURE:
+      // test failure
+    process.exit(1);
+    break;
+
+  default:
+    logger.err(`Error while running Magellan: ${err.message}`);
+    logger.err(err.stack);
+      // we exit magellan process by providing code directly
+    process.exit(1);
+    break;
+  }
+});

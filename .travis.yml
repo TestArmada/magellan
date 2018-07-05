@@ -1,7 +1,9 @@
 language: node_js
 node_js:
+  - v8
   - v7
   - v6
-  - v5
-  - v4
-sudo: false
+script:
+  - npm run lint
+  - npm run test
+  - npm run upload-coverage

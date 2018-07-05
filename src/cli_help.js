@@ -1,26 +1,23 @@
 "use strict";
 
 const _ = require("lodash");
+const clc = require("cli-color");
 
 const project = require("../package.json");
 const settings = require("./settings");
 const magellanHelp = require("./help").help;
 const logger = require("./logger");
 
-const MAX_HELP_KEY_WIDTH = 40;
+const MAX_HELP_KEY_WIDTH = 60;
 
 /*eslint max-len: 0*/
 /*eslint max-statements: 0*/
 module.exports = {
+  /*eslint no-unused-vars: 0 */
   help: (opts) => {
-    const runOpts = _.assign({
-      settings
-    }, opts);
 
     logger.loghelp("");
     logger.loghelp("Usage: magellan [options]");
-    logger.loghelp("");
-    logger.loghelp("By default, magellan will run all available tests in parallel with phantomjs.");
     logger.loghelp("");
     logger.loghelp("Available options:");
     logger.loghelp("");
@@ -38,25 +35,25 @@ module.exports = {
     });
 
     // load desire framework help
-    if (runOpts.settings.testFramework && runOpts.settings.testFramework.help) {
-      help[" Framework-specific (" + runOpts.settings.framework + ")"] = {};
+    if (settings.testFramework && settings.testFramework.help) {
+      help[` Framework-specific (${clc.greenBright(settings.framework)})`] = {};
 
-      _.forEach(runOpts.settings.testFramework.help, (v, k) => {
+      _.forEach(settings.testFramework.help, (v, k) => {
         if (v.visible === undefined || v.visible) {
-          help[" Framework-specific (" + runOpts.settings.framework + ")"][k] = v;
+          help[` Framework-specific (${clc.greenBright(settings.framework)})`][k] = v;
         }
       });
     }
 
     // load desire executor(s) help
-    if (runOpts.settings.testExecutors) {
-      _.forEach(runOpts.settings.testExecutors, (v) => {
+    if (settings.testExecutors) {
+      _.forEach(settings.testExecutors, (v) => {
         if (v.help) {
-          help[" Executor-specific (" + v.name + ")"] = {};
+          help[` Executor-specific (${clc.greenBright(v.name)})`] = {};
 
           _.forEach(v.help, (itemValue, itemKey) => {
             if (itemValue.visible === undefined || itemValue.visible) {
-              help[" Executor-specific (" + v.name + ")"][itemKey] = itemValue;
+              help[` Executor-specific (${clc.greenBright(v.name)})`][itemKey] = itemValue;
             }
           });
         }
@@ -64,14 +61,14 @@ module.exports = {
     }
 
     // load desire strategy help
-    if (runOpts.settings.strategies) {
-      _.forEach(runOpts.settings.strategies, (v) => {
+    if (settings.strategies) {
+      _.forEach(settings.strategies, (v) => {
         if (v.help) {
-          help[" Strategy-specific (" + v.name + ")"] = {};
+          help[` Strategy-specific (${clc.greenBright(v.name)})`] = {};
 
           _.forEach(v.help, (itemValue, itemKey) => {
             if (itemValue.visible === undefined || itemValue.visible) {
-              help[" Strategy-specific (" + v.name + ")"][itemKey] = itemValue;
+              help[` Strategy-specific (${clc.greenBright(v.name)})`][itemKey] = itemValue;
             }
           });
         }
@@ -81,7 +78,7 @@ module.exports = {
 
     if (help) {
       _.forEach(help, (helpValue, helpKey) => {
-        logger.loghelp(" " + helpKey);
+        logger.loghelp(` ${clc.cyanBright(helpKey)}`);
 
         _.forEach(helpValue, (itemValue, itemKey) => {
           let str = "   --" + itemKey;
@@ -102,6 +99,6 @@ module.exports = {
       });
     }
 
-    logger.log("Magellan@" + project.version);
+    logger.log(`Magellan@${project.version}`);
   }
 };

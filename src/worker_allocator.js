@@ -5,9 +5,6 @@ const settings = require("./settings");
 const portUtil = require("./util/port_util");
 const logger = require("./logger");
 
-const MAX_ALLOCATION_ATTEMPTS = 120;
-const WORKER_START_DELAY = 1000;
-
 // Create a worker allocator for MAX_WORKERS workers. Note that the allocator
 // is not obliged to honor the creation of MAX_WORKERS, just some number of workers
 // between 0 and MAX_WORKERS.
@@ -34,12 +31,17 @@ class Allocator {
     this.initializeWorkers(MAX_WORKERS);
   }
 
-  initialize(callback) {
-    callback();
+  setup() {
+    return Promise.resolve();
   }
 
-  teardown(callback) {
-    callback();
+  teardown(err) {
+    if (err) {
+      // something is happening before this step,
+      // we pass this error down
+      return Promise.reject(err);
+    }
+    return Promise.resolve();
   }
 
   initializeWorkers(numWorkers) {
@@ -63,23 +65,23 @@ class Allocator {
         attempts++;
         if (worker) {
           return callback(null, worker);
-        } else if (attempts > MAX_ALLOCATION_ATTEMPTS) {
-          const errorMessage = "Couldn't allocate a worker after " + MAX_ALLOCATION_ATTEMPTS
-            + " attempts";
+        } else if (attempts > settings.MAX_ALLOCATION_ATTEMPTS) {
+          const errorMessage = "Couldn't allocate a worker after"
+            + ` ${settings.MAX_ALLOCATION_ATTEMPTS} attempts`;
+
           return callback(errorMessage);
         } else {
           // If we didn't get a worker, try again
-          this.setTimeout(poll, WORKER_START_DELAY);
+          this.setTimeout(poll, settings.WORKER_START_DELAY);
         }
       });
     };
 
-    this.setTimeout(poll, WORKER_START_DELAY);
+    this.setTimeout(poll, settings.WORKER_START_DELAY);
   }
 
   _get(callback) {
     const availableWorker = _.find(this.workers, (e) => !e.occupied);
-
     if (availableWorker) {
       // occupy this worker while we test if we can use it
       availableWorker.occupied = true;
