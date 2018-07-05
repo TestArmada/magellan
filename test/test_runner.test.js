@@ -413,6 +413,163 @@ describe("test_runner", () => {
       jest.runAllTimers();
     });
   });
+  
+  describe("execute", () => {  
+    beforeEach(() => {
+      jest.useFakeTimers();
+    });
+    
+    test("test is executed successfully", (done) => {
+      const listener = new Reporter();
+      const listenerListenToSpy = jest.spyOn(listener, "listenTo");
+
+      options.listeners = [ listener ];
+
+      const testRunner = initTestRunner(tests, options);
+      const test = stubPassTest();
+      const testRun = {
+        guid: "",
+        getEnvironment: (opts) => ""
+      };
+
+      testRunner.execute(testRun, test);
+      jest.runOnlyPendingTimers();
+      jest.runOnlyPendingTimers();
+      
+      expect(listenerListenToSpy).toHaveBeenCalled();
+      done();
+    });
+    
+    test("bailing a test closes the execution worker", (done) => {
+      const listener = new Reporter();
+      const listenerListenToSpy = jest.spyOn(listener, "listenTo");
+
+      options.listeners = [ listener ];
+      options.strategies.bail.hasBailed = true;
+      options.strategies.bail.getBailReason = jest.fn();
+      
+      const testRunner = initTestRunner(tests, options);
+      const test = stubPassTest();
+      const testRun = {
+        guid: "",
+        getEnvironment: (opts) => ""
+      };
+
+      testRunner.execute(testRun, test);
+      jest.runOnlyPendingTimers();
+      jest.runOnlyPendingTimers();
+      
+      expect(listenerListenToSpy).toHaveBeenCalled();
+      expect(options.strategies.bail.getBailReason).toHaveBeenCalled();
+      done();
+    });
+    
+    test("test environment error results in promise rejection", () => {
+      const listener = new Reporter();
+      const listenerListenToSpy = jest.spyOn(listener, "listenTo");
+
+      options.listeners = [ listener ];
+      
+      const testRunner = initTestRunner(tests, options);
+      const test = stubPassTest();
+      const testRun = {
+        guid: "",
+        getEnvironment: (opts) => {
+          throw "ENVIRONMENT_ERROR";
+        }
+      };
+
+      return testRunner.execute(testRun, test).catch(e => expect(e).toMatch("ENVIRONMENT_ERROR"));
+    });
+    
+    test("child process error results in promise rejection", () => {
+      const listener = new Reporter();
+      const listenerListenToSpy = jest.spyOn(listener, "listenTo");
+
+      options.listeners = [ listener ];
+      options.executors.local.execute = () => {
+        throw "CHILD_PROCESS_ERROR";
+      };
+
+      const testRunner = initTestRunner(tests, options);
+      const test = stubPassTest();
+      const testRun = {
+        guid: "",
+        getEnvironment: (opts) => ""
+      };
+
+      return testRunner.execute(testRun, test).catch(e => expect(e).toMatch("CHILD_PROCESS_ERROR"));
+    });
+    
+    test("listener error results in promise rejection", () => {
+      const listener = new Reporter();
+      listener.listenTo = () => {
+        throw "LISTENER_ERROR";
+      };
+
+      options.listeners = [ listener ];
+
+      const testRunner = initTestRunner(tests, options);
+      const test = stubPassTest();
+      const testRun = {
+        guid: "",
+        getEnvironment: (opts) => ""
+      };
+
+      return testRunner.execute(testRun, test).catch(e => expect(e).toMatch("LISTENER_ERROR"));
+    });
+  });
+  
+  describe("logTestsSummary", () => {    
+    test("empty test print no warning", (done) => {
+      const warnSpy = jest.spyOn(logger, "warn");
+
+      const testRunner = initTestRunner(tests, options);
+
+      testRunner.logTestsSummary();
+      
+      expect(warnSpy).not.toHaveBeenCalled();
+      done();
+    });
+    
+    test("passing 1 test and failing 1 test prints 4 warnings", (done) => {
+      const loggerLogSpy = jest.spyOn(logger, "log");
+      const loggerWarnSpy = jest.spyOn(logger, "warn");
+      const analyticsMarkSpy = jest.spyOn(analytics, "mark");
+      
+      const testRunner = initTestRunner(tests, options);
+      enqueuePassedTest(testRunner);
+      enqueueFailedTest(testRunner);
+
+      testRunner.logTestsSummary();
+      
+      expect(loggerLogSpy).toHaveBeenCalled();
+      expect(loggerWarnSpy).toHaveBeenCalled();
+      expect(analyticsMarkSpy).toHaveBeenCalledWith("magellan-run", "failed");
+      done();
+    });
+    
+    test("failing 1 test with bail prints 4 warnings with bail reason", (done) => {
+      options.strategies.bail.hasBailed = true;
+      options.strategies.bail.getBailReason = () => "Some bail reason";
+      
+      const loggerLogSpy = jest.spyOn(logger, "log");
+      const loggerWarnSpy = jest.spyOn(logger, "warn");
+      const analyticsMarkSpy = jest.spyOn(analytics, "mark");
+      const bailReasonSpy = jest.spyOn(options.strategies.bail, "getBailReason");
+
+      const testRunner = initTestRunner(tests, options);
+      enqueueFailedTest(testRunner);
+
+      testRunner.logTestsSummary();
+      
+      expect(loggerLogSpy).toHaveBeenCalled();
+      expect(loggerWarnSpy).toHaveBeenCalled();
+      expect(bailReasonSpy).toHaveBeenCalled();
+      expect(analyticsMarkSpy).toHaveBeenCalledWith("magellan-run", "failed");
+      done();
+    });
+  });
 });
 
 function initTestRunner(tests, options, numPassedTests, numFailedTests) {
