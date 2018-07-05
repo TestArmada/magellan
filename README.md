@@ -7,7 +7,7 @@
 
 ![image](https://cloud.githubusercontent.com/assets/12995/9419235/e2fbb4f2-480e-11e5-9de8-c6c4871890b9.png)
 
-Magellan is a tool for massively-scaling your automated test suite, with added reliability. Run large test suites across many environments (multiple browsers or versions, or multiple native iOS or Android devices) at the same time, in parallel, with a friendly command-line workflow that is both local development and continuous-integration friendly. Magellan is compatible with `mocha` (`wd.js`, `webdriver.io`, `appium`) tests ( [example Mocha/wd project](https://github.com/TestArmada/boilerplate-mocha) ) and `Nightwatch.js` tests ( [example Nightwatch project](https://github.com/TestArmada/boilerplate-nightwatch) ), and includes [SauceLabs](http://www.saucelabs.com/) support. Through Magellan's `mocha` support, you can scale regular node.js test suites too.
+Magellan is a tool for massively-scaling your automated test suite, with added reliability. Run large test suites across many environments (multiple browsers or versions, or multiple native iOS or Android devices) at the same time, in parallel, with a friendly command-line workflow that is both local development and continuous-integration friendly. Magellan is compatible with `mocha` (`wd.js`, `webdriver.io`, `appium`) tests and `Nightwatch.js` tests ( [example Nightwatch project](https://github.com/TestArmada/boilerplate-nightwatch) ), and includes third party browser provider support such as [SauceLabs](http://www.saucelabs.com/). Through Magellan's `mocha` support, you can scale regular node.js test suites too.
 
 Features
 ========
@@ -500,6 +500,23 @@ Where `browser_profiles.json` should have a structure similar to placing `profil
     ]
   }
 ```
+
+Magellan's Strategies
+==========================================
+
+Since 10.1.0 magellan supports strategies. Strategy is a rule which tells magellan when to do what. There are two strategies that magellan allows for now 
+
+## Bail strategy
+Bail strategy is a rule which tells magellan when to fail the whole test suite when there are certain failures in your test run, you can tell magellan to terminate your test run early via a certain bail strategy.
+
+Current supported bail strategies: [magellan-early-bail-strategy](https://github.com/TestArmada/magellan-early-bail-strategy) and [magellan-fast-bail-strategy](https://github.com/TestArmada/magellan-fast-bail-strategy).
+
+Please refer to the readme of each repo for more details.
+
+## Resource strategy
+Resource strategy tells magellan what to do if required resources are not available for the test.
+
+
 
 Setting Up Setup and Teardown Tasks for CI
 ==========================================
