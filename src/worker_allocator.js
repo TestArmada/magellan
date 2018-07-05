@@ -67,7 +67,7 @@ class Allocator {
           return callback(null, worker);
         } else if (attempts > settings.MAX_ALLOCATION_ATTEMPTS) {
           const errorMessage = "Couldn't allocate a worker after"
-            + ` ${settings.MAX_ALLOCATION_ATTEMPTS}attempts`;
+            + ` ${settings.MAX_ALLOCATION_ATTEMPTS} attempts`;
 
           return callback(errorMessage);
         } else {
