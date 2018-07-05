@@ -1,10 +1,10 @@
-'use strict';
+"use strict";
 
 /* istanbul ignore next */
 module.exports = {
-  name: 'testarmada-magellan-no-resource-strategy',
-  description: 'Magellan doesn\'t require a resource manager to schedule test run',
-  failReason: 'Magellan shouldn\'t depend on any resource manager to control test run',
+  name: "testarmada-magellan-no-resource-strategy",
+  description: "Magellan doesn't require a resource manager to schedule test run",
+  failReason: "Magellan shouldn't depend on any resource manager to control test run",
 
   // resource format
   holdResourceForTest(profile) {

@@ -442,6 +442,7 @@ module.exports = {
             .all(_.map(opts.executors,
               (executor) => executor.teardownRunner()))
             .then(() => Promise.reject(err))
+            /*eslint no-unused-vars: 0 */
             .catch((otherErr) => Promise.reject(err))
         )
         //  processCleanup is guaranteed to execute

@@ -6,6 +6,7 @@ const settings = require("./settings");
 module.exports = {
   // Detect and return filters specified by command line arguments
   // from an argv object args
+  /*eslint no-unused-vars: 0 */
   detectFromCLI: (args, opts) => {
 
     const filters = {};
@@ -21,6 +22,7 @@ module.exports = {
 
   // Successively reduce files to a smaller set of files by
   // running a list of filters on the list repeatedly
+  /*eslint no-unused-vars: 0 */
   filter: (files, filters, opts) => {
 
     let allFiles = files;

@@ -1,9 +1,9 @@
-'use strict';
+"use strict";
 
-const _ = require('lodash');
-const settings = require('./settings');
-const portUtil = require('./util/port_util');
-const logger = require('./logger');
+const _ = require("lodash");
+const settings = require("./settings");
+const portUtil = require("./util/port_util");
+const logger = require("./logger");
 
 // Create a worker allocator for MAX_WORKERS workers. Note that the allocator
 // is not obliged to honor the creation of MAX_WORKERS, just some number of workers
@@ -17,15 +17,15 @@ class Allocator {
       debug: settings.debug
     }, opts);
 
-    logger.debug('Worker Allocator starting.');
-    logger.debug('Port allocation range from: ' + settings.BASE_PORT_START + ' to '
-      + (settings.BASE_PORT_START + settings.BASE_PORT_RANGE - 1) + ' with '
-      + settings.BASE_PORT_SPACING + ' ports available to each worker.');
+    logger.debug("Worker Allocator starting.");
+    logger.debug("Port allocation range from: " + settings.BASE_PORT_START + " to "
+      + (settings.BASE_PORT_START + settings.BASE_PORT_RANGE - 1) + " with "
+      + settings.BASE_PORT_SPACING + " ports available to each worker.");
 
     /* istanbul ignore if */
     if (settings.BASE_PORT_SPACING === 1) {
-      logger.warn('Only one port is available per worker');
-      logger.warn('Increase --base_port_spacing to allocate more ports per worker if needed');
+      logger.warn("Only one port is available per worker");
+      logger.warn("Increase --base_port_spacing to allocate more ports per worker if needed");
     }
 
     this.initializeWorkers(MAX_WORKERS);
@@ -66,8 +66,9 @@ class Allocator {
         if (worker) {
           return callback(null, worker);
         } else if (attempts > settings.MAX_ALLOCATION_ATTEMPTS) {
-          const errorMessage = 'Couldn\'t allocate a worker after ' + settings.MAX_ALLOCATION_ATTEMPTS
-            + ' attempts';
+          const errorMessage = "Couldn't allocate a worker after"
+            + ` ${settings.MAX_ALLOCATION_ATTEMPTS}attempts`;
+
           return callback(errorMessage);
         } else {
           // If we didn't get a worker, try again
@@ -93,7 +94,7 @@ class Allocator {
       // portOffset + 1 : pre-assigned for mocking (available for application to use)
       // ...
       // portOffset + n : available for application to use
-      const desiredPortLabels = ['selenium port'];
+      const desiredPortLabels = ["selenium port"];
       const desiredPorts = [];
 
       // if BASE_PORT_SPACING is the default of 3, we'll check 3 ports
@@ -111,11 +112,11 @@ class Allocator {
           // Print a message that ports are not available, show which ones in the range
           availableWorker.occupied = false;
 
-          logger.warn('Detected port contention while spinning up worker: ');
+          logger.warn("Detected port contention while spinning up worker: ");
           statuses.forEach((status, portIndex) => {
             if (!status.available) {
-              logger.warn('  in use: #: ' + status.port + ' purpose: '
-                + (desiredPortLabels[portIndex] ? desiredPortLabels[portIndex] : 'generic'));
+              logger.warn("  in use: #: " + status.port + " purpose: "
+                + (desiredPortLabels[portIndex] ? desiredPortLabels[portIndex] : "generic"));
             }
           });
 

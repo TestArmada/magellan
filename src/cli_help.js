@@ -1,25 +1,26 @@
-'use strict';
+"use strict";
 
-const _ = require('lodash');
-const clc = require('cli-color');
+const _ = require("lodash");
+const clc = require("cli-color");
 
-const project = require('../package.json');
-const settings = require('./settings');
-const magellanHelp = require('./help').help;
-const logger = require('./logger');
+const project = require("../package.json");
+const settings = require("./settings");
+const magellanHelp = require("./help").help;
+const logger = require("./logger");
 
 const MAX_HELP_KEY_WIDTH = 60;
 
 /*eslint max-len: 0*/
 /*eslint max-statements: 0*/
 module.exports = {
+  /*eslint no-unused-vars: 0 */
   help: (opts) => {
 
-    logger.loghelp('');
-    logger.loghelp('Usage: magellan [options]');
-    logger.loghelp('');
-    logger.loghelp('Available options:');
-    logger.loghelp('');
+    logger.loghelp("");
+    logger.loghelp("Usage: magellan [options]");
+    logger.loghelp("");
+    logger.loghelp("Available options:");
+    logger.loghelp("");
 
     const help = {};
 
@@ -80,13 +81,13 @@ module.exports = {
         logger.loghelp(` ${clc.cyanBright(helpKey)}`);
 
         _.forEach(helpValue, (itemValue, itemKey) => {
-          let str = '   --' + itemKey;
+          let str = "   --" + itemKey;
           if (itemValue.example) {
-            str += '=' + itemValue.example;
+            str += "=" + itemValue.example;
           }
 
           while (str.length < MAX_HELP_KEY_WIDTH) {
-            str += ' ';
+            str += " ";
           }
 
           // truncate just in case the example was too long to begin with
@@ -94,7 +95,7 @@ module.exports = {
           str += itemValue.description;
           logger.loghelp(str);
         });
-        logger.loghelp('');
+        logger.loghelp("");
       });
     }
 
