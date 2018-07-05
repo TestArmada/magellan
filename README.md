@@ -1,7 +1,7 @@
 ## Magellan: Large-Scale Automated Testing
 
 [![Build Status](https://travis-ci.org/TestArmada/magellan.svg?branch=master)](https://travis-ci.org/TestArmada/magellan)
-[![Codecov](https://img.shields.io/codecov/c/github/codecov/example-python.svg)]()
+[![codecov](https://codecov.io/gh/TestArmada/magellan/branch/master/graph/badge.svg)](https://codecov.io/gh/TestArmada/magellan)
 [![Downloads](http://img.shields.io/npm/dm/testarmada-magellan.svg?style=flat)](https://npmjs.org/package/testarmada-magellan)
 
 
