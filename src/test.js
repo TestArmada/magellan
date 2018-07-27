@@ -15,8 +15,10 @@ class Test {
     this.locator = locator;
 
     this.maxAttempts = maxAttempts;
+    this.maxResourceAttempts = 10;
 
     this.attempts = 0;
+    this.resourceAttempts = 0;
     this.status = TEST_STATUS_NEW;
 
     this.profile = profile;
@@ -42,8 +44,8 @@ class Test {
     this.status = TEST_STATUS_SUCCESSFUL;
   }
 
-  fail() {
-    this.attempts++;
+  fail(attempts) {
+    this.attempts = attempts;
     this.status = TEST_STATUS_FAILED;
   }
 

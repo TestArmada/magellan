@@ -128,12 +128,13 @@ class TestRunner {
 
                 // Pass or fail the test
                 if (runResults.error) {
-                  test.fail();
+                  test.attempts++;
+                  test.fail(test.attempts);
                 } else {
                   test.pass();
                 }
 
-                callback(null, test);
+                return callback(null, test);
               })
               .catch((runTestError) => {
                 // Catch a testing infrastructure error unrelated to the test itself failing.
@@ -152,9 +153,10 @@ class TestRunner {
                 test.error = runTestError;
                 test.stdout = "";
                 test.stderr = runTestError;
+                test.attempts++;
 
-                test.fail();
-                callback(runTestError, test);
+                test.fail(test.attempts);
+                return callback(runTestError, test);
               });
           });
 
@@ -166,7 +168,15 @@ class TestRunner {
         logger.warn(`No available resource for ${test.toString()},` +
           " we'll put it back in the queue.");
 
-        callback(err, test);
+        // increase test resourceAttempts
+        test.resourceAttempts++;
+
+        if (test.resourceAttempts > test.maxResourceAttempts) {
+          // we fail this test due to max resource retry
+          test.fail(test.maxAttempts);
+        }
+
+        return callback(err, test);
       });
 
   }
@@ -615,46 +625,46 @@ class TestRunner {
     let enqueueNote = "";
 
     switch (test.status) {
-    case Test.TEST_STATUS_SUCCESSFUL:
+      case Test.TEST_STATUS_SUCCESSFUL:
         // Add this test to the passed test list, then remove it from the failed test
         // list (just in case it's a test we just retried after a previous failure).
-      break;
+        break;
 
-    case Test.TEST_STATUS_FAILED:
-      status = clc.redBright("FAIL");
+      case Test.TEST_STATUS_FAILED:
+        status = clc.redBright("FAIL");
 
-      if (this.settings.gatherTrends) {
-        const key = test.toString();
+        if (this.settings.gatherTrends) {
+          const key = test.toString();
           /*eslint-disable no-magic-numbers*/
-        this.trends.failures[key] = this.trends.failures[key] > -1
+          this.trends.failures[key] = this.trends.failures[key] > -1
             ? this.trends.failures[key] + 1 : 1;
-      }
+        }
 
         // if suite should bail due to failure
-      this.strategies.bail.shouldBail({
-        totalTests: this.queue.tests,
-        passedTests: this.queue.getPassedTests(),
-        failedTests: this.queue.getFailedTests()
-      });
+        this.strategies.bail.shouldBail({
+          totalTests: this.queue.tests,
+          passedTests: this.queue.getPassedTests(),
+          failedTests: this.queue.getFailedTests()
+        });
 
         // Note: Tests that failed but can still run again are pushed back into the queue.
         // This push happens before the queue is given back flow control (at the end of
         // this callback), which means that the queue isn't given the chance to drain.
-      if (!test.canRun()) {
+        if (!test.canRun()) {
+          this.queue.enqueue(test, constants.TEST_PRIORITY.RETRY);
+
+          enqueueNote = clc.cyanBright(`(will retry, ${test.maxAttempts - test.attempts}` +
+            ` time(s) left). Spent ${test.getRuntime()} ms`);
+        }
+        break;
+
+      case Test.TEST_STATUS_NEW:
+        // no available resource
+        status = clc.yellowBright("RETRY");
         this.queue.enqueue(test, constants.TEST_PRIORITY.RETRY);
 
-        enqueueNote = clc.cyanBright(`(will retry, ${test.maxAttempts - test.attempts}` +
-            ` time(s) left). Spent ${test.getRuntime()} ms`);
-      }
-      break;
-
-    case Test.TEST_STATUS_NEW:
-        // no available resource
-      status = clc.yellowBright("RETRY");
-      this.queue.enqueue(test, constants.TEST_PRIORITY.RETRY);
-
-      enqueueNote = clc.cyanBright("(will retry). ") + clc.redBright(error.message);
-      break;
+        enqueueNote = clc.cyanBright("(will retry). ") + clc.redBright(error.message);
+        break;
     }
 
     const failedTests = this.queue.getFailedTests();
