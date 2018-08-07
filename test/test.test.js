@@ -100,7 +100,7 @@ describe('Test Class', () => {
 
   test('should compute retries', () => {
     const myTest = new Test();
-    myTest.fail();
+    myTest.fail(1);
     myTest.pass();
     expect(myTest.getRetries()).toEqual(1);
   });
