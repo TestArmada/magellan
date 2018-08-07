@@ -387,7 +387,7 @@ module.exports = {
           (executor) => executor.setupRunner())
         )
         .then(() => opts.strategies.resource.holdSuiteResources({
-          workers: settings.workerAmount,
+          workers: settings.MAX_WORKERS,
           profiles: opts.profiles,
           tests: opts.tests
         }))
@@ -421,12 +421,12 @@ module.exports = {
         // resource.releaseSuiteResources is guaranteed to execute
         .then(
           () => opts.strategies.resource.releaseSuiteResources({
-            workers: settings.workerAmount,
+            workers: settings.MAX_WORKERS,
             profiles: opts.profiles,
             tests: opts.tests
           }),
           (err) => opts.strategies.resource.releaseSuiteResources({
-            workers: settings.workerAmount,
+            workers: settings.MAX_WORKERS,
             profiles: opts.profiles,
             tests: opts.tests
           }).then(() => Promise.reject(err))
