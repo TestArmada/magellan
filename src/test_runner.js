@@ -624,12 +624,12 @@ class TestRunner {
     let status = clc.greenBright("PASS");
     let enqueueNote = "";
 
+    /* eslint-disable indent */
     switch (test.status) {
       case Test.TEST_STATUS_SUCCESSFUL:
         // Add this test to the passed test list, then remove it from the failed test
         // list (just in case it's a test we just retried after a previous failure).
         break;
-
       case Test.TEST_STATUS_FAILED:
         status = clc.redBright("FAIL");
 
@@ -657,7 +657,6 @@ class TestRunner {
             ` time(s) left). Spent ${test.getRuntime()} ms`);
         }
         break;
-
       case Test.TEST_STATUS_NEW:
         // no available resource
         status = clc.yellowBright("RETRY");
