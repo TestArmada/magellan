@@ -173,6 +173,13 @@ module.exports = {
           logger.log("  " + targetExecutor.name);
           // targetExecutor.validateConfig(opts.argv);
           settings.testExecutors[targetExecutor.shortName] = targetExecutor;
+
+          if (opts.argv[`${targetExecutor.shortName}_list_browsers`]
+            && _.isFunction(targetExecutor.listBrowsers)) {
+            // we leave callback on purpose so magellan can proceed and exit
+            targetExecutor.listBrowsers({ settings }, () => { });
+          }
+
         } catch (e) {
           executorLoadExceptions.push(e);
         }
