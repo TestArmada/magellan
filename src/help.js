@@ -29,6 +29,12 @@ module.exports = {
       "visible": true,
       "description": "Retry tests N times (default: 3)."
     },
+    "repetitions": {
+      "category": "Parallelism, Workflow and Filtering",
+      "example": "20",
+      "visible": true,
+      "description": "Number of times to repeat each test (default: 1)."
+    },
     "test_timeout": {
       "category": "Parallelism, Workflow and Filtering",
       "example": "80000",

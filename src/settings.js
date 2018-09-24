@@ -89,6 +89,8 @@ module.exports = {
   MAX_WORKERS: argv.serial ? 1 : parseInt(argv.max_workers) || 3,
   MAX_TEST_ATTEMPTS: parseInt(argv.max_test_attempts) || 3,
 
+  REPETITIONS: parseInt(argv.repetitions) || 1,
+
   MAX_ALLOCATION_ATTEMPTS: 120,
   WORKER_START_DELAY: 1000,
 
