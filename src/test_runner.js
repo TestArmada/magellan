@@ -71,17 +71,18 @@ class TestRunner {
 
     this.allocator = options.allocator;
     // For each actual test path, split out
-    var testsXprofiles = [];
-    for(var cnt = 0; cnt < this.REPETITIONS; cnt++)
+    let testsXprofiles = [];
+    for (let cnt = 0; cnt < this.REPETITIONS; cnt++) {
       testsXprofiles = _.concat(testsXprofiles, _.flatten(
       tests.map((testLocator) =>
-        options.profiles.map((profile) => {
-          return new Test(
+        options.profiles.map((profile) =>
+          new Test(
             testLocator,
             profile,
             this.executors[profile.executor],
             this.MAX_TEST_ATTEMPTS)
-          }))));
+        ))));
+    }
 
     if (this.settings.gatherTrends) {
       this.trends = {
@@ -216,7 +217,8 @@ class TestRunner {
     const profileStatement = this.profiles.map((b) => b.toString()).join(", ");
     const serialStatement = this.serial ? "in serial mode" : `with ${this.MAX_WORKERS} workers`;
 
-    logger.log(`Running ${this.queue.getTestAmount() / this.REPETITIONS} tests` + (this.REPETITIONS > 1 ? ` repeated ${this.REPETITIONS} times` : '')
+    logger.log(`Running ${this.queue.getTestAmount() / this.REPETITIONS} tests`
+      + (this.REPETITIONS > 1 ? ` repeated ${this.REPETITIONS} times` : "")
       + ` ${serialStatement} with [${profileStatement}]`);
 
     return this.queue.proceed();
