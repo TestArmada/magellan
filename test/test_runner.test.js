@@ -343,6 +343,21 @@ describe("test_runner", () => {
       jest.runAllTimers();
     });
 
+    test("tests are repeated", (done) => {
+      const testRunner = new TestRunner([stubPassTest, stubPassTest], options, {
+        settings: {
+          REPETITIONS: 3
+        },
+        startTime: (new Date()).getTime()
+      });
+
+      testRunner.queue.proceed = jest.fn();
+      testRunner.run();
+      expect(testRunner.queue.proceed).toHaveBeenCalled();
+      expect(testRunner.queue.tests.length).toEqual(6);
+      done();
+    });
+
     test("test in serial is run successfully", (done) => {
       fs.mkdirSync.mockImplementation((p) => { });
 
@@ -666,7 +681,7 @@ describe("test_runner", () => {
   });
 });
 
-function initTestRunner(tests, options, numPassedTests, numFailedTests) {
+function initTestRunner(tests, options) {
   const testRunner = new TestRunner(tests, options, {
     settings: {
       gatherTrends: true,
