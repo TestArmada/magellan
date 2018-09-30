@@ -24,7 +24,7 @@ class Test {
     this.profile = profile;
     this.executor = executor;
     this.repetition = repetition;
-    
+
     this.workerIndex = -1;
     this.error = undefined;
     this.stdout = "";
