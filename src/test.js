@@ -6,7 +6,7 @@ const TEST_STATUS_SUCCESSFUL = 3;
 const TEST_STATUS_SKIPPED = 4;
 
 class Test {
-  constructor(locator, profile, executor, maxAttempts) {
+  constructor(locator, profile, executor, maxAttempts, repetition) {
     //
     // note: this locator object is an instance of an object which is defined by whichever test
     // framework plugin is currently loaded. The implementation of locator could be almost any
@@ -23,7 +23,8 @@ class Test {
 
     this.profile = profile;
     this.executor = executor;
-
+    this.repetition = repetition;
+    
     this.workerIndex = -1;
     this.error = undefined;
     this.stdout = "";

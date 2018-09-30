@@ -51,7 +51,7 @@ module.exports = {
       "category": "Strategy",
       "example": "testarmada-magellan-locks-resource-strategy",
       "visible": true,
-      "description": "The strategy helps magellan hold/release resourcs for test when limit resources are available."
+      "description": "The strategy helps magellan hold/release resources for test when limit resources are available."
     },
     "debug": {
       "category": "Parallelism, Workflow and Filtering",
