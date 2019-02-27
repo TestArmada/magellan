@@ -1,10 +1,10 @@
 "use strict";
 
-const fs = require("fs");
+const fs = require("fs-extra");
 
 module.exports = (path) => {
   try {
-    fs.mkdirSync(path);
+    fs.ensureDirSync(path);
   } catch (e) {
     if (e.code !== "EEXIST") {
       throw e;
