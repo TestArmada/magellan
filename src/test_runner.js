@@ -64,8 +64,6 @@ class TestRunner {
 
     this.serial = this.settings.serial;
 
-    console.log(new Error().stack);
-
     this.enablePassedTestsLogging = this.settings.enablePassedTestsLogging;
 
     this.listeners = options.listeners || [];
