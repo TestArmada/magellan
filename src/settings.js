@@ -99,6 +99,9 @@ module.exports = {
 
   gatherTrends: argv.gather_trends,
 
+  // for successful tests, running in non-serial mode, output the logging for each step
+  enablePassedTestsLogging: Boolean(argv.enablePassedTestsLogging),
+
   aggregateScreenshots: argv.aggregate_screenshots,
   tempDir: TEMP_DIR,
 
