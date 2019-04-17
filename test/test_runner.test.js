@@ -633,6 +633,21 @@ describe("test_runner", () => {
       done();
     });
 
+    test("if enablePassedTestsLogging enabled, print out the success logs if all tests pass", (done) => {
+
+      const loggerLogSpy = jest.spyOn(logger, "log");
+      const loggerWarnSpy = jest.spyOn(logger, "warn");
+
+      const testRunner = initTestRunner(tests, options, { enablePassedTestsLogging: true });
+      enqueuePassedTest(testRunner);
+
+      testRunner.logTestsSummary();
+
+      expect(loggerLogSpy).toHaveBeenCalled();
+      expect(loggerWarnSpy).toHaveBeenCalled();
+      done();
+    });
+
   });
 
   test("gather trends", () => {
@@ -666,9 +681,9 @@ describe("test_runner", () => {
   });
 });
 
-function initTestRunner(tests, options, numPassedTests, numFailedTests) {
+function initTestRunner(tests, options, settings) {
   const testRunner = new TestRunner(tests, options, {
-    settings: {
+    settings: Object.assign({
       gatherTrends: true,
       debugVerbose: true,
       buildId: "FAKE_BUILD_ID",
@@ -681,7 +696,7 @@ function initTestRunner(tests, options, numPassedTests, numFailedTests) {
         TestRun: class { }
       },
       BASE_PORT_SPACING: 3
-    },
+    }, settings),
     startTime: (new Date()).getTime()
   });
 

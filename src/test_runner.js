@@ -64,6 +64,8 @@ class TestRunner {
 
     this.serial = this.settings.serial;
 
+    this.enablePassedTestsLogging = this.settings.enablePassedTestsLogging;
+
     this.listeners = options.listeners || [];
 
     this.onFinish = options.onFinish;
@@ -564,6 +566,20 @@ class TestRunner {
       }
 
     } else {
+      if (this.enablePassedTestsLogging && !this.serial) {
+          // output logs from passed test logs in non-serial mode
+          logger.log(clc.greenBright("============= Passed Tests:  ============="));
+
+          _.forEach(passedTests, (test) => {
+            logger.warn("- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -");
+            logger.warn(`      Passed Test:  ${test.toString()}`);
+            logger.warn(`       # attempts:  ${test.attempts}`);
+            logger.warn("From last attempt: \n");
+            logger.loghelp(test.stdout);
+            logger.loghelp(test.stderr);
+          });
+      }
+
       analytics.mark("magellan-run", "passed");
     }
 
