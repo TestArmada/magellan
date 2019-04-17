@@ -566,9 +566,8 @@ class TestRunner {
       }
 
     } else {
-      if (this.enablePassedTestsLogging) {
-        if (!this.serial) {
-          // only output passed test logs in non-serial mode
+      if (this.enablePassedTestsLogging && !this.serial) {
+          // output logs from passed test logs in non-serial mode
           logger.log(clc.greenBright("============= Passed Tests:  ============="));
 
           _.forEach(passedTests, (test) => {
@@ -579,7 +578,6 @@ class TestRunner {
             logger.loghelp(test.stdout);
             logger.loghelp(test.stderr);
           });
-        }
       }
 
       analytics.mark("magellan-run", "passed");
