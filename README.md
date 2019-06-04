@@ -214,6 +214,19 @@ To run **one specific test**, use the `--test` flag with a path to the test file
 $ magellan --test=path/to/my/test.js
 ```
 
+To run **tests defined in a json file as array**, use the `--testFile` flag with a path to the test file (must use testarmada-magellan-nightwatch-plugin@8.0.3 or highter):
+```console
+$ magellan --test=path/to/my/tests.json
+```
+Example file:
+```
+[
+  "path/to/my/test1.js",
+  "path/to/my/test2.js",
+  path/to/my/test3.js""
+]
+```
+
 #### Running Tests One at a Time (Serial Mode)
 
 You can run your entire suite serially (i.e. one at a time) and get live console output with the `--serial` option:
