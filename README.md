@@ -223,7 +223,7 @@ Example file:
 [
   "path/to/my/test1.js",
   "path/to/my/test2.js",
-  path/to/my/test3.js""
+  "path/to/my/test3.js"
 ]
 ```
 
