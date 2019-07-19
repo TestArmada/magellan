@@ -59,7 +59,7 @@ co(function *() {
     break;
 
   default:
-    logger.err(`Error while running Magellan: ${err.message}`);
+    logger.err(`Error while running Magellan: ${err.message || err}`);
     logger.err(err.stack);
       // we exit magellan process by providing code directly
     process.exit(1);
