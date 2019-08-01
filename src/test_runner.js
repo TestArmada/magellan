@@ -193,15 +193,18 @@ class TestRunner {
         .all(
           _.map(this.listeners,
             (listener) => new Promise((innerResolve) => {
-              listener
-                .flush()
-                .then(() => innerResolve())
+              const _listener = listener.flush();
+              if(_listener){
+                _listener.then(() => innerResolve())
                 .catch((err) => {
                   logger.err(`Error when flushing listener output: ${err}. ` +
                     "This error doesn't impact test result");
                   // we eat this error and contiue the listner.flush()
                   return innerResolve();
                 });
+              }else{
+                innerResolve();
+              }
             })))
         .then(() => this.onFinish(this.queue.getFailedTests()));
     }, FINAL_CLEANUP_DELAY, true);
