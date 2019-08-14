@@ -194,7 +194,7 @@ class TestRunner {
           _.map(this.listeners,
             (listener) => new Promise((innerResolve) => {
               const _listener = listener.flush();
-              if(_listener){
+              if (_listener) {
                 _listener.then(() => innerResolve())
                 .catch((err) => {
                   logger.err(`Error when flushing listener output: ${err}. ` +
@@ -202,7 +202,7 @@ class TestRunner {
                   // we eat this error and contiue the listner.flush()
                   return innerResolve();
                 });
-              }else{
+              } else {
                 innerResolve();
               }
             })))
