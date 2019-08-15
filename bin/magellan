@@ -17,14 +17,15 @@ co(function *() {
   yield cli.loadFramework({ argv });
   yield cli.loadExecutors({ argv });
 
+  if (argv.help) {
+    yield cli.help({ argv });
+  }
+
   const profiles = yield cli.detectProfiles({ argv, settings });
   const executors = yield cli.enableExecutors({ argv, profiles });
   const strategies = yield cli.loadStrategies({ argv });
   const listeners = yield cli.loadListeners({ argv });
 
-  if (argv.help) {
-    yield cli.help({ argv });
-  }
   // console.log(profiles)
   // console.log(strategies)
   // console.log(listeners)
