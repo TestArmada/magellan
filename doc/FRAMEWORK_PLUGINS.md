@@ -39,8 +39,9 @@ The `iterator` property of the plugin is a function that returns an array of tes
 
 Each object should represent exactly one test.
 
-Magellan doesn't care how the object is structured, except that the object should implement a
-`toString()` method so that Magellan can display a human-readable name for the test on the screen.
+Magellan doesn't care how the object is structured, except that the object should expose a `filename` 
+property with the path to the test and should implement a `toString()` method so that Magellan can 
+display a human-readable name for the test on the screen.
 
 If your test framework makes human-readable test names available and you are able to parse or query
 these with your plugin, it's recommended that your `toString()` implementation returns a name as
@@ -50,6 +51,8 @@ opposed to a filename. For example:
 > var t = new Locator("/path/to/test.js", "Should add integers and return an integer");
 > t.toString()
 "Should add integers and return an integer"
+> t.filename
+"/path/to/test.js"
 ```
 
 #### TestRun Class
