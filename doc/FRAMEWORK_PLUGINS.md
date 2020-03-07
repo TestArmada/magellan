@@ -137,18 +137,18 @@ We recommend adding at least `--tags`, `--group`, and `--test` to preserve user'
 filters: {
 
   // Adds --tags=xxxx command line switch
-  tags: function (tags, testLocator) {
-    /* return true if testLocator satisfies tags from --tags=t1,t2,.. */
+  tags: function (tests, tags) {
+    /* return a filtered list of tests matching --tags=t1,t2,.. */
   },
 
   // Adds --group=xxxx command line switch
-  group: function (prefix, testLocator) {
-    /* return true if testLocator satisfies prefix from --group=a/b/c*/
+  group: function (tests, prefix) {
+    /* return a filtered list of tests matching --group=a/b/c*/
   },
 
   // Adds --test=xxxx command line switch
-  test: function (testidentity, testLocator) {
-    /* return true if testLocator is the same as --test=path-or-name */
+  test: function (tests, testpath) {
+    /* return a filtered list of tests matching --test=path-or-name */
   }
 },
 ```
