@@ -38,7 +38,7 @@ const util = {
       // check all the ports in the range. If fail, move to next set
       const startPort = util.getNextPort();
       const ports = [];
-      for(let i=startPort;i<startPort + settings.BASE_PORT_SPACING; i++){
+      for (let i = startPort; i < startPort + settings.BASE_PORT_SPACING; i++) {
         ports.push(i);
       }
       checkPorts(ports, (result) => {
