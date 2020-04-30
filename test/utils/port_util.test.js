@@ -67,11 +67,23 @@ test('should acquire next port if any port is not available', () => {
 
   checkPorts.mockImplementation((arr, cb) => {
     // second port not available
-    arr[1] === 12331 ? cb([{
+    arr[0] === 12330 ? cb([{
       port: arr[0],
+      available: true
+    },{
+      port: arr[1],
       available: false
+    },{
+      port: arr[2],
+      available: true
     }]) : cb([{
       port: arr[0],
+      available: true
+    },{
+      port: arr[1],
+      available: true
+    },{
+      port: arr[2],
       available: true
     }]);
   });
@@ -86,11 +98,23 @@ test('should acquire next port if any port is not available', () => {
 
   checkPorts.mockImplementation((arr, cb) => {
     // third port not available
-    arr[1] === 12340 ? cb([{
+    arr[0] === 12339 ? cb([{
       port: arr[0],
+      available: true
+    },{
+      port: arr[1],
+      available: true
+    },{
+      port: arr[2],
       available: false
     }]) : cb([{
       port: arr[0],
+      available: true
+    },{
+      port: arr[1],
+      available: true
+    },{
+      port: arr[2],
       available: true
     }]);
   });

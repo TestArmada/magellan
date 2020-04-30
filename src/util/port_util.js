@@ -42,7 +42,14 @@ const util = {
         ports.push(i);
       }
       checkPorts(ports, (result) => {
-        if (result[0].available) {
+        let available = true;
+        for (let i = 0; i < result.length; i++) {
+          if (!result[i].available) {
+            available = false;
+            break;
+          }
+        }
+        if (available) {
           return callback(null, result[0].port);
         } else {
           attempts++;
