@@ -39,7 +39,7 @@ The `iterator` property of the plugin is a function that returns an array of tes
 
 Each object should represent exactly one test.
 
-Magellan doesn't care how the object is structured, except that the object should expose a `filename` 
+Magellan does not care how the object is structured, except that the object should expose a `filename` 
 property with the path to the test and should implement a `toString()` method so that Magellan can 
 display a human-readable name for the test on the screen.
 
