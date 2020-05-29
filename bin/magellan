@@ -12,7 +12,7 @@ const settings = require("../src/settings");
 const constants = require("../src/constants");
 
 process.on('uncaughtException', function (error) {
-  console.error("Magellan uncaughtException", error);
+  console.trace("Magellan uncaughtException", error);
 });
 
 co(function *() {
