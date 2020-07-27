@@ -75,4 +75,13 @@ describe('Child process', () => {
     expect(cp.stdout).toContain('fake data');
     expect(cp.stdout).toContain('real data');
   });
+
+  test('should add context to error message', () => {
+    const cp = new ChildProcess(handler);
+
+    cp.onDataCallback('Connection refused! Is selenium server started?')
+
+    expect(cp.stdout).toContain('Connection refused! Is selenium server started?')    
+    expect(cp.stdout).toContain(`If running on saucelabs, perhaps you're out of capcity and should TRY RUN AGAIN :)`);
+  })
 });
