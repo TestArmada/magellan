@@ -11,6 +11,9 @@ const MESSAGE = "message";
 const DATA = "data";
 const CLOSE = "close";
 
+const NOT_GOOD_ENUFF_ERROR_MESSAGE = "Connection refused! Is selenium server started?";
+const ADDED_ERROR_MESSAGE_CONTEXT = "If running on saucelabs, perhaps you're out of capcity and should TRY RUN AGAIN :)";
+
 module.exports = class ChildProcess {
   constructor(handler) {
     this.stdout = `${clc.yellowBright(logStamp())} =====> Magellan child process start\n`;
@@ -34,6 +37,15 @@ module.exports = class ChildProcess {
     this.handler.on(MESSAGE, (message) => callback(message));
   }
 
+  addErrorMessageContext() {
+    if (this.stdout.includes(NOT_GOOD_ENUFF_ERROR_MESSAGE)) {
+      if (!this.stdout.includes(ADDED_ERROR_MESSAGE_CONTEXT)) {
+        const replacement = `${NOT_GOOD_ENUFF_ERROR_MESSAGE}\n${ADDED_ERROR_MESSAGE_CONTEXT}`
+        this.stdout = this.stdout.replace(NOT_GOOD_ENUFF_ERROR_MESSAGE, replacement)
+      }
+    }
+  }
+
   onDataCallback(data) {
     let text = "" + data;
     if (!_.isEmpty(text.trim())) {
@@ -49,6 +61,7 @@ module.exports = class ChildProcess {
       } else {
         this.stdout += "\n";
       }
+      addErrorMessageContext()
     }
   }
 
