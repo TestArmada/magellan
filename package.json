@@ -1,6 +1,6 @@
 {
   "name": "testarmada-magellan",
-  "version": "11.0.8",
+  "version": "11.0.10",
   "description": "Massively parallel automated testing",
   "main": "src/main",
   "directories": {
@@ -36,6 +36,7 @@
     "co": "^4.6.0",
     "fs-extra": "^7.0.1",
     "glob": "^7.1.1",
+    "http-proxy": "^1.18.1",
     "lodash": "^4.6.1",
     "marge": "^1.0.1",
     "once": "^1.3.1",
