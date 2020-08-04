@@ -4,7 +4,7 @@ orbs:
 workflows:
   node-tests:
     jobs:
-      - node/test
+      - node/test:
           matrix:
             parameters:
               version:
