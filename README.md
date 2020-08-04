@@ -145,7 +145,7 @@ Quick Reference Guide for Command-Line Use
 
 #### Running Many Tests in Parallel (Default)
 
-By default, `magellan` will try to run your test suite the fastest way possible, in parallel
+By default, `magellan` will try to run your test suite the fastest way possible, in parallel. Default is 3 workers, but this can be set using "--max_workers=n" command line param.
 
 You can also run parallel tests on a real local browser (with `magellan-local-executor`):
 ```console
