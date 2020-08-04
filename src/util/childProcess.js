@@ -12,7 +12,8 @@ const DATA = "data";
 const CLOSE = "close";
 
 const NOT_GOOD_ENUFF_ERROR_MESSAGE = "Connection refused! Is selenium server started?";
-const ADDED_ERROR_MESSAGE_CONTEXT = "If running on saucelabs, perhaps you're out of capacity and should TRY RUN AGAIN :)";
+const ADDED_ERROR_MESSAGE_CONTEXT = "If running on saucelabs, perhaps " +
+    "you're out of capacity and should TRY RUN AGAIN :)";
 
 module.exports = class ChildProcess {
   constructor(handler) {
@@ -40,8 +41,9 @@ module.exports = class ChildProcess {
   addErrorMessageContext() {
     if (this.stdout.includes(NOT_GOOD_ENUFF_ERROR_MESSAGE)) {
       if (!this.stdout.includes(ADDED_ERROR_MESSAGE_CONTEXT)) {
-        const replacement = `${NOT_GOOD_ENUFF_ERROR_MESSAGE}\n${clc.yellowBright(logStamp())} ${clc.red(ADDED_ERROR_MESSAGE_CONTEXT)}`
-        this.stdout = this.stdout.replace(NOT_GOOD_ENUFF_ERROR_MESSAGE, replacement)
+        const replacement = `${NOT_GOOD_ENUFF_ERROR_MESSAGE}\n${clc.yellowBright(logStamp())}`;
+        replacement.concat(" ", `${replacement} ${clc.red(ADDED_ERROR_MESSAGE_CONTEXT)}`);
+        this.stdout = this.stdout.replace(NOT_GOOD_ENUFF_ERROR_MESSAGE, replacement);
       }
     }
   }
@@ -61,7 +63,7 @@ module.exports = class ChildProcess {
       } else {
         this.stdout += "\n";
       }
-      this.addErrorMessageContext()
+      this.addErrorMessageContext();
     }
   }
 
