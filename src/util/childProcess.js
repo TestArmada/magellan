@@ -41,8 +41,8 @@ module.exports = class ChildProcess {
   addErrorMessageContext() {
     if (this.stdout.includes(NOT_GOOD_ENUFF_ERROR_MESSAGE)) {
       if (!this.stdout.includes(ADDED_ERROR_MESSAGE_CONTEXT)) {
-        const replacement = `${NOT_GOOD_ENUFF_ERROR_MESSAGE}\n${clc.yellowBright(logStamp())}`;
-        replacement.concat(" ", `${replacement} ${clc.red(ADDED_ERROR_MESSAGE_CONTEXT)}`);
+        const replacement = `${NOT_GOOD_ENUFF_ERROR_MESSAGE}\n${clc.yellowBright(logStamp())}`
+          .concat(clc.red(ADDED_ERROR_MESSAGE_CONTEXT));
         this.stdout = this.stdout.replace(NOT_GOOD_ENUFF_ERROR_MESSAGE, replacement);
       }
     }

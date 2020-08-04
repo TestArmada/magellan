@@ -82,6 +82,6 @@ describe('Child process', () => {
     cp.onDataCallback('Connection refused! Is selenium server started?')
 
     expect(cp.stdout).toContain('Connection refused! Is selenium server started?')    
-    expect(cp.stdout).toContain(`If running on saucelabs, perhaps you're out of capacity and should TRY RUN AGAIN :)`);
+    expect(cp.stdout).toContain(`If running on saucelabs, perhaps you're out of capacity and should TRY RUN AGAIN LATER :)`);
   })
 });
