@@ -13,7 +13,7 @@ const CLOSE = "close";
 
 const NOT_GOOD_ENUFF_ERROR_MESSAGE = "Connection refused! Is selenium server started?";
 const ADDED_ERROR_MESSAGE_CONTEXT = "If running on saucelabs, perhaps " +
-    "you're out of capacity and should TRY RUN AGAIN :)";
+    "you're out of capacity and should TRY RUN AGAIN LATER :)";
 
 module.exports = class ChildProcess {
   constructor(handler) {
