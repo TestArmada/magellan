@@ -5,3 +5,9 @@ workflows:
   node-tests:
     jobs:
       - node/test
+          matrix:
+            parameters:
+              version:
+                - 8.17.0
+                - 7.10.1
+                - 6.17.1
