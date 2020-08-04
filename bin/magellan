@@ -11,7 +11,7 @@ const cli = require("../src/cli");
 const settings = require("../src/settings");
 const constants = require("../src/constants");
 
-process.on("uncaughtException", function (error) {
+process.on("uncaughtException", (error) => {
   console.trace("Magellan uncaughtException", error);
 });
 
