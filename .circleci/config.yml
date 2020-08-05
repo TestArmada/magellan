@@ -9,5 +9,5 @@ workflows:
             parameters:
               version:
                 - 8.17.0
-                - 7.10.1
-                - 6.16.0
+                - 10.22.0
+                - 12.18.3
