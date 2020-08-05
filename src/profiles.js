@@ -26,6 +26,7 @@ module.exports = {
      */
     const testExecutors = opts.settings.testExecutors;
 
+    // eslint-disable-next-line complexity
     return new Promise((resolve, reject) => {
       let profiles = [];
 
