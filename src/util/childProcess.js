@@ -1,7 +1,7 @@
 const _ = require("lodash");
 const clc = require("cli-color");
 const EventEmitter = require("events").EventEmitter;
-const StreamSlicer = require('stream-slic3r');
+const StreamSlicer = require('stream-slicer');
 
 const logger = require("../logger");
 const logStamp = require("./logstamp");
@@ -13,6 +13,22 @@ const NOT_GOOD_ENUFF_ERROR_MESSAGE = "Connection refused! Is selenium server sta
 const ADDED_ERROR_MESSAGE_CONTEXT = "If running on saucelabs, perhaps " +
     "you're out of capacity and should TRY RUN AGAIN LATER :)";
 
+// MAKE NIGHWATCH ERROR & WARN LOGS VISIBLE IN MAGELLAN STDOUT:
+// ------------------------------------------------------------------------------------------------
+// Currently the "ERROR" and "WARN" logs from nightwatch are supressed when the "DEBUG" flag is
+// turned OFF.. and our customers ALWAYS use the "DEBUG" off, because if you turn it on your log
+// will be filled with base64 screenshot gobbledegook... Also, withj the approach taken, we will
+// sell all the "ERRORED" selenium request/response logs in our magellan log
+//
+// relevant code for this feature:
+//   STDOUT_WHITE_LIST, SLICE_ON_TEXT, infoSlicer, isTextWhiteListed
+// ------------------------------------------------------------------------------------------------
+
+// if the "this.handler.stdout" stream of the childprocess does not 
+// include atleast one of these tokens then it will not be included in the "this.stdout"
+const STDOUT_WHITE_LIST = ['ERROR', 'WARN', 'Test Suite', '✖']
+
+// we slice the VERBOSE nighwatch stdout stream on the purple INFO text that has black background
 const SLICE_ON_TEXT = '\033[1;35m\033[40mINFO\033[0m'
 
 module.exports = class ChildProcess {
@@ -21,8 +37,16 @@ module.exports = class ChildProcess {
     this.stderr = "";
     this.handler = handler;
 
+    // create the nightwtach INFO slicer:
+    // if the stdout stream does not contain SLICE_ON_TEXT, 
+    // then the entire stdout will be emitted 'data' with nothing sliced out
+    // otherwise the stream will be sliced on nighwatch INFO text (purple with black background)
+    // and each "slice" will be emitted 'data' 
     const infoSlicer = new StreamSlicer(SLICE_ON_TEXT);
+
+    // pipe the stdout stream into the slicer for slicing :)
     this.handler.stdout.pipe(infoSlicer)
+
     infoSlicer.on('data', this.onDataCallback.bind(this));
 
     this.emitter = new EventEmitter();
@@ -51,8 +75,7 @@ module.exports = class ChildProcess {
   }
 
   isTextWhiteListed(text) {
-    const whiteList = ['ERROR', 'WARN', 'Test Suite', '✖']
-    for (const item of whiteList) {
+    for (const item of STDOUT_WHITE_LIST) {
       if (text.includes(item)) {
         return true
       }
