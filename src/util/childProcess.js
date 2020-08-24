@@ -15,9 +15,9 @@ const ADDED_ERROR_MESSAGE_CONTEXT = "If running on saucelabs, perhaps " +
 
 // MAKE NIGHWATCH ERROR & WARN LOGS VISIBLE IN MAGELLAN STDOUT:
 // ------------------------------------------------------------------------------------------------
-// Currently the "ERROR" and "WARN" logs from nightwatch are supressed when the "DEBUG" flag is
+// Currently the "ERROR" and "WARN" logs from nightwatch are suppressed when the "DEBUG" flag is
 // turned OFF.. and our customers ALWAYS use the "DEBUG" off, because if you turn it on your log
-// will be filled with base64 screenshot gobbledegook... Also, withj the approach taken, we will
+// will be filled with base64 screenshot gobbledegook... Also, with the approach taken, we will
 // sell all the "ERRORED" selenium request/response logs in our magellan log
 //
 // relevant code for this feature:
