@@ -104,6 +104,11 @@ module.exports = {
                 rootWorkingDirectory: process.cwd()
               });
         }
+        if (settings.framework === 'testarmada-magellan-nightwatch-plugin') {
+          // turn on nightwatch verbose debugging so we can capture the nightwatch errors and warnings
+          // inside util/childProcess we filter out the verbose info logs of nightwatch
+          opts.argv.debug = true
+        }
         settings.testFramework.initialize(opts.argv, settings.pluginOptions);
       } catch (e) {
         frameworkInitializationException = e;

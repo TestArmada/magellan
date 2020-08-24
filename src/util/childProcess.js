@@ -1,27 +1,29 @@
-"use strict";
-
 const _ = require("lodash");
 const clc = require("cli-color");
 const EventEmitter = require("events").EventEmitter;
+const StreamSlicer = require('stream-slic3r');
 
 const logger = require("../logger");
 const logStamp = require("./logstamp");
 
 const MESSAGE = "message";
-const DATA = "data";
 const CLOSE = "close";
 
 const NOT_GOOD_ENUFF_ERROR_MESSAGE = "Connection refused! Is selenium server started?";
 const ADDED_ERROR_MESSAGE_CONTEXT = "If running on saucelabs, perhaps " +
     "you're out of capacity and should TRY RUN AGAIN LATER :)";
 
+const SLICE_ON_TEXT = '\033[1;35m\033[40mINFO\033[0m'
+
 module.exports = class ChildProcess {
   constructor(handler) {
     this.stdout = `${clc.yellowBright(logStamp())} =====> Magellan child process start\n`;
     this.stderr = "";
     this.handler = handler;
-    this.handler.stdout.on(DATA, this.onDataCallback.bind(this));
-    this.handler.stderr.on(DATA, this.onDataCallback.bind(this));
+
+    const infoSlicer = new StreamSlicer(SLICE_ON_TEXT);
+    this.handler.stdout.pipe(infoSlicer)
+    infoSlicer.on('data', this.onDataCallback.bind(this));
 
     this.emitter = new EventEmitter();
     this.emitter.stdout = handler.stdout;
@@ -48,21 +50,25 @@ module.exports = class ChildProcess {
     }
   }
 
+  isTextWhiteListed(text) {
+    const whiteList = ['ERROR', 'WARN', 'Test Suite', '✖']
+    for (const item of whiteList) {
+      if (text.includes(item)) {
+        return true
+      }
+    }
+    return false
+  }
+
   onDataCallback(data) {
-    let text = "" + data;
-    if (!_.isEmpty(text.trim())) {
+    let text = data.toString().trim()
+    if (text.length > 0 && this.isTextWhiteListed(text)) {
       text = text
         .split("\n")
         .filter((line) => !_.isEmpty(line.trim()))
         .map((line) => `${clc.yellowBright(logStamp())} ${line}`)
         .join("\n");
-
-      /* istanbul ignore else */
-      if (!_.isEmpty(text)) {
-        this.stdout += text + "\n";
-      } else {
-        this.stdout += "\n";
-      }
+      this.stdout += text + "\n";
       this.addErrorMessageContext();
     }
   }
