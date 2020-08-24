@@ -1,7 +1,7 @@
 const _ = require("lodash");
 const clc = require("cli-color");
 const EventEmitter = require("events").EventEmitter;
-const StreamSlicer = require('stream-slicer');
+const StreamSlicer = require('stream-slic3r');
 
 const logger = require("../logger");
 const logStamp = require("./logstamp");
