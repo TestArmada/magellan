@@ -1,8 +1,8 @@
-"use strict";
+'use strict';
 
 /* istanbul ignore next */
 module.exports = {
-  name: "fake-bail-strategy",
+  name: 'fake-bail-strategy',
 
   setConfiguration() { },
 

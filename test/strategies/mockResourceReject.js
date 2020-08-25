@@ -1,8 +1,8 @@
-"use strict";
+'use strict';
 
 /* istanbul ignore next */
 module.exports = {
-  name: "fake-resource-reject-strategy",
+  name: 'fake-resource-reject-strategy',
 
   setConfiguration() { },
 

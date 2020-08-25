@@ -1,13 +1,13 @@
 /* eslint no-undef: 0 */
-"use strict";
+'use strict';
 
-const settings = require("../src/settings");
-const getTests = require("../src/get_tests");
+const settings = require('../src/settings');
+const getTests = require('../src/get_tests');
 
-jest.mock("../src/settings", () => {
+jest.mock('../src/settings', () => {
   return {
     testFramework: {
-      iterator: () => ["a", "b", "c"],
+      iterator: () => ['a', 'b', 'c'],
       filters: {
         a: () => true,
         b: () => true
@@ -16,8 +16,8 @@ jest.mock("../src/settings", () => {
   };
 });
 
-describe("getTests", () => {
-  test("should get tests", () => {
+describe('getTests', () => {
+  test('should get tests', () => {
     const tests = getTests({
       a: () => true,
       b: () => true

@@ -1,11 +1,11 @@
-"use strict";
+'use strict';
 
-const TestQueue = require("../src/test_queue");
-const Test = require("../src/test");
+const TestQueue = require('../src/test_queue');
+const Test = require('../src/test');
 
-test("should construct", () => {
+test('should construct', () => {
   const tq = new TestQueue({
-    tests: ["a", "b"],
+    tests: ['a', 'b'],
     workerAmount: 1,
     completeQueueHandler: () => { },
     completeTestHandler: () => { },
@@ -16,7 +16,7 @@ test("should construct", () => {
   expect(tq.workerAmount).toEqual(1);
 });
 
-test("should be idle with no test and zero test amount ", () => {
+test('should be idle with no test and zero test amount ', () => {
   const tq = new TestQueue({
     tests: [],
     workerAmount: 1,
@@ -29,9 +29,9 @@ test("should be idle with no test and zero test amount ", () => {
   expect(tq.getTestAmount()).toEqual(0);
 });
 
-test("shouldn't be idle with tests", () => {
+test('shouldn\'t be idle with tests', () => {
   const tq = new TestQueue({
-    tests: ["a", "b"],
+    tests: ['a', 'b'],
     workerAmount: 1,
     completeQueueHandler: () => { },
     completeTestHandler: () => { },
@@ -42,11 +42,11 @@ test("shouldn't be idle with tests", () => {
   expect(tq.getTestAmount()).toEqual(2);
 });
 
-test("should return correct failed and passed tests", () => {
+test('should return correct failed and passed tests', () => {
   const tq = new TestQueue({
     tests: [
-      { name: "a", status: Test.TEST_STATUS_FAILED },
-      { name: "b", status: Test.TEST_STATUS_SUCCESSFUL }
+      { name: 'a', status: Test.TEST_STATUS_FAILED },
+      { name: 'b', status: Test.TEST_STATUS_SUCCESSFUL }
     ],
     workerAmount: 1,
     completeQueueHandler: () => { },
@@ -58,11 +58,11 @@ test("should return correct failed and passed tests", () => {
   expect(tq.getPassedTests()).toHaveLength(1);
 });
 
-test("should enqueue a test", () => {
+test('should enqueue a test', () => {
   const tq = new TestQueue({
     tests: [
-      { name: "a", status: Test.TEST_STATUS_FAILED },
-      { name: "b", status: Test.TEST_STATUS_SUCCESSFUL }
+      { name: 'a', status: Test.TEST_STATUS_FAILED },
+      { name: 'b', status: Test.TEST_STATUS_SUCCESSFUL }
     ],
     workerAmount: 1,
     completeQueueHandler: () => { },
@@ -70,29 +70,29 @@ test("should enqueue a test", () => {
     stageTestHandler: () => { }
   });
 
-  tq.enqueue({ name: "c", status: Test.TEST_STATUS_NEW }, 1);
+  tq.enqueue({ name: 'c', status: Test.TEST_STATUS_NEW }, 1);
 });
 
-test("should terminate a queue early", () => {
+test('should terminate a queue early', () => {
   const tq = new TestQueue({
     tests: [
-      { name: "a", status: Test.TEST_STATUS_FAILED },
-      { name: "b", status: Test.TEST_STATUS_SUCCESSFUL }
+      { name: 'a', status: Test.TEST_STATUS_FAILED },
+      { name: 'b', status: Test.TEST_STATUS_SUCCESSFUL }
     ],
     workerAmount: 1,
-    completeQueueHandler: () => Promise.resolve("aha"),
+    completeQueueHandler: () => Promise.resolve('aha'),
     completeTestHandler: () => { },
     stageTestHandler: () => { }
   });
 
-  expect(tq.earlyTerminate()).resolves.toEqual("aha");
+  expect(tq.earlyTerminate()).resolves.toEqual('aha');
 });
 
-test("should proceed if no test in queue", () => {
+test('should proceed if no test in queue', () => {
   const tq = new TestQueue({
     tests: [
-      { name: "a", status: Test.TEST_STATUS_FAILED },
-      { name: "b", status: Test.TEST_STATUS_SUCCESSFUL }
+      { name: 'a', status: Test.TEST_STATUS_FAILED },
+      { name: 'b', status: Test.TEST_STATUS_SUCCESSFUL }
     ],
     workerAmount: 1,
     completeQueueHandler: () => { },
@@ -105,14 +105,14 @@ test("should proceed if no test in queue", () => {
   expect(tq.isIdle()).toEqual(false);
 });
 
-test("should proceed if no test in queue", () => {
+test('should proceed if no test in queue', () => {
   const tq = new TestQueue({
     tests: [],
     workerAmount: 1,
-    completeQueueHandler: () => Promise.resolve("aha"),
+    completeQueueHandler: () => Promise.resolve('aha'),
     completeTestHandler: () => { },
     stageTestHandler: () => { }
   });
 
-  expect(tq.proceed()).resolves.toEqual("aha");
+  expect(tq.proceed()).resolves.toEqual('aha');
 });

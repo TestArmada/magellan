@@ -11,17 +11,17 @@ describe("Reporter", () => {
     expect(r.flush).not.toBeNull();
   });
 
-  test("should initialize", () => {
+  test('should initialize', () => {
     const r = new Reporter();
     return expect(r.initialize()).resolves.toBe(undefined);
   });
 
-  test("should flush", () => {
+  test('should flush', () => {
     const r = new Reporter();
     return expect(r.flush()).resolves.toBe(undefined);
   });
 
-  test("should listenTo", () => {
+  test('should listenTo', () => {
     const r = new Reporter();
     r.listenTo();
   });

@@ -1,13 +1,13 @@
 /* eslint no-undef: 0 */
-"use strict";
+'use strict';
 
-const settings = require("../src/settings");
-const testFilter = require("../src/test_filter");
+const settings = require('../src/settings');
+const testFilter = require('../src/test_filter');
 
-jest.mock("../src/settings", () => {
+jest.mock('../src/settings', () => {
   return {
     testFramework: {
-      iterator: () => ["a", "b", "c"],
+      iterator: () => ['a', 'b', 'c'],
       filters: {
         a: () => true,
         b: () => true
@@ -16,9 +16,9 @@ jest.mock("../src/settings", () => {
   };
 });
 
-describe("test_filter", () => {
-  test("should filter from settings", () => {
-    const tests = testFilter.filter(["a", "b", "c"], {
+describe('test_filter', () => {
+  test('should filter from settings', () => {
+    const tests = testFilter.filter(['a', 'b', 'c'], {
       a: () => true,
       b: () => true
     });
@@ -26,9 +26,9 @@ describe("test_filter", () => {
     expect(tests).toEqual(true);
   });
 
-  test("should detect from cli", () => {
-    const filters = testFilter.detectFromCLI({ a: "abcdefg" });
-
-    expect(filters).toEqual({ a: "abcdefg" });
+  test('should detect from cli', () => {
+    const filters = testFilter.detectFromCLI({ a: 'abcdefg' });
+    
+    expect(filters).toEqual({ a: 'abcdefg' });
   });
 });

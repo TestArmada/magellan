@@ -1,5 +1,5 @@
 module.exports = {
-  initialize () {
+  initialize: function () {
 
   },
   filters: {},
