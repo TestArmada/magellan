@@ -1,6 +1,6 @@
 "use strict";
 
-const _ = require("lodash")
+const _ = require("lodash");
 
 const analytics = require("../src/global_analytics");
 const fs = require("fs");
@@ -78,8 +78,8 @@ describe("test_runner", () => {
         release: (worker) => true
       },
       onFinish: () => Promise.resolve()
-    }
-  })
+    };
+  });
 
   test("constructor", () => {
     const testRunner = initTestRunner(tests, options);
@@ -212,7 +212,7 @@ describe("test_runner", () => {
 
       testRunner.completeTestHandler(null, test);
 
-      expect(test.status).toBe(Test.TEST_STATUS_SKIPPED)
+      expect(test.status).toBe(Test.TEST_STATUS_SKIPPED);
       done();
     });
 
@@ -326,7 +326,7 @@ describe("test_runner", () => {
       const testRunner = initTestRunner(tests, options);
       const test = stubPassTest();
 
-      let worker = {
+      const worker = {
         index: 1,
         occupied: true,
         portOffset: 12000
@@ -349,7 +349,7 @@ describe("test_runner", () => {
       const testRunner = initTestRunner(tests, options);
       const test = stubPassTest();
 
-      let worker = {
+      const worker = {
         index: 1,
         occupied: true,
         portOffset: 12000,
@@ -374,7 +374,7 @@ describe("test_runner", () => {
       const testRunner = initTestRunner(tests, options);
       const test = stubPassTest();
 
-      let worker = {
+      const worker = {
         index: 1,
         occupied: true,
         portOffset: 12000,
@@ -398,7 +398,7 @@ describe("test_runner", () => {
       const testRunner = initTestRunner(tests, options);
       const test = stubPassTest();
 
-      let worker = {
+      const worker = {
         index: 1,
         occupied: true,
         portOffset: 12000,
@@ -608,13 +608,13 @@ describe("test_runner", () => {
       testRunner.queue = new TestQueue({
         tests: [{
           status: Test.TEST_STATUS_SUCCESSFUL,
-          getRetries: () => 2,
+          getRetries: () => 2
         }, {
           status: Test.TEST_STATUS_FAILED,
-          getRetries: () => 2,
+          getRetries: () => 2
         }, {
           status: Test.TEST_STATUS_NEW,
-          getRetries: () => 0,
+          getRetries: () => 0
         }],
         getTestAmount: () => 3,
         getPassedTests: () => 1,
@@ -657,16 +657,16 @@ describe("test_runner", () => {
     jest.mock("fs", () => {
       return {
         readFileSync: () => {
-          console.log("some fake call")
+          console.log("some fake call");
           return {
             failures: {
               "FAKE_FAILURE": 2,
               "ANOTHER_FAILURE": 1
             }
-          }
+          };
         },
         writeFileSync: () => { }
-      }
+      };
     });
 
     testRunner.trends = {
@@ -743,7 +743,7 @@ function stubPassTest() {
     stdout: () => { },
     pass: jest.fn(),
     fail: jest.fn()
-  }
+  };
 }
 
 function stubFailTest() {
@@ -764,5 +764,5 @@ function stubFailTest() {
     stdout: () => { },
     pass: jest.fn(),
     fail: jest.fn()
-  }
+  };
 }

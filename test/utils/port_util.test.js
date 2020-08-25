@@ -1,19 +1,19 @@
 /* eslint no-undef: 0, no-unused-expressions: 0, no-magic-numbers: 0, callback-return: 0 */
-'use strict';
+"use strict";
 
-const sinon = require('sinon');
+const sinon = require("sinon");
 
-const checkPorts = require('../../src/util/check_ports');
-const portUtil = require('../../src/util/port_util');
+const checkPorts = require("../../src/util/check_ports");
+const portUtil = require("../../src/util/port_util");
 
-jest.mock('../../src/util/check_ports');
+jest.mock("../../src/util/check_ports");
 
-test('should get the next port', () => {
-  expect(portUtil.getNextPort()).toEqual(12000)
+test("should get the next port", () => {
+  expect(portUtil.getNextPort()).toEqual(12000);
   expect(portUtil.getNextPort()).toEqual(12003);
 });
 
-test('should acquire a port', () => {
+test("should acquire a port", () => {
   checkPorts.mockImplementation((arr, cb) => cb([{
     port: arr[0],
     available: true
@@ -27,7 +27,7 @@ test('should acquire a port', () => {
   expect(spy.args[0]).toEqual([null, 12006]);
 });
 
-test('should acquire a port after several retries', () => {
+test("should acquire a port after several retries", () => {
   checkPorts.mockImplementation((arr, cb) => {
     arr[0] < 12020 ? cb([{
       port: arr[0],
@@ -46,7 +46,7 @@ test('should acquire a port after several retries', () => {
   expect(spy.args[0]).toEqual([null, 12021]);
 });
 
-test('should throw exception after maximum retries', () => {
+test("should throw exception after maximum retries", () => {
   checkPorts.mockImplementation((arr, cb) => cb([{
     port: arr[0],
     available: false
@@ -57,32 +57,32 @@ test('should throw exception after maximum retries', () => {
   portUtil.acquirePort(spy);
 
   expect(spy.called).toEqual(true);
-  expect(spy.args[0][0].message).toEqual('Gave up looking for an available port after 100 attempts.');
+  expect(spy.args[0][0].message).toEqual("Gave up looking for an available port after 100 attempts.");
 });
 
-test('should acquire next port if any port is not available', () => {
+test("should acquire next port if any port is not available", () => {
 
   // can't reset port_util.portCursor, so we just have to start where it left off
-  expect(portUtil.getNextPort()).toEqual(12327)
+  expect(portUtil.getNextPort()).toEqual(12327);
 
   checkPorts.mockImplementation((arr, cb) => {
     // second port not available
     arr[0] === 12330 ? cb([{
       port: arr[0],
       available: true
-    },{
+    }, {
       port: arr[1],
       available: false
-    },{
+    }, {
       port: arr[2],
       available: true
     }]) : cb([{
       port: arr[0],
       available: true
-    },{
+    }, {
       port: arr[1],
       available: true
-    },{
+    }, {
       port: arr[2],
       available: true
     }]);
@@ -94,26 +94,26 @@ test('should acquire next port if any port is not available', () => {
   expect(spy.args[0]).toEqual([null, 12333]);
 
   // can't reset port_util.portCursor, so we just have to start where it left off
-  expect(portUtil.getNextPort()).toEqual(12336)
+  expect(portUtil.getNextPort()).toEqual(12336);
 
   checkPorts.mockImplementation((arr, cb) => {
     // third port not available
     arr[0] === 12339 ? cb([{
       port: arr[0],
       available: true
-    },{
+    }, {
       port: arr[1],
       available: true
-    },{
+    }, {
       port: arr[2],
       available: false
     }]) : cb([{
       port: arr[0],
       available: true
-    },{
+    }, {
       port: arr[1],
       available: true
-    },{
+    }, {
       port: arr[2],
       available: true
     }]);

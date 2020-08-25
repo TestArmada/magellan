@@ -1,32 +1,32 @@
-var Q = require("q");
+const Q = require("q");
 
-var TestListener = function () {
+const TestListener = function () {
   this.testMessages = [];
 };
 
 TestListener.prototype = {
 
-  initialize: function () {
-    var self = this
-    var deferred = Q.defer();
-    setTimeout(function () {
+  initialize () {
+    const self = this;
+    const deferred = Q.defer();
+    setTimeout(() => {
       self.didInitialize = true;
       deferred.resolve();
     }, 1);
     return deferred.promise;
   },
 
-  listenTo: function (testRun, test, source) {
-    var self = this;
-    source.addListener("message", function (message) {
+  listenTo (testRun, test, source) {
+    const self = this;
+    source.addListener("message", (message) => {
       self.testMessages.push(message);
     });
   },
 
-  flush: function () {
-    var self = this;
-    var deferred = Q.defer();
-    setTimeout(function () {
+  flush () {
+    const self = this;
+    const deferred = Q.defer();
+    setTimeout(() => {
       self.didFlush = true;
       deferred.resolve();
     }, 1);

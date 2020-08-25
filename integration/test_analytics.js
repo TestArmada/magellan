@@ -1,19 +1,19 @@
-var chai = require("chai");
-var expect = chai.expect;
+const chai = require("chai");
+const expect = chai.expect;
 
-var TestRunner = require("../src/test_runner");
-var _ = require("lodash");
-var settings = require("../src/settings");
-var WorkerAllocator = require("../src/worker_allocator");
-var TestAnalyticsListener = require("../test_support/test_analytics_listener");
+const TestRunner = require("../src/test_runner");
+const _ = require("lodash");
+const settings = require("../src/settings");
+const WorkerAllocator = require("../src/worker_allocator");
+const TestAnalyticsListener = require("../test_support/test_analytics_listener");
 
 settings.framework = "magellan-fake";
 settings.testFramework = require("../test_support/magellan-selftest-plugin/index");
 settings.testFramework.initialize({});
 
-var MAX_WORKERS = 1;
+const MAX_WORKERS = 1;
 
-var baseOptions = {
+const baseOptions = {
   debug: false,
   maxWorkers: MAX_WORKERS,
   maxTestAttempts: 1,
@@ -27,16 +27,16 @@ var baseOptions = {
   sauceSettings: undefined
 };
 
-describe("analytics", function () {
+describe("analytics", () => {
 
   describe("events", function () {
     this.timeout(6000);
 
-    var workerAllocator;
-    var listener;
-    var options;
+    let workerAllocator;
+    let listener;
+    let options;
 
-    beforeEach(function (done) {
+    beforeEach((done) => {
       workerAllocator = new WorkerAllocator(MAX_WORKERS);
       listener = new TestAnalyticsListener();
       options = _.extend({}, baseOptions, {
@@ -44,7 +44,7 @@ describe("analytics", function () {
         listeners: [listener]
       });
 
-      listener.initialize().then(function () {
+      listener.initialize().then(() => {
         done();
       });
     });
@@ -52,11 +52,11 @@ describe("analytics", function () {
     it("emits events @analytics", function (done) {
       this.timeout(6000);
 
-      workerAllocator.initialize(function (err) {
-        var runner = new TestRunner(["fake_test1"], _.extend({}, options, {
-          onSuccess: function () {
+      workerAllocator.initialize((err) => {
+        const runner = new TestRunner(["fake_test1"], _.extend({}, options, {
+          onSuccess () {
             // we should see at least fake test start and finish
-            var testRunEvents = listener.timeline.filter(function (ev) {
+            const testRunEvents = listener.timeline.filter((ev) => {
               return (ev.data && ev.data.name && _.startsWith(ev.data.name, "test-run-"))
                 || (ev.eventName && _.startsWith(ev.eventName, "test-run-"));
             });

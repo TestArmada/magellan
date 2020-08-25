@@ -1,9 +1,9 @@
 /*
   Fake testing for unit testing purposes
 */
-var _ = require("lodash");
+const _ = require("lodash");
 
-var FakeTestrun = function (options) {
+const FakeTestrun = function (options) {
   _.extend(this, options);
 };
 

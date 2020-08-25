@@ -1,17 +1,17 @@
-var assert = require("assert");
-var TestRunner = require("../src/test_runner");
-var _ = require("lodash");
-var settings = require("../src/settings");
-var WorkerAllocator = require("../src/worker_allocator");
+const assert = require("assert");
+const TestRunner = require("../src/test_runner");
+const _ = require("lodash");
+const settings = require("../src/settings");
+const WorkerAllocator = require("../src/worker_allocator");
 
 settings.framework = "magellan-fake";
 settings.testFramework = require("../test_support/magellan-selftest-plugin/index");
 settings.testFramework.initialize({});
 
-var DEFAULT_BAIL_TIME = settings.bailTime;
-var MAX_WORKERS = 1;
+const DEFAULT_BAIL_TIME = settings.bailTime;
+const MAX_WORKERS = 1;
 
-var baseOptions = {
+const baseOptions = {
   debug: false,
   maxWorkers: MAX_WORKERS,
   maxTestAttempts: 1,
@@ -25,36 +25,36 @@ var baseOptions = {
   sauceSettings: undefined
 };
 
-describe("test runner", function () {
+describe("test runner", () => {
 
-  beforeEach(function () {
+  beforeEach(() => {
     settings.bailTime = DEFAULT_BAIL_TIME;
   });
 
   describe("single worker", function () {
     this.timeout(6000);
 
-    it("runs zero tests", function (done) {
-      var options = _.extend({}, baseOptions, {
+    it("runs zero tests", (done) => {
+      const options = _.extend({}, baseOptions, {
         onSuccess: done
       });
 
-      var runner = new TestRunner([], options);
+      const runner = new TestRunner([], options);
       runner.start();
     });
 
     it("runs one test @testtag", function (done) {
       this.timeout(6000);
 
-      var workerAllocator = new WorkerAllocator(MAX_WORKERS);
+      const workerAllocator = new WorkerAllocator(MAX_WORKERS);
 
-      var options = _.extend({}, baseOptions, {
+      const options = _.extend({}, baseOptions, {
         allocator: workerAllocator,
         onSuccess: done
       });
 
-      workerAllocator.initialize(function (err) {
-        var runner = new TestRunner(["fake_test1"], options);
+      workerAllocator.initialize((err) => {
+        const runner = new TestRunner(["fake_test1"], options);
         runner.start();
       });
     });
@@ -62,17 +62,17 @@ describe("test runner", function () {
     it("fails one test @testtag", function (done) {
       this.timeout(6000);
 
-      var workerAllocator = new WorkerAllocator(MAX_WORKERS);
+      const workerAllocator = new WorkerAllocator(MAX_WORKERS);
 
-      var options = _.extend({}, baseOptions, {
+      const options = _.extend({}, baseOptions, {
         allocator: workerAllocator,
-        onFailure: function () {
+        onFailure () {
           done();
         }
       });
 
-      workerAllocator.initialize(function (err) {
-        var runner = new TestRunner(["fail_test1"], options);
+      workerAllocator.initialize((err) => {
+        const runner = new TestRunner(["fail_test1"], options);
         runner.start();
       });
     });
@@ -83,32 +83,32 @@ describe("test runner", function () {
   describe("multi-worker", function () {
     this.timeout(6000);
 
-    var MAX_WORKERS = 8;
-    var multiWorkerBaseOptions = _.extend({}, baseOptions, {
+    const MAX_WORKERS = 8;
+    const multiWorkerBaseOptions = _.extend({}, baseOptions, {
       maxWorkers: MAX_WORKERS
     });
 
-    it("runs zero tests @testtag @multi", function (done) {
-      var options = _.extend({}, multiWorkerBaseOptions, {
+    it("runs zero tests @testtag @multi", (done) => {
+      const options = _.extend({}, multiWorkerBaseOptions, {
         onSuccess: done
       });
 
-      var runner = new TestRunner([], options);
+      const runner = new TestRunner([], options);
       runner.start();
     });
 
     it("runs one test", function (done) {
       this.timeout(6000);
 
-      var workerAllocator = new WorkerAllocator(MAX_WORKERS);
+      const workerAllocator = new WorkerAllocator(MAX_WORKERS);
 
-      var options = _.extend({}, multiWorkerBaseOptions, {
+      const options = _.extend({}, multiWorkerBaseOptions, {
         allocator: workerAllocator,
         onSuccess: done
       });
 
-      workerAllocator.initialize(function (err) {
-        var runner = new TestRunner(["fake_test1"], options);
+      workerAllocator.initialize((err) => {
+        const runner = new TestRunner(["fake_test1"], options);
         runner.start();
       });
     });
@@ -116,20 +116,20 @@ describe("test runner", function () {
     it("runs many tests", function (done) {
       this.timeout(25000);
 
-      var workerAllocator = new WorkerAllocator(MAX_WORKERS);
+      const workerAllocator = new WorkerAllocator(MAX_WORKERS);
 
-      var options = _.extend({}, multiWorkerBaseOptions, {
+      const options = _.extend({}, multiWorkerBaseOptions, {
         allocator: workerAllocator,
         onSuccess: done
       });
 
-      var tests = [];
-      for (var i = 0; i < 14; i++) {
+      const tests = [];
+      for (let i = 0; i < 14; i++) {
         tests.push("fake_test" + i);
       }
 
-      workerAllocator.initialize(function (err) {
-        var runner = new TestRunner(tests, options);
+      workerAllocator.initialize((err) => {
+        const runner = new TestRunner(tests, options);
         runner.start();
       });
     });
@@ -138,23 +138,23 @@ describe("test runner", function () {
       this.timeout(25000);
       settings.bailTime = 2500;
 
-      var workerAllocator = new WorkerAllocator(MAX_WORKERS);
+      const workerAllocator = new WorkerAllocator(MAX_WORKERS);
 
-      var options = _.extend({}, multiWorkerBaseOptions, {
+      const options = _.extend({}, multiWorkerBaseOptions, {
         bailFast: true,
         allocator: workerAllocator,
-        onSuccess: function () {
+        onSuccess () {
           done();
         },
-        onFailure: function () {
+        onFailure () {
           done();
         }
       });
 
-      var tests = ["zombie"];
+      const tests = ["zombie"];
 
-      workerAllocator.initialize(function (err) {
-        var runner = new TestRunner(tests, options);
+      workerAllocator.initialize((err) => {
+        const runner = new TestRunner(tests, options);
         runner.start();
       });
     });
@@ -162,17 +162,17 @@ describe("test runner", function () {
     it("runs many tests and fails two", function (done) {
       this.timeout(25000);
 
-      var workerAllocator = new WorkerAllocator(MAX_WORKERS);
+      const workerAllocator = new WorkerAllocator(MAX_WORKERS);
 
-      var options = _.extend({}, multiWorkerBaseOptions, {
+      const options = _.extend({}, multiWorkerBaseOptions, {
         allocator: workerAllocator,
-        onFailure: function () {
+        onFailure () {
           done();
         }
       });
 
-      var tests = [];
-      for (var i = 0; i < 14; i++) {
+      const tests = [];
+      for (let i = 0; i < 14; i++) {
         if (i == 7 || i == 11) {
           tests.push("fail_test" + i);
         } else {
@@ -180,8 +180,8 @@ describe("test runner", function () {
         }
       }
 
-      workerAllocator.initialize(function (err) {
-        var runner = new TestRunner(tests, options);
+      workerAllocator.initialize((err) => {
+        const runner = new TestRunner(tests, options);
         runner.start();
       });
     });

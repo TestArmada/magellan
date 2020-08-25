@@ -1,19 +1,19 @@
-var chai = require("chai");
-var expect = chai.expect;
+const chai = require("chai");
+const expect = chai.expect;
 
-var TestRunner = require("../src/test_runner");
-var _ = require("lodash");
-var settings = require("../src/settings");
-var WorkerAllocator = require("../src/worker_allocator");
-var TestListener = require("../test_support/test_listener");
+const TestRunner = require("../src/test_runner");
+const _ = require("lodash");
+const settings = require("../src/settings");
+const WorkerAllocator = require("../src/worker_allocator");
+const TestListener = require("../test_support/test_listener");
 
 settings.framework = "magellan-fake";
 settings.testFramework = require("../test_support/magellan-selftest-plugin/index");
 settings.testFramework.initialize({});
 
-var MAX_WORKERS = 1;
+const MAX_WORKERS = 1;
 
-var baseOptions = {
+const baseOptions = {
   debug: false,
   maxWorkers: MAX_WORKERS,
   maxTestAttempts: 1,
@@ -27,16 +27,16 @@ var baseOptions = {
   sauceSettings: undefined
 };
 
-describe("test runner", function () {
+describe("test runner", () => {
 
   describe("listener lifecycle", function () {
     this.timeout(6000);
 
-    var workerAllocator;
-    var listener;
-    var options;
+    let workerAllocator;
+    let listener;
+    let options;
 
-    beforeEach(function (done) {
+    beforeEach((done) => {
       workerAllocator = new WorkerAllocator(MAX_WORKERS);
       listener = new TestListener();
       options = _.extend({}, baseOptions, {
@@ -44,7 +44,7 @@ describe("test runner", function () {
         listeners: [listener]
       });
 
-      listener.initialize().then(function () {
+      listener.initialize().then(() => {
         done();
       });
     });
@@ -52,9 +52,9 @@ describe("test runner", function () {
     it("initializes", function (done) {
       this.timeout(6000);
 
-      workerAllocator.initialize(function (err) {
-        var runner = new TestRunner(["fake_test1"], _.extend({}, options, {
-          onSuccess: function () {
+      workerAllocator.initialize((err) => {
+        const runner = new TestRunner(["fake_test1"], _.extend({}, options, {
+          onSuccess () {
             expect(listener.didInitialize).to.equal(true);
             done();
           }
@@ -66,9 +66,9 @@ describe("test runner", function () {
     it("flushes", function (done) {
       this.timeout(6000);
 
-      workerAllocator.initialize(function (err) {
-        var runner = new TestRunner(["fake_test1"], _.extend({}, options, {
-          onSuccess: function () {
+      workerAllocator.initialize((err) => {
+        const runner = new TestRunner(["fake_test1"], _.extend({}, options, {
+          onSuccess () {
             expect(listener.didFlush).to.equal(true);
             done();
           }

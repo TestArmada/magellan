@@ -6,4 +6,4 @@ module.exports = class ST {
   initialize() {
     return Promise.resolve();
   }
-}
+};
