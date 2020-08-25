@@ -18,11 +18,13 @@ const ADDED_ERROR_MESSAGE_CONTEXT = "If running on saucelabs, perhaps " +
 // Currently the "ERROR" and "WARN" logs from nightwatch are suppressed when the "DEBUG" flag is
 // turned OFF.. and our customers ALWAYS use the "DEBUG" off, because if you turn it on your log
 // will be filled with base64 screenshot gobbledegook... Also, with the approach taken, we will
-// sell all the "ERRORED" selenium request/response logs in our magellan log
+// see all the "ERRORED" selenium request/response logs in our magellan log
 //
 // relevant code for this feature:
-//   STDOUT_WHITE_LIST, SLICE_ON_TEXT, infoSlicer, isTextWhiteListed
+//   DEBUG, STDOUT_WHITE_LIST, SLICE_ON_TEXT, infoSlicer, isTextWhiteListed
 // ------------------------------------------------------------------------------------------------
+
+const DEBUG = process.env.DEBUG // if truthy, effectively turns off any filtering of nightwatch logs
 
 // if the "this.handler.stdout" stream of the childprocess does not 
 // include atleast one of these tokens then it will not be included in the "this.stdout"
@@ -75,12 +77,11 @@ module.exports = class ChildProcess {
   }
 
   isTextWhiteListed(text) {
-    for (const item of STDOUT_WHITE_LIST) {
-      if (text.includes(item)) {
-        return true
-      }
+    if (DEBUG) {
+      // in debug mode we do not filter out any text
+      return true
     }
-    return false
+    return STDOUT_WHITE_LIST.some(item => text.includes(item))
   }
 
   onDataCallback(data) {
