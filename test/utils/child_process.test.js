@@ -10,7 +10,8 @@ const handler = {
   stdout: {
     on: () => { },
     removeAllListeners: () => { },
-    unpipe: () => { }
+    unpipe: () => { },
+    pipe: () => { }
   },
   stderr: {
     on: () => { },
@@ -68,8 +69,8 @@ describe('Child process', () => {
   test('should append data to stdout', () => {
     const cp = new ChildProcess(handler);
 
-    cp.onDataCallback('fake data');
-    cp.onDataCallback('real data');
+    cp.onDataCallback('WARN fake data');
+    cp.onDataCallback('WARN real data');
     cp.onDataCallback('');
 
     expect(cp.stdout).toContain('fake data');
@@ -79,9 +80,29 @@ describe('Child process', () => {
   test('should add context to error message', () => {
     const cp = new ChildProcess(handler);
 
-    cp.onDataCallback('Connection refused! Is selenium server started?')
+    cp.onDataCallback('ERROR Connection refused! Is selenium server started?')
 
     expect(cp.stdout).toContain('Connection refused! Is selenium server started?')    
     expect(cp.stdout).toContain(`If running on saucelabs, perhaps you're out of capacity and should TRY RUN AGAIN LATER :)`);
   })
+
+
+  test('should exclude text that is not white listed', () => {
+    const cp = new ChildProcess(handler);
+
+    cp.onDataCallback('This text is not white listed')
+
+    expect(cp.stdout.trim().endsWith('Magellan child process start')).toEqual(true)
+  })
+
+  test('should not exclude any text if env.debug is true', () => {
+    process.env.DEBUG = true
+    const cp = new ChildProcess(handler);
+
+    cp.onDataCallback('This text is not white listed')
+
+    expect(cp.stdout.trim().endsWith('Magellan child process start')).toEqual(false)
+  })
+
+
 });

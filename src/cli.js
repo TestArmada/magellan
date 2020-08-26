@@ -104,6 +104,19 @@ module.exports = {
                 rootWorkingDirectory: process.cwd()
               });
         }
+        if (settings.framework === "testarmada-magellan-nightwatch-plugin") {
+
+          if (opts.argv.debug) {
+            // if the user has SET the debug flag, that means they want ALL the logs and NOT
+            // filter out anything. we must let the util/ChildProcess.js know this information,
+            // we will use the ENV to relay this information
+            process.env.DEBUG = true; // this tells childProcess.js not to filter out any logs
+          }
+
+          // turn on nightwatch verbose logs so we can capture the nightwatch errors and warns
+          // inside util/childProcess we filter out the verbose info logs of nightwatch
+          opts.argv.debug = true; // this turns on nightwatch verbose logging
+        }
         settings.testFramework.initialize(opts.argv, settings.pluginOptions);
       } catch (e) {
         frameworkInitializationException = e;
