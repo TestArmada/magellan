@@ -24,14 +24,12 @@ const ADDED_ERROR_MESSAGE_CONTEXT = "If running on saucelabs, perhaps " +
 //   DEBUG, STDOUT_WHITE_LIST, SLICE_ON_TEXT, infoSlicer, isTextWhiteListed
 // ------------------------------------------------------------------------------------------------
 
-const DEBUG = process.env.DEBUG // if truthy, effectively turns off any filtering of nightwatch logs
-
 // if the "this.handler.stdout" stream of the childprocess does not 
 // include atleast one of these tokens then it will not be included in the "this.stdout"
 const STDOUT_WHITE_LIST = ['ERROR', 'WARN', 'Test Suite', '✖']
 
 // we slice the VERBOSE nighwatch stdout stream on the purple INFO text that has black background
-const SLICE_ON_TEXT = '\033[1;35m\033[40mINFO\033[0m'
+const SLICE_ON_TEXT = '\x1B[1;35m\x1B[40mINFO\x1B[0m'
 
 module.exports = class ChildProcess {
   constructor(handler) {
@@ -77,7 +75,7 @@ module.exports = class ChildProcess {
   }
 
   isTextWhiteListed(text) {
-    if (DEBUG) {
+    if (process.env.DEBUG) {
       // in debug mode we do not filter out any text
       return true
     }
