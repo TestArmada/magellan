@@ -4,6 +4,7 @@ const _ = require("lodash");
 const clc = require("cli-color");
 const EventEmitter = require("events").EventEmitter;
 const StreamSlicer = require("stream-slic3r");
+const { Transform } = require("stream");
 
 const logger = require("../logger");
 const logStamp = require("./logstamp");
@@ -46,14 +47,31 @@ module.exports = class ChildProcess {
     // and each "slice" will be emitted 'data'
     const infoSlicer = new StreamSlicer(SLICE_ON_TEXT);
 
-    // pipe the stdout stream into the slicer for slicing :)
-    this.handler.stdout.pipe(infoSlicer);
-
-    infoSlicer.on("data", this.onDataCallback.bind(this));
+    // create the stdout filtering transform, only nightwatch INFO chunks that are white-listed
+    const self = this;
+    const stdoutFilter = new Transform({
+      transform(data, encoding, callback) {
+        let text = data.toString().trim();
+        if (text.length > 0 && self.isTextWhiteListed(text)) {
+          text = text
+            .split("\n")
+            .filter((line) => !_.isEmpty(line.trim()))
+            .map((line) => `${clc.yellowBright(logStamp())} ${line}`)
+            .join("\n");
+          self.stdout += text + "\n";
+          self.addErrorMessageContext();
+          this.push(text);
+        }
+        callback();
+      }
+    });
 
     this.emitter = new EventEmitter();
-    this.emitter.stdout = handler.stdout;
+    this.emitter.stdout = stdoutFilter;
     this.emitter.stderr = handler.stderr;
+
+    // pipe the stdout stream into the slicer and then into the filter
+    this.handler.stdout.pipe(infoSlicer).pipe(stdoutFilter);
   }
 
   enableDebugMsg() {
@@ -82,19 +100,6 @@ module.exports = class ChildProcess {
       return true;
     }
     return STDOUT_WHITE_LIST.some(item => text.includes(item));
-  }
-
-  onDataCallback(data) {
-    let text = data.toString().trim();
-    if (text.length > 0 && this.isTextWhiteListed(text)) {
-      text = text
-        .split("\n")
-        .filter((line) => !_.isEmpty(line.trim()))
-        .map((line) => `${clc.yellowBright(logStamp())} ${line}`)
-        .join("\n");
-      this.stdout += text + "\n";
-      this.addErrorMessageContext();
-    }
   }
 
   onClose(callback) {
