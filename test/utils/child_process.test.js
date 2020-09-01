@@ -62,16 +62,15 @@ describe('Child process', () => {
     cp.teardown();
   });
 
-  test('should append data to stdout', (done) => {
+  test('should append data to stdout if contains whitelisted data', (done) => {
     const cp = new ChildProcess(newHandler());
 
-    cp.handler.stdout.write('WARN fake data');
-    cp.handler.stdout.end('WARN real data');
+    const warnTag = '\x1B[1;32m\x1B[40mWARN\x1B[0m'
+    cp.handler.stdout.end(`${warnTag} sample data`);
 
     // wait for the write to flow thru the slicer and filter transforms
     setTimeout(() => {
-      expect(cp.stdout).toContain('fake data');
-      expect(cp.stdout).toContain('real data');
+      expect(cp.stdout).toContain(`${warnTag} sample data`);
       done();
     }, 0)
 
@@ -80,7 +79,8 @@ describe('Child process', () => {
   test('should add context to error message', (done) => {
     const cp = new ChildProcess(newHandler());
 
-    cp.handler.stdout.end('ERROR Connection refused! Is selenium server started?');
+    const errorTag = '\x1B[1;33mERROR\x1B[0m';
+    cp.handler.stdout.end(`${errorTag} Connection refused! Is selenium server started?`);
 
     // wait for the write to flow thru the slicer and filter transforms
     setTimeout(() => {
