@@ -33,7 +33,8 @@ const STDOUT_WHITE_LIST = [
   "\x1B[1;33mERROR\x1B[0m",
   "\x1B[1;32m\x1B[40mWARN\x1B[0m",
   "Test Suite",
-  "✖"
+  "✖",
+  "✔"
 ];
 
 // we slice the VERBOSE nighwatch stdout stream on the purple INFO text that has black background
