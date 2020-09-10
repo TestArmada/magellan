@@ -59,6 +59,22 @@ module.exports = class ChildProcess {
       transform(data, encoding, callback) {
         let text = data.toString().trim();
         if (text.length > 0 && self.isTextWhiteListed(text)) {
+          if (text.includes("✔")) {
+            // for successful chunks we really only want to keep specific lines
+            const lines = text.split("\n");
+            const buff = [];
+            const startWithTerms = ["Running:", " ✔", "OK."];
+            const processLine = (line) => {
+              for (const term of startWithTerms) {
+                // line could have an ERROR or WARN tag that is whitelisted we want to keep
+                if (self.isTextWhiteListed(line) || line.startsWith(term)) {
+                  buff.push(line);
+                }
+              }
+            };
+            lines.forEach(line => processLine(line));
+            text = buff.join("\n");
+          }
           text = text
             .split("\n")
             .filter((line) => !_.isEmpty(line.trim()))
@@ -75,6 +91,7 @@ module.exports = class ChildProcess {
     this.emitter = new EventEmitter();
     this.emitter.stdout = stdoutFilter;
     this.emitter.stderr = handler.stderr;
+    this.emitter.infoSlicer = infoSlicer;
 
     // pipe the stdout stream into the slicer and then into the filter
     this.handler.stdout.pipe(infoSlicer).pipe(stdoutFilter);
