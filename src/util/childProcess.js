@@ -34,7 +34,9 @@ const STDOUT_WHITE_LIST = [
   "\x1B[1;32m\x1B[40mWARN\x1B[0m",
   "Test Suite",
   "✖",
-  "✔"
+  "✔",
+  "Running:",
+  "OK."
 ];
 
 // we slice the VERBOSE nighwatch stdout stream on the purple INFO text that has black background
@@ -59,19 +61,15 @@ module.exports = class ChildProcess {
       transform(data, encoding, callback) {
         let text = data.toString().trim();
         if (text.length > 0 && self.isTextWhiteListed(text)) {
-          if (!process.env.DEBUG && text.includes("✔")) {
+          if (text.includes("✔") || text.includes("Running:") || text.includes("OK.")) {
             // for successful chunks we really only want to keep specific lines
             const lines = text.split("\n");
             const buff = [];
-            const startsWithTerms = ["Running:", " ✔", "OK."];
             const maxLineLength = 512;
             const processLine = (line) => {
-              for (const term of startsWithTerms) {
-                // line could have an ERROR or WARN tag that is whitelisted we want to keep
-                if (self.isTextWhiteListed(line) || line.startsWith(term)) {
-                  // limit the length of each line, goal here is to "limit" verbosity
-                  buff.push(line.substring(0, maxLineLength));
-                }
+              if (self.isTextWhiteListed(line)) {
+                // limit the length of each line, goal here is to "limit" verbosity
+                buff.push(line.substring(0, maxLineLength));
               }
             };
             lines.forEach(line => processLine(line));
@@ -80,7 +78,7 @@ module.exports = class ChildProcess {
           text = text
             .split("\n")
             .filter((line) => !_.isEmpty(line.trim()))
-            .map((line) => `${clc.yellowBright(logStamp())} ${line}`)
+            .map((line) => `\n${clc.yellowBright(logStamp())} ${line}`)
             .join("\n");
           self.stdout += text + "\n";
           self.addErrorMessageContext();
