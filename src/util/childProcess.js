@@ -59,16 +59,17 @@ module.exports = class ChildProcess {
       transform(data, encoding, callback) {
         let text = data.toString().trim();
         if (text.length > 0 && self.isTextWhiteListed(text)) {
-          if (text.includes("✔")) {
+          if (!process.env.DEBUG && text.includes("✔")) {
             // for successful chunks we really only want to keep specific lines
             const lines = text.split("\n");
             const buff = [];
-            const startWithTerms = ["Running:", " ✔", "OK."];
+            const startsWithTerms = ["Running:", " ✔", "OK."];
             const processLine = (line) => {
-              for (const term of startWithTerms) {
+              for (const term of startsWithTerms) {
                 // line could have an ERROR or WARN tag that is whitelisted we want to keep
                 if (self.isTextWhiteListed(line) || line.startsWith(term)) {
-                  buff.push(line);
+                  // limit the length of each line, goal here is to "limit" verbosity
+                  buff.push(line.substring(0, 512)); 
                 }
               }
             };
