@@ -64,12 +64,13 @@ module.exports = class ChildProcess {
             const lines = text.split("\n");
             const buff = [];
             const startsWithTerms = ["Running:", " ✔", "OK."];
+            const maxLineLength = 512;
             const processLine = (line) => {
               for (const term of startsWithTerms) {
                 // line could have an ERROR or WARN tag that is whitelisted we want to keep
                 if (self.isTextWhiteListed(line) || line.startsWith(term)) {
                   // limit the length of each line, goal here is to "limit" verbosity
-                  buff.push(line.substring(0, 512)); 
+                  buff.push(line.substring(0, maxLineLength));
                 }
               }
             };
