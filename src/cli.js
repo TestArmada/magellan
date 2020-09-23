@@ -311,7 +311,7 @@ module.exports = {
     }
 
     //
-    // Serial Mode Reporter (enabled with --serial)
+    // Page Reporter to help find pages with errors (enabled with --pageDebugger)
     //
     if (opts.argv.pageDebugger) {
       listeners.push(new PageReporter());
