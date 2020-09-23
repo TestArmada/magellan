@@ -29,6 +29,9 @@ const logger = require("./logger");
 const BailStrategy = require("./strategies/bail");
 const ResourceStrategy = require("./strategies/resource");
 
+const PageReporter = require("./reporters/page/reporter");
+const SerialReporter = require("./reporters/stdout/reporter");
+
 module.exports = {
 
   initialize() {
@@ -304,8 +307,14 @@ module.exports = {
     // Serial Mode Reporter (enabled with --serial)
     //
     if (opts.argv.serial) {
-      const SerialReporter = require("./reporters/stdout/reporter");
       listeners.push(new SerialReporter());
+    }
+
+    //
+    // Serial Mode Reporter (enabled with --serial)
+    //
+    if (opts.argv.pageDebugger) {
+      listeners.push(new PageReporter());
     }
 
     // intiialize listeners
