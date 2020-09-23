@@ -15,7 +15,7 @@ const BaseReporter = require("../reporter");
 
 const logHarEntryToScreen = (entry, url) => {
   // to make things easier to read ie taking less screen space...
-  // reduce the querystring and headers to find on justa few lines
+  // reduce the querystring and headers usew fewer lines
   const reducer = (result, item) => {
     result.push(`${item.name} = ${item.value}`);
     return result;
