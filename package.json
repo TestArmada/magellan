@@ -33,9 +33,11 @@
   },
   "dependencies": {
     "async": "^2.1.4",
+    "chrome-har-capturer": "^0.13.8",
     "cli-color": "^1.1.0",
     "co": "^4.6.0",
     "fs-extra": "^7.0.1",
+    "get-port": "^5.1.1",
     "glob": "^7.1.1",
     "http-proxy": "^1.18.1",
     "lodash": "^4.6.1",
