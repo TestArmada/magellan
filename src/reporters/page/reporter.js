@@ -71,7 +71,7 @@ class Reporter extends BaseReporter {
           data = data.toString();
           // StreamSlicer has no data loss,
           // the first slice might not contain any url
-          // thus we have ths check
+          // thus we have this check
           if (data.startsWith(sliceOn)) {
             const endIndex = data.indexOf("\"", sliceOn.length + 1);
             const url = data.substring(sliceOn.length, endIndex);
