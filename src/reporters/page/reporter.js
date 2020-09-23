@@ -6,10 +6,9 @@ const logger = require("../../logger");
 const HarCaptureEngine = require("./HarCaptureEngine");
 
 /*
-* Stdout Reporter
+* Page Reporter
 *
-* This reporter streams the output from a test run directly to stdout/stderr, to allow
-* for easier live debugging at the console.
+* reports any pages with failed requests to the stdout
 */
 
 const BaseReporter = require("../reporter");
