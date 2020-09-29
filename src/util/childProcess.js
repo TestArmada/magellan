@@ -81,7 +81,7 @@ module.exports = class ChildProcess {
         }
         if (text.length > 0 && self.isTextWhiteListed(text)) {
           // slices that have any one of these indicators
-          // need-line-by-line filtering applied to them
+          // need line-by-line filtering applied to them
           const lineFilterIndicators = ["✔", "Running:", "OK.", "✖"];
           if (lineFilterIndicators.some(item => text.includes(item))) {
             // apply some line by line filtering
