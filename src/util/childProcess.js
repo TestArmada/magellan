@@ -29,9 +29,14 @@ const ADDED_ERROR_MESSAGE_CONTEXT = "If running on saucelabs, perhaps " +
 
 // if the "this.handler.stdout" stream of the childprocess does not
 // include atleast one of these tokens then it will not be included in the "this.stdout"
+
+const NW_ERROR_TAG = "\x1B[1;33mERROR\x1B[0m";
+const NW_WARN_TAG = "\x1B[1;32m\x1B[40mWARN\x1B[0m";
+const NW_INFO_TAG = "\x1B[1;35m\x1B[40mINFO\x1B[0m";
+
 const STDOUT_WHITE_LIST = [
-  "\x1B[1;33mERROR\x1B[0m",
-  "\x1B[1;32m\x1B[40mWARN\x1B[0m",
+  NW_ERROR_TAG,
+  NW_WARN_TAG,
   "Test Suite",
   "✖",
   "✔",
@@ -40,7 +45,14 @@ const STDOUT_WHITE_LIST = [
 ];
 
 // we slice the VERBOSE nighwatch stdout stream on the purple INFO text that has black background
-const SLICE_ON_TEXT = "\x1B[1;35m\x1B[40mINFO\x1B[0m";
+const SLICE_ON_TEXT = NW_INFO_TAG;
+
+const applyLineFilter = (text, lineFilter) => {
+  const lines = text.split("\n");
+  const buff = [];
+  lines.forEach(line => lineFilter(line, buff));
+  return buff.join("\n");
+};
 
 module.exports = class ChildProcess {
   constructor(handler) {
@@ -60,27 +72,34 @@ module.exports = class ChildProcess {
     const stdoutFilter = new Transform({
       transform(data, encoding, callback) {
         let text = data.toString().trim();
+        // ignore info chunks that are reporting a failed /timeouts/async_script request
+        // avoids cluttering the log because /timeouts/async_script is not well supported
+        if (text.includes(NW_ERROR_TAG) && text.includes("/timeouts/async_script")) {
+          // we are not losing any key information here, request and response payloads
+          // sit between nw_info_tags and we slice data on nw_info_tag
+          return callback();
+        }
         if (text.length > 0 && self.isTextWhiteListed(text)) {
-          if (text.includes("✔") || text.includes("Running:") || text.includes("OK.")) {
-            // for successful chunks we really only want to keep specific lines
-            const lines = text.split("\n");
-            const buff = [];
+          // slices that have any one of these indicators
+          // need line-by-line filtering applied to them
+          const lineFilterIndicators = ["✔", "Running:", "OK.", "✖"];
+          if (lineFilterIndicators.some(item => text.includes(item))) {
+            // apply some line by line filtering
             const maxLineLength = 512;
-            const processLine = (line) => {
+            const lineFilter = (line, buff) => {
               if (self.isTextWhiteListed(line)) {
                 // limit the length of each line, goal here is to "limit" verbosity
                 buff.push(line.substring(0, maxLineLength));
               }
             };
-            lines.forEach(line => processLine(line));
-            text = buff.join("\n");
+            text = applyLineFilter(text, lineFilter);
           }
           text = text
             .split("\n")
             .filter((line) => !_.isEmpty(line.trim()))
-            .map((line) => `\n${clc.yellowBright(logStamp())} ${line}`)
-            .join("\n");
-          self.stdout += text + "\n";
+            .map((line) => `${clc.yellowBright(logStamp())} ${line}`)
+            .join("\n") + "\n";
+          self.stdout += text;
           self.addErrorMessageContext();
           this.push(text);
         }
