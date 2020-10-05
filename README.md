@@ -216,7 +216,7 @@ $ magellan --test=path/to/my/test.js
 
 To run **tests defined in a json file as array**, use the `--testFile` flag with a path to the test file (must use testarmada-magellan-nightwatch-plugin@8.0.3 or highter):
 ```console
-$ magellan --test=path/to/my/tests.json
+$ magellan --testFile=path/to/my/tests.json
 ```
 Example file:
 ```
