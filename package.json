@@ -54,7 +54,7 @@
   },
   "engineStrict": true,
   "engines": {
-    "npm": ">=2.1.10"
+    "node" : ">=10.22.1"
   },
   "bin": {
     "magellan": "./bin/magellan",
