@@ -1,6 +1,6 @@
 {
   "name": "testarmada-magellan",
-  "version": "11.0.17-1",
+  "version": "11.0.18",
   "description": "Massively parallel automated testing",
   "main": "src/main",
   "directories": {
@@ -48,9 +48,9 @@
     "slugify": "^1.0.2",
     "stream-slic3r": "^1.0.1",
     "sync-request": "^4.0.1",
-    "testarmada-magellan-local-executor": "^2.1.1",
+    "testarmada-magellan-local-executor": "^2.0.0",
     "testarmada-tree-kill": "^2.0.0",
-    "yargs": "^16.0.3"
+    "yargs": "6.5.0"
   },
   "engineStrict": true,
   "engines": {
