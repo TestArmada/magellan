@@ -1,6 +1,6 @@
 {
   "name": "testarmada-magellan",
-  "version": "11.0.18",
+  "version": "11.0.19",
   "description": "Massively parallel automated testing",
   "main": "src/main",
   "directories": {
@@ -54,7 +54,7 @@
   },
   "engineStrict": true,
   "engines": {
-    "node": ">=10.0.0"
+    "npm": ">=2.1.10"
   },
   "bin": {
     "magellan": "./bin/magellan",
