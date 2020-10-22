@@ -37,7 +37,8 @@ module.exports = {
 
   version() {
     const project = require("../package.json");
-    logger.log(`Version:  ${clc.greenBright(project.version)}`);
+    logger.log(`Node Version:  ${clc.greenBright(process.version)}`);
+    logger.log(`Magellan Version:  ${clc.greenBright(project.version)}`);
     logger.log("Use --help to list out all command options");
   },
 
